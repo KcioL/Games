@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bataille navale</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚢</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="bataille.css">
+  <script type="module" src="bataille.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../">← Jeux</a>
+    <h1>Bataille navale</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+            <p>L'une crée le salon, l'autre entre le code à 4 lettres.</p>
+      <label>Ton pseudo
+        <input id="pseudo" maxlength="16" placeholder="Ex : Léa" autocomplete="nickname">
+      </label>
+      <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+      <div class="separateur">ou</div>
+      <div class="ligne">
+        <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+        <button class="btn" id="btn-rejoindre">Rejoindre</button>
+      </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Un seul téléphone, que vous vous passez à chaque tour. Pas besoin d'internet.</p>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente de ton adversaire</h2>
+      <p>Donne-lui ce code :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <p class="statut" id="statut" aria-live="polite"></p>
+
+    <div class="outils-placement" id="outils-placement">
+      <div class="dock" id="dock"></div>
+      <div class="boutons">
+        <button class="btn" id="btn-pivoter">Pivoter ↻</button>
+        <button class="btn" id="btn-hasard">Placer au hasard</button>
+        <button class="btn btn-principal" id="btn-pret" disabled>Flotte prête</button>
+      </div>
+    </div>
+
+    <div class="plateaux" id="plateaux">
+      <section class="plateau adverse" id="bloc-adverse">
+        <h2 id="titre-adverse">Mer adverse</h2>
+        <div class="grille" id="grille-adverse"></div>
+        <ul class="etat-flotte" id="flotte-adverse"></ul>
+      </section>
+      <section class="plateau moi" id="bloc-moi">
+        <h2>Ma flotte</h2>
+        <div class="grille" id="grille-moi"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="voile" id="fin" hidden>
+    <div class="carte-salon">
+      <h2 id="fin-titre"></h2>
+      <p id="fin-texte"></p>
+      <button class="btn btn-principal" id="btn-rejouer">Rejouer</button>
+    </div>
+  </div>
+
+  <dialog class="regles" id="regles">
+    <h2>Bataille navale</h2>
+    <p>Chaque joueuse cache 5 bateaux sur sa grille de 10 × 10, puis on tire à tour de rôle pour couler la flotte adverse.</p>
+    <h3>Placement</h3>
+    <ul>
+      <li>Choisis un bateau, puis touche la case où il commence.</li>
+      <li>« Pivoter » le met à l'horizontale ou à la verticale.</li>
+      <li>Touche un bateau déjà posé pour le reprendre.</li>
+      <li>Flotte : porte-avions (5), croiseur (4), contre-torpilleur (3), sous-marin (3), torpilleur (2).</li>
+    </ul>
+    <h3>Combat</h3>
+    <ul>
+      <li>À ton tour, touche une case de la mer adverse.</li>
+      <li>Point blanc : dans l'eau. Rouge : touché. Rouge foncé : coulé.</li>
+      <li>Quand tu touches un bateau, tu rejoues. Dans l'eau, c'est à l'autre.</li>
+      <li>La première qui coule toute la flotte adverse gagne.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>

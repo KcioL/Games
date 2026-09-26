@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UNO</title>
+  <link rel="icon" type="image/png" href="uno-logo.png">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+
+  <!-- Firebase (configuration partagée par tous les jeux) -->
+  <script type="module" src="../firebase.js"></script>
+  <!-- Mode un seul téléphone (marche sans internet) -->
+  <script type="module" src="local.js"></script>
+</head>
+<body>
+  <div class="game-container">
+    <header class="game-header">
+      <a href="../" class="uno-retour">← Jeux</a>
+      <h1>UNO</h1>
+      
+      <!-- Menu de salon en ligne avec sélecteur du nombre de joueurs et pseudo -->
+      <div class="game-settings" id="lobby-controls">
+        <input type="text" id="player-name-input" placeholder="Ton pseudo" style="padding: 6px; border-radius: 6px; border: none; font-weight: bold; width: 120px; text-align: center;">
+        
+        <select id="select-max-players" style="padding: 6px; border-radius: 6px; font-weight: bold; background: #ecf0f1; border: none;">
+          <option value="2">2 Joueurs</option>
+          <option value="3">3 Joueurs</option>
+          <option value="4">4 Joueurs</option>
+          <option value="5">5 Joueurs</option>
+          <option value="6">6 Joueurs</option>
+        </select>
+        <button id="btn-create-room" class="btn btn-start">Créer un salon</button>
+        <div id="join-section" style="display: flex; gap: 8px;">
+          <input type="text" id="room-code-input" placeholder="Code salon" style="text-transform: uppercase; width: 90px; padding: 6px; border-radius: 6px; border: none;">
+          <button id="btn-join-room" class="btn btn-secondary" style="background-color: #3498db; color: white;">Rejoindre</button>
+        </div>
+        <button id="btn-local" class="btn btn-local">Sur ce téléphone</button>
+        <button id="btn-reprendre-local" class="btn btn-local" hidden>Reprendre (ce téléphone)</button>
+      </div>
+      <div id="room-info" class="hidden" style="color: #f1c40f; font-weight: bold;">
+        Salon : <span id="display-room-code"></span>
+      </div>
+    </header>
+
+    <div class="uno-table">
+      <!-- Zone des adversaires (autour de la table) -->
+      <div id="opponents-container" class="opponents-container"></div>
+
+      <!-- Centre de la table : Pioche et Défausse -->
+      <div class="center-table">
+        <div class="draw-pile" id="draw-pile" title="Piocher une carte">
+          <div class="uno-logo-back">UNO</div>
+        </div>
+        <div class="discard-pile" id="discard-pile">
+          <!-- La dernière carte jouée apparaîtra ici -->
+        </div>
+      </div>
+      
+      <div class="turn-indicator" id="turn-indicator">Créez ou rejoignez un salon pour commencer.</div>
+
+      <!-- Zone du joueur actif (en bas) -->
+      <div class="active-player-zone">
+        <h2 id="active-player-name">Joueur</h2>
+        <div class="hand-container" id="active-hand"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Écran de choix de couleur (Joker / +4) -->
+  <div id="color-picker-overlay" class="overlay hidden">
+    <div class="overlay-card">
+      <h2>Choisissez une couleur</h2>
+      <div class="color-buttons">
+        <button class="color-btn red" data-color="red"></button>
+        <button class="color-btn blue" data-color="blue"></button>
+        <button class="color-btn green" data-color="green"></button>
+        <button class="color-btn yellow" data-color="yellow"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode un seul téléphone : noms des joueurs -->
+  <div id="local-overlay" class="overlay hidden">
+    <div class="overlay-card local-card">
+      <h2>Sur ce téléphone</h2>
+      <p>Vous vous passez le téléphone à chaque tour. Pas besoin d'internet.</p>
+      <label class="local-nb">Nombre de joueurs
+        <select id="local-nb">
+          <option value="2">2 joueurs</option>
+          <option value="3">3 joueurs</option>
+          <option value="4">4 joueurs</option>
+          <option value="5">5 joueurs</option>
+          <option value="6">6 joueurs</option>
+        </select>
+      </label>
+      <div id="local-noms" class="local-noms"></div>
+      <div class="local-actions">
+        <button id="local-annuler" class="btn">Annuler</button>
+        <button id="local-go" class="btn btn-start">Commencer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>

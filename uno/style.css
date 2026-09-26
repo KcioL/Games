@@ -1,0 +1,822 @@
+:root {
+  --card-w: 80px;
+  --card-h: 120px;
+  --red: #ff5555;
+  --blue: #5555ff;
+  --green: #55aa55;
+  --yellow: #ffaa00;
+  --black: #333333;
+}
+
+* { 
+  box-sizing: border-box;
+  margin: 0; 
+  padding: 0; 
+  font-family: 'Segoe UI', Tahoma, sans-serif; 
+}
+
+body { 
+  background-color: #2c3e50; 
+  color: #fff; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  min-height: 100vh; 
+  overflow: hidden; 
+}
+
+.game-container { 
+  width: 100%; 
+  max-width: 1200px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 15px; 
+  padding: 10px; 
+}
+
+.game-header { 
+  background: #1a252f; 
+  padding: 15px 20px; 
+  border-radius: 12px; 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  z-index: 50; 
+}
+.game-header h1 { 
+  color: #f1c40f;
+  letter-spacing: 2px; 
+}
+.game-settings { 
+  display: flex; 
+  gap: 15px; 
+  align-items: center; 
+}
+.game-settings select, .game-settings input { 
+  padding: 6px;
+  border-radius: 6px; 
+  border: none; 
+  background: #ecf0f1; 
+  color: #333; 
+  font-weight: bold; 
+}
+
+.hidden { 
+  display: none !important; 
+}
+.btn { 
+  padding: 8px 16px; 
+  border: none; 
+  border-radius: 6px; 
+  font-weight: bold; 
+  cursor: pointer; 
+  transition: 0.2s; 
+}
+.btn:hover {
+  filter: brightness(1.1); 
+  transform: translateY(-2px); 
+}
+.btn-start { 
+  background-color: #e74c3c; 
+  color: white; 
+}
+
+/* --- La table globale --- */
+.uno-table { 
+  background: radial-gradient(circle, #34495e 0%, #2c3e50 100%); 
+  border-radius: 30px; 
+  border: 8px solid #bdc3c7; 
+  min-height: 80vh; 
+  position: relative; 
+  overflow: hidden;
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+}
+
+/* Zone Centrale (Pioche et Défausse) */
+.center-table { 
+  position: absolute;
+  top: 50%; 
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex; 
+  gap: 30px; 
+  align-items: center; 
+  z-index: 5; 
+}
+
+.draw-pile { 
+  width: var(--card-w); 
+  height: var(--card-h); 
+  background: #111; 
+  border: 4px solid white;
+  border-radius: 10px; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  cursor: pointer; 
+  box-shadow: -2px 2px 10px rgba(0,0,0,0.5); 
+  transition: 0.2s; 
+}
+.draw-pile:hover { 
+  transform: translateY(-5px); 
+  box-shadow: -2px 7px 15px rgba(0,0,0,0.6); 
+}
+.uno-logo-back { 
+  color: #e74c3c; 
+  font-weight: 900; 
+  font-size: 1.5rem; 
+  transform: rotate(-20deg); 
+  text-shadow: 2px 2px 0px white; 
+}
+
+/* Indicateur de tour */
+.turn-indicator { 
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center; 
+  font-size: 1.2rem; 
+  font-weight: bold; 
+  padding: 10px 20px; 
+  background: rgba(0,0,0,0.75); 
+  border-radius: 10px; 
+  z-index: 10; 
+  white-space: nowrap;
+}
+
+/* --- Positionnement des Adversaires --- */
+.opponents-container { 
+  position: absolute; 
+  top: 0; left: 0; right: 0; bottom: 0; 
+  pointer-events: none; 
+}
+
+.opponent-zone { 
+  position: absolute;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  transform: scale(0.7); 
+}
+
+.opponent-name { 
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.5);
+  padding: 5px 15px;
+  border-radius: 20px;
+}
+
+.opponent-hand { 
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+
+.opponent-hand .card {
+  margin-left: -45px; 
+  box-shadow: -2px 0 5px rgba(0,0,0,0.3);
+}
+.opponent-hand .card:first-child {
+  margin-left: 0;
+}
+
+.pos-top { 
+  top: 5%; 
+  left: 50%; 
+  transform: translateX(-50%) scale(0.7); 
+}
+.pos-left { 
+  top: 40%; 
+  left: -30px; 
+  transform: translateY(-50%) scale(0.7); 
+}
+.pos-right { 
+  top: 40%; 
+  right: -30px; 
+  transform: translateY(-50%) scale(0.7);
+}
+.pos-top-left { 
+  top: 15%; 
+  left: 10%;
+  transform: scale(0.7);
+}
+.pos-top-right { 
+  top: 15%; 
+  right: 10%; 
+  transform: scale(0.7);
+}
+
+/* Main du joueur actif (Placée en bas) */
+.active-player-zone { 
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  gap: 10px; 
+  z-index: 15; 
+  width: 100%;
+}
+.hand-container { 
+  display: flex; 
+  gap: -30px; 
+  justify-content: center; 
+  max-width: 90%; 
+  flex-wrap: wrap; 
+}
+
+/* Style des Cartes */
+.card { 
+  width: var(--card-w); 
+  height: var(--card-h); 
+  border-radius: 10px; 
+  border: 4px solid white; 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  position: relative; 
+  font-weight: 900; 
+  font-size: 2rem; 
+  cursor: pointer; 
+  box-shadow: 2px 2px 8px rgba(0,0,0,0.3); 
+  transition: transform 0.2s; 
+  margin-left: -20px; 
+}
+.card:first-child { 
+  margin-left: 0; 
+}
+.card.unplayable { 
+  filter: brightness(0.4); 
+  cursor: not-allowed; 
+}
+.card.unplayable:hover { 
+  transform: none; 
+}
+
+.card:not(.back)::before { 
+  content: ''; 
+  position: absolute; 
+  width: 80%; 
+  height: 60%; 
+  background: white; 
+  border-radius: 50%; 
+  transform: rotate(-25deg); 
+  z-index: 0; 
+}
+.card span { 
+  position: relative; 
+  z-index: 1; 
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5); 
+}
+
+.card.red { 
+  background-color: var(--red); 
+  color: var(--red); 
+}
+.card.blue { 
+  background-color: var(--blue); 
+  color: var(--blue); 
+}
+.card.green { 
+  background-color: var(--green); 
+  color: var(--green); 
+}
+.card.yellow { 
+  background-color: var(--yellow); 
+  color: var(--yellow); 
+}
+.card.black { 
+  background-color: var(--black); 
+  color: white;
+}
+.card.black:not(.back)::before { 
+  background: linear-gradient(45deg, var(--red) 25%, var(--blue) 25%, var(--blue) 50%, var(--green) 50%, var(--green) 75%, var(--yellow) 75%); 
+}
+.card.black span { 
+  color: white; 
+  text-shadow: none; 
+}
+
+/* Dos de carte */
+.card.back { 
+  background-color: #111; 
+  cursor: default; 
+}
+.card.back:hover { 
+  transform: none; 
+}
+.card.back::before { 
+  content: 'UNO'; 
+  background: none; 
+  width: auto; 
+  height: auto; 
+  border-radius: 0; 
+  color: #e74c3c; 
+  font-weight: 900; 
+  font-size: 1.8rem; 
+  transform: rotate(-20deg); 
+  text-shadow: 2px 2px 0px white; 
+}
+.card.back span { 
+  display: none; 
+}
+
+.active-player-zone .card:not(.unplayable):hover { 
+  transform: translateY(-15px); z-index: 20; 
+}
+
+/* Overlays */
+.overlay { 
+  position: fixed; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  background: rgba(0,0,0,0.4); /* Plus transparent (0.4 au lieu de 0.9) pour voir le fond */
+  display: flex; 
+  justify-content: center; 
+  align-items: flex-start; /* On place la boîte en haut au lieu de la centrer */
+  padding-top: 15vh; /* On la décolle un peu du plafond de l'écran */
+  z-index: 100; 
+}
+.overlay-card { 
+  background: #ecf0f1; 
+  color: #2c3e50; 
+  padding: 30px; 
+  border-radius: 15px; 
+  text-align: center; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 20px; 
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
+}
+.color-buttons { 
+  display: flex; 
+  gap: 15px; 
+  justify-content: center; }
+.color-btn { 
+  width: 60px; 
+  height: 60px; 
+  border-radius: 50%;
+  border: 4px solid white; 
+  cursor: pointer; 
+  transition: 0.2s; 
+}
+.color-btn:hover { 
+  transform: scale(1.1); 
+}
+.color-btn.red { 
+  background: var(--red); 
+}
+.color-btn.blue {
+  background: var(--blue); 
+}
+.color-btn.green { 
+  background: var(--green); 
+}
+.color-btn.yellow { 
+  background: var(--yellow); 
+}
+
+/* --- ANIMATIONS DES CARTES (Mises à jour fluides en 0.4s) --- */
+@keyframes playCardAnim {
+  0% { transform: translateY(180px) scale(0.8); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.anim-play {
+  animation: playCardAnim 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes drawCardAnim {
+  0% { transform: translateY(-150px) scale(0.5); opacity: 0; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+.anim-draw {
+  animation: drawCardAnim 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* --- BOUTONS UNO & CONTRE UNO --- */
+.uno-btn, .contre-uno-btn {
+  position: fixed;
+  z-index: 1000;
+  padding: 15px 30px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+  display: none; 
+  transition: transform 0.1s;
+}
+.uno-btn:active, .contre-uno-btn:active {
+  transform: scale(0.95);
+}
+
+.uno-btn {
+  background-color: #e74c3c;
+  bottom: 25%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.contre-uno-btn {
+  background-color: #f1c40f;
+  color: #000;
+}
+
+/* --- ÉCRAN DE VICTOIRE --- */
+.win-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.85);
+  color: #f1c40f;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 50px;
+  text-shadow: 0 0 20px #f1c40f;
+  z-index: 2000;
+}
+
+/* --- RESPONSIVITÉ SMARTPHONE --- */
+@media (max-width: 768px) {
+  .game-header h1 {
+    font-size: 22px;
+    margin: 5px 0;
+  }
+  
+  #lobby-controls {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  #join-section {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card {
+    width: 50px;
+    height: 75px;
+    font-size: 20px;
+    border-width: 3px;
+    border-radius: 6px;
+  }
+
+  .uno-logo-back {
+    font-size: 14px;
+  }
+
+  .center-table {
+    transform: scale(0.85);
+  }
+
+  .active-player-zone {
+    width: 100vw;
+    bottom: 5px;
+  }
+
+  .hand-container {
+    display: flex;
+    overflow-x: auto; 
+    padding: 10px;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch; 
+  }
+
+  .hand-container .card {
+    flex-shrink: 0;
+    margin-left: -20px; 
+  }
+  .hand-container .card:first-child {
+    margin-left: 0;
+  }
+
+  .opponent-zone {
+    transform: scale(0.5); 
+  }
+  .pos-top { top: 5%; }
+  .pos-left { left: -45px; }
+  .pos-right { right: -45px; }
+  .pos-top-left { top: 8%; left: -20px; }
+  .pos-top-right { top: 8%; right: -20px; }
+
+  .overlay-card {
+    width: 90%;
+    padding: 15px;
+  }
+  .color-buttons button {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .uno-btn, .contre-uno-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+  }
+}
+/* ========================================================= */
+/* --- RESPONSIVITÉ POUR SMARTPHONE (Écrans < 768px) --- */
+/* ========================================================= */
+@media (max-width: 768px) {
+  /* On autorise le scroll sur la page globale */
+  body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    display: block !important;
+  }
+
+  /* CORRECTION : On force la table à faire au moins 85% de la hauteur de l'écran 
+     pour que les éléments absolus aient la place de respirer */
+  .uno-table {
+    min-height: 85vh !important; 
+    padding-bottom: 0;
+  }
+
+  /* On ajuste l'espacement vertical pour ne pas que le texte touche les cartes */
+  .turn-indicator {
+    top: 15%;
+  }
+
+  /* CORRECTION : On garde le translate(-50%, -50%) pour que la pioche reste bien au centre */
+  .center-table {
+    transform: translate(-50%, -50%) scale(0.85) !important;
+  }
+
+  .game-header h1 {
+    font-size: 22px;
+    margin: 5px 0;
+  }
+  
+  #lobby-controls {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  #join-section {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .card {
+    width: 50px;
+    height: 75px;
+    font-size: 20px;
+    border-width: 3px;
+    border-radius: 6px;
+  }
+
+  .uno-logo-back {
+    font-size: 14px;
+  }
+
+  .active-player-zone {
+    width: 100vw;
+    bottom: 5px;
+  }
+
+  .hand-container {
+    display: flex;
+    overflow-x: auto; 
+    padding: 10px;
+    justify-content: flex-start;
+    -webkit-overflow-scrolling: touch; 
+  }
+
+  .hand-container .card {
+    flex-shrink: 0;
+    margin-left: -20px; 
+  }
+  .hand-container .card:first-child {
+    margin-left: 0;
+  }
+
+  .opponent-zone {
+    transform: scale(0.5); 
+  }
+  .pos-top { top: 5%; }
+  .pos-left { left: -45px; }
+  .pos-right { right: -45px; }
+  .pos-top-left { top: 8%; left: -20px; }
+  .pos-top-right { top: 8%; right: -20px; }
+
+  .overlay-card {
+    width: 90%;
+    padding: 15px;
+  }
+  .color-buttons button {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .uno-btn, .contre-uno-btn {
+    padding: 10px 20px;
+    font-size: 18px;
+  }
+}
+
+/* --- MESSAGE FLOTTANT (petits messages d'info : "Trop tard...", etc.) --- */
+.uno-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-200%);
+  background: linear-gradient(180deg, #2c3e50, #1a252f);
+  color: #fff;
+  border: 3px solid #fff;
+  outline: 3px solid #f1c40f;
+  padding: 10px 22px;
+  border-radius: 14px;
+  font-weight: 800;
+  text-align: center;
+  max-width: 90vw;
+  z-index: 3000;
+  pointer-events: none;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  transition: transform 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.uno-toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* --- PANNEAU D'ANNONCE (Contre UNO / UNO) --- */
+.game-announce {
+  --accent: #f1c40f;
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3000;
+  pointer-events: none; /* ne bloque jamais le jeu */
+  display: none;
+}
+.game-announce.visible {
+  display: block;
+}
+.game-announce.ga-self   { --accent: #2ecc71; }
+.game-announce.ga-victim { --accent: #e74c3c; }
+.game-announce.ga-other  { --accent: #f1c40f; }
+.game-announce.ga-uno    { --accent: #e74c3c; }
+
+.ga-panel {
+  position: relative;
+  min-width: 280px;
+  max-width: 88vw;
+  padding: 22px 28px 20px;
+  border-radius: 20px;
+  border: 5px solid #fff;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.18), transparent 60%),
+    linear-gradient(160deg, #34495e 0%, #1a252f 100%);
+  box-shadow:
+    0 0 0 5px var(--accent),
+    0 0 35px var(--accent),
+    0 15px 35px rgba(0,0,0,0.6);
+  text-align: center;
+  animation: gaPop 3.2s cubic-bezier(0.2, 1.3, 0.4, 1) forwards;
+}
+.game-announce.ga-victim .ga-panel {
+  animation: gaPop 3.2s cubic-bezier(0.2, 1.3, 0.4, 1) forwards, gaShake 0.5s 0.3s ease-in-out;
+}
+
+/* Titre façon logo UNO : penché, gras, contour blanc */
+.ga-title {
+  display: inline-block;
+  font-size: 2.6rem;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 1px;
+  color: var(--accent);
+  transform: rotate(-6deg);
+  margin: -48px 0 16px;
+  padding: 4px 18px;
+  background: #1a252f;
+  border: 4px solid #fff;
+  border-radius: 14px;
+  text-shadow: 2px 2px 0 #fff, -1px -1px 0 #000;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+.ga-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+/* Mini carte UNO (+2 ou 1) */
+.ga-card {
+  flex-shrink: 0;
+  width: 52px;
+  height: 76px;
+  border-radius: 8px;
+  border: 4px solid #fff;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 900;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  transform: rotate(8deg);
+  box-shadow: 2px 4px 10px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.35);
+  animation: gaCardFlip 0.6s 0.15s ease-out backwards;
+}
+.ga-card::before { /* l'ovale blanc des cartes UNO */
+  content: '';
+  position: absolute;
+  inset: 10px -6px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  transform: rotate(-30deg);
+}
+
+.ga-message {
+  color: #ecf0f1;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+}
+.ga-name {
+  color: var(--accent);
+  font-weight: 900;
+}
+
+@keyframes gaPop {
+  0%   { transform: scale(0.3) rotate(-12deg); opacity: 0; }
+  10%  { transform: scale(1.08) rotate(2deg);  opacity: 1; }
+  16%  { transform: scale(1) rotate(0); }
+  85%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.8) translateY(-30px); opacity: 0; }
+}
+@keyframes gaShake {
+  0%, 100% { translate: 0 0; }
+  20% { translate: -10px 0; }
+  40% { translate: 10px 0; }
+  60% { translate: -6px 0; }
+  80% { translate: 6px 0; }
+}
+@keyframes gaCardFlip {
+  0%   { transform: rotateY(90deg) rotate(8deg); }
+  100% { transform: rotateY(0) rotate(8deg); }
+}
+
+@media (max-width: 768px) {
+  .ga-panel { min-width: 0; padding: 18px 16px 14px; }
+  .ga-title { font-size: 1.8rem; margin-top: -40px; }
+  .ga-card { width: 40px; height: 58px; font-size: 1.1rem; }
+  .ga-message { font-size: 1rem; }
+}
+
+/* Lien de retour vers le menu des jeux */
+.uno-retour {
+  color: #ecf0f1;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+}
+.uno-retour:hover { background: rgba(255,255,255,0.18); }
+
+/* Mode « sur ce téléphone » */
+.btn-local {
+  background: #ecf0f1;
+  color: #2c3e50;
+}
+.local-card {
+  display: grid;
+  gap: 12px;
+  width: min(360px, 90vw);
+  text-align: left;
+}
+.local-card p { color: #555; }
+.local-card .local-nb { display: grid; gap: 4px; font-weight: bold; }
+.local-noms { display: grid; gap: 8px; }
+.local-card input, .local-card select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 2px solid #bdc3c7;
+  font-weight: bold;
+  background: #fff;
+  color: #333;
+}
+.local-actions { display: flex; justify-content: flex-end; gap: 8px; }

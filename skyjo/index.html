@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skyjo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🃏</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="skyjo.css">
+  <script type="module" src="skyjo.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../">← Jeux</a>
+    <h1>Skyjo</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+            <p>L'une crée le salon, les autres entrent le code à 4 lettres.</p>
+      <label>Ton pseudo
+        <input id="pseudo" maxlength="16" placeholder="Ex : Léa" autocomplete="nickname">
+      </label>
+      <label>Nombre de joueurs
+        <select id="nb-joueurs">
+          <option value="2">2 joueurs</option>
+          <option value="3">3 joueurs</option>
+          <option value="4">4 joueurs</option>
+          <option value="5">5 joueurs</option>
+          <option value="6">6 joueurs</option>
+        </select>
+      </label>
+      <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+      <div class="separateur">ou</div>
+      <div class="ligne">
+        <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+        <button class="btn" id="btn-rejoindre">Rejoindre</button>
+      </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Un seul téléphone, que vous vous passez à chaque tour. Pas besoin d'internet.</p>
+        <label>Nombre de joueurs
+          <select id="local-nb">
+            <option value="2">2 joueurs</option>
+            <option value="3">3 joueurs</option>
+            <option value="4">4 joueurs</option>
+            <option value="5">5 joueurs</option>
+            <option value="6">6 joueurs</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="adversaires" id="adversaires"></div>
+
+    <div class="centre">
+      <button class="pile pioche" id="pioche" aria-label="Piocher une carte">
+        <span class="dos"></span>
+        <span class="legende" id="nb-pioche"></span>
+      </button>
+      <button class="pile" id="defausse" aria-label="Prendre la carte de la défausse"></button>
+      <div class="main-tenue" id="main-tenue">
+        <div id="carte-tenue"></div>
+        <button class="btn" id="btn-defausser">Défausser</button>
+      </div>
+    </div>
+
+    <p class="statut" id="statut" aria-live="polite"></p>
+
+    <section class="mon-jeu">
+      <div class="mon-entete">
+        <strong id="mon-nom"></strong>
+        <span id="mon-score"></span>
+      </div>
+      <div class="grille-cartes grande" id="ma-grille"></div>
+    </section>
+  </main>
+
+  <div class="voile" id="bilan" hidden>
+    <div class="carte-salon">
+      <h2 id="bilan-titre"></h2>
+      <p id="bilan-texte"></p>
+      <table class="tableau-scores">
+        <thead><tr><th>Joueur</th><th>Manche</th><th>Total</th></tr></thead>
+        <tbody id="bilan-lignes"></tbody>
+      </table>
+      <button class="btn btn-principal" id="btn-suite"></button>
+      <button class="btn btn-discret" id="btn-voir">Voir les cartes</button>
+    </div>
+  </div>
+
+  <dialog class="regles" id="regles">
+    <h2>Skyjo</h2>
+    <p>Le but : avoir le moins de points possible. La partie s'arrête quand quelqu'un atteint 100 points ; le plus petit total gagne.</p>
+    <h3>Début de manche</h3>
+    <ul>
+      <li>Chacun a 12 cartes cachées (3 lignes de 4) et en retourne 2.</li>
+      <li>Le plus gros total visible commence. Aux manches suivantes, c'est celui qui a fini la manche d'avant.</li>
+    </ul>
+    <h3>À ton tour</h3>
+    <ul>
+      <li>Prends la carte de la défausse et échange-la avec une de tes cartes (cachée ou non),</li>
+      <li>ou pioche une carte, puis échange-la avec une de tes cartes, ou défausse-la et retourne une de tes cartes cachées.</li>
+      <li>La carte remplacée va sur la défausse, face visible.</li>
+    </ul>
+    <h3>Colonnes</h3>
+    <ul>
+      <li>Trois cartes identiques visibles dans une même colonne disparaissent : elles ne comptent plus.</li>
+    </ul>
+    <h3>Fin de manche</h3>
+    <ul>
+      <li>Quand quelqu'un a retourné ses 12 cartes, les autres jouent un dernier tour.</li>
+      <li>On retourne tout et on compte. Si celui qui a fini n'a pas strictement le plus petit score de la manche (et que son score est positif), ses points sont doublés.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>

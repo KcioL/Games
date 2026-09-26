@@ -1,0 +1,151 @@
+/* Skyjo */
+#jeu {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 12px 32px;
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Cartes ---------- */
+.grille-cartes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+.carte {
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  border: 2px solid rgba(255, 255, 255, .85);
+}
+.carte .val { font-size: 1.1em; }
+
+/* Couleurs par valeur, comme le vrai jeu */
+.carte.f-neg { background: #3C3F9E; color: #fff; }
+.carte.f-zero { background: #56B4E6; color: var(--encre); }
+.carte.f-vert { background: #4FAE5A; color: #fff; }
+.carte.f-jaune { background: #F2C230; color: var(--encre); }
+.carte.f-rouge { background: #E0453A; color: #fff; }
+
+/* Dos : un soleil levant sur fond de nuit */
+.carte.cachee {
+  background:
+    radial-gradient(circle at 50% 50%, var(--soleil) 0 22%, transparent 23%),
+    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
+  border-color: #4A5687;
+}
+.carte.partie { background: transparent; border: 2px dashed #3A4570; }
+
+.carte.jouable { cursor: pointer; box-shadow: 0 0 0 3px #F2C230; }
+.carte.jouable:hover { transform: translateY(-3px); }
+.carte.jouable:active { transform: scale(.97); }
+.carte { transition: transform .12s; }
+
+/* ---------- Adversaires ---------- */
+.adversaires {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  justify-content: safe center;
+}
+.adversaire {
+  flex: 0 0 auto;
+  width: 170px;
+  background: var(--nuit-2);
+  border-radius: 12px;
+  padding: 8px;
+  border: 2px solid transparent;
+}
+.adversaire.actif { border-color: #F2C230; }
+.adversaire.fini .adv-tete strong::after { content: " a fini"; color: var(--soleil); font-weight: 700; font-size: .8rem; }
+.adv-tete { display: grid; margin-bottom: 6px; }
+.adv-tete strong { font-size: .95rem; }
+.adv-tete span { font-size: .75rem; color: var(--brume); }
+.grille-cartes.mini { gap: 3px; }
+.grille-cartes.mini .carte { font-size: .75rem; border-radius: 4px; border-width: 1px; }
+
+/* ---------- Centre : pioche, défausse, carte en main ---------- */
+.centre {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0;
+}
+.pile {
+  width: 68px;
+  border: none;
+  background: none;
+  padding: 0;
+  border-radius: 10px;
+  position: relative;
+}
+.pile .carte { font-size: 1.6rem; }
+.pile:disabled { cursor: default; }
+.pile.jouable { box-shadow: 0 0 0 3px #F2C230; }
+.pile.jouable:hover { transform: translateY(-3px); }
+.pioche .dos {
+  display: block;
+  aspect-ratio: 3 / 4;
+  border-radius: 8px;
+  border: 2px solid #4A5687;
+  background:
+    radial-gradient(circle at 50% 50%, var(--soleil) 0 22%, transparent 23%),
+    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
+  box-shadow: 3px 3px 0 #1F2847, 6px 6px 0 #18203A;
+}
+.pioche .legende {
+  position: absolute;
+  bottom: -20px;
+  left: 0; right: 0;
+  font-size: .75rem;
+  color: var(--brume);
+}
+.main-tenue {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  width: 84px;
+  animation: arrivee .25s ease-out;
+}
+.main-tenue #carte-tenue { width: 76px; }
+.main-tenue .carte { font-size: 1.8rem; box-shadow: 0 8px 20px rgba(0, 0, 0, .45); transform: rotate(-4deg); }
+.main-tenue .btn { padding: 6px 10px; font-size: .85rem; }
+@keyframes arrivee { from { transform: translateY(-10px); opacity: 0; } }
+
+/* ---------- Mon jeu ---------- */
+.mon-jeu {
+  width: min(420px, 100%);
+  margin: 0 auto;
+  padding: 10px;
+  border-radius: 16px;
+  background: var(--nuit-2);
+  border: 2px solid transparent;
+}
+.mon-jeu.actif { border-color: #F2C230; }
+.mon-entete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.mon-entete span { color: var(--brume); font-size: .85rem; }
+.grille-cartes.grande { gap: 8px; }
+.grille-cartes.grande .carte { font-size: 1.9rem; border-radius: 10px; }
+
+.btn-bilan { justify-self: center; }
+
+/* ---------- Bilan de manche ---------- */
+.tableau-scores { width: 100%; border-collapse: collapse; text-align: left; }
+.tableau-scores th { font-size: .8rem; color: #6B7090; padding: 4px 6px; }
+.tableau-scores td { padding: 8px 6px; border-top: 1px solid #E4DDCB; font-weight: 700; }
+.tableau-scores td:not(:first-child), .tableau-scores th:not(:first-child) { text-align: right; }
+.tableau-scores tr.moi td { color: var(--soleil); }
+
+@media (max-width: 480px) {
+  .adversaire { width: 140px; }
+  .grille-cartes.grande .carte { font-size: 1.6rem; }
+  .pile { width: 58px; }
+}

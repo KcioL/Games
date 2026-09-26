@@ -1,0 +1,56 @@
+/* Écrans « passe le téléphone » (mode un seul téléphone) */
+.relais-barre, .relais-voile { font-family: "Zen Maru Gothic", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.relais-barre[hidden], .relais-voile[hidden] { display: none !important; }
+
+.relais-barre {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(460px, calc(100vw - 24px));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 12px 12px 18px;
+  background: #FBF7EE;
+  color: #1A2238;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, .5);
+  z-index: 4000;
+  font-weight: 700;
+  animation: relais-monte .3s cubic-bezier(.2, 1.2, .4, 1);
+}
+.relais-barre span { flex: 1 1 140px; font-size: .95rem; }
+.relais-barre button { flex: 1 1 auto; }
+.relais-barre button, .relais-carte button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  background: #D7263D;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.relais-barre button:hover, .relais-carte button:hover { filter: brightness(1.1); }
+@keyframes relais-monte { from { transform: translate(-50%, 30px); opacity: 0; } }
+
+.relais-voile {
+  position: fixed;
+  inset: 0;
+  background: #1A2238;
+  color: #FBF7EE;
+  display: grid;
+  place-items: center;
+  z-index: 5000;
+  padding: 24px;
+  text-align: center;
+}
+.relais-carte { display: grid; justify-items: center; gap: 14px; max-width: 360px; }
+.relais-soleil { width: 84px; height: 84px; border-radius: 50%; background: #D7263D; margin-bottom: 8px; }
+.relais-carte h2 { font-size: 2rem; font-weight: 900; line-height: 1.1; margin: 0; color: #FBF7EE; text-shadow: none; }
+.relais-carte p { color: #9AA3BF; margin: 0 0 8px; }
+.relais-carte button { padding: 14px 22px; font-size: 1.05rem; }
+
+@media (prefers-reduced-motion: reduce) { .relais-barre { animation: none; } }

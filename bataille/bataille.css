@@ -1,0 +1,141 @@
+/* Bataille navale */
+:root {
+  --mer: #1E4A7A;
+  --mer-ligne: #2A5C92;
+  --mer-vise: #2F6BAA;
+  --coque: #D8DCE6;
+  --coule: #7A1424;
+}
+
+#jeu { padding-bottom: 32px; }
+
+.plateaux {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 0 12px;
+}
+.plateau h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--brume);
+  margin-bottom: 8px;
+}
+.plateau.adverse { width: min(440px, 100%); }
+.plateau.moi { width: min(300px, 100%); transition: opacity .2s; }
+.plateaux.en-placement .plateau.moi { width: min(440px, 100%); }
+.plateau.moi.attente-tir { outline: 2px solid var(--soleil); outline-offset: 6px; border-radius: 4px; }
+
+/* ---------- Grille ---------- */
+.grille {
+  display: grid;
+  grid-template-columns: 1.1em repeat(10, 1fr);
+  gap: 2px;
+  font-size: .72rem;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.repere, .coin {
+  display: grid;
+  place-items: center;
+  color: var(--brume);
+  font-weight: 700;
+}
+.case {
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 3px;
+  background: var(--mer);
+  position: relative;
+  padding: 0;
+  touch-action: manipulation;
+}
+.case:disabled { cursor: default; }
+.case.visable:hover { background: var(--mer-vise); }
+.case.visable:active { background: #3A7CC4; }
+
+/* Bateaux : coque continue, arrondie aux extrémités */
+.case.navire { background: var(--coque); border-radius: 0; }
+.case.navire.h.debut { border-radius: 50% 3px 3px 50%; }
+.case.navire.h.fin { border-radius: 3px 50% 50% 3px; }
+.case.navire.v.debut { border-radius: 50% 50% 3px 3px; }
+.case.navire.v.fin { border-radius: 3px 3px 50% 50%; }
+
+/* Tirs */
+.case.eau::after {
+  content: "";
+  position: absolute;
+  inset: 34%;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .75);
+}
+.case.touche { background: var(--soleil); }
+.case.touche::after, .case.coule::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  background:
+    linear-gradient(45deg, transparent 42%, #fff 42%, #fff 58%, transparent 58%),
+    linear-gradient(-45deg, transparent 42%, #fff 42%, #fff 58%, transparent 58%);
+}
+.case.coule { background: var(--coule); }
+.case.coule::after { opacity: .55; }
+
+/* Aperçu de placement (ordinateur) */
+.case.apercu { background: #7FB0E0; }
+.case.apercu-ko { background: #B04A5A; }
+
+/* Dernier tir : onde */
+.case.impact { animation: impact .7s ease-out; z-index: 1; }
+@keyframes impact {
+  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, .9); transform: scale(1.25); }
+  100% { box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); transform: scale(1); }
+}
+
+/* Flotte adverse restante */
+.etat-flotte {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 10px;
+  font-size: .82rem;
+  color: var(--papier);
+}
+.etat-flotte li.coule { color: var(--brume); text-decoration: line-through; text-decoration-color: var(--soleil); }
+
+/* ---------- Placement ---------- */
+.outils-placement {
+  max-width: 440px;
+  margin: 0 auto 16px;
+  padding: 0 12px;
+  display: grid;
+  gap: 12px;
+}
+.dock { display: flex; flex-wrap: wrap; gap: 8px; }
+.piece {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: var(--nuit-2);
+}
+.piece.choisi { border-color: #F2C230; }
+.piece.pose { opacity: .35; }
+.piece .nom { font-size: .78rem; font-weight: 700; }
+.coque { display: flex; gap: 2px; }
+.coque i { width: 12px; height: 12px; background: var(--coque); }
+.coque i:first-child { border-radius: 50% 2px 2px 50%; }
+.coque i:last-child { border-radius: 2px 50% 50% 2px; }
+.outils-placement .boutons { display: flex; flex-wrap: wrap; gap: 8px; }
+.outils-placement .boutons .btn-principal { margin-left: auto; }
+
+@media (max-width: 480px) {
+  .plateaux { gap: 18px; }
+  .plateau.moi { width: min(260px, 100%); }
+  .grille { font-size: .62rem; gap: 1.5px; }
+}
