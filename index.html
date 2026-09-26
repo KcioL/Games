@@ -97,7 +97,14 @@
     .blackjack .pastille, .poker .pastille { display: grid; place-items: center; font-size: 1.2rem; font-weight: 900; }
     .blackjack .pastille { background: #1B5646; color: #FBF7EE; border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1B5646; }
     .poker .pastille { background: #D7263D; color: #fff; border: 4px dashed #fff; box-shadow: 0 0 0 2px #D7263D; }
-    .chevaux .pastille { background: conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0); border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1A2238; }
+    /* Tête de cheval blanche sur fond nuit, entourée des 4 couleurs du plateau */
+    .chevaux .pastille {
+      display: grid; place-items: center;
+      background: radial-gradient(circle, #1A2238 0 64%, transparent 65%), conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0);
+      box-shadow: 0 0 0 2px #1A2238;
+      color: #FBF7EE; font-size: 1.75rem; line-height: 1; padding-bottom: 2px;
+      font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", "Noto Sans Symbols 2", sans-serif;
+    }
 
     .notes {
       max-width: 620px;
@@ -207,7 +214,7 @@
             <div class="champ"><small>Partie</small><strong>30 à 60 min</strong></div>
           </div>
         </div>
-        <div class="talon"><span class="pastille" aria-hidden="true"></span><span>Jouer</span></div>
+        <div class="talon"><span class="pastille" aria-hidden="true">♞︎</span><span>Jouer</span></div>
       </a>
     </li>
   </ul>
