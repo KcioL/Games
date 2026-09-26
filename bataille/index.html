@@ -66,9 +66,10 @@
 
     <div class="outils-placement" id="outils-placement">
       <div class="dock" id="dock"></div>
+      <p class="aide-placement">Glisse les bateaux sur la grille. Touche un bateau pour le tourner.</p>
       <div class="boutons">
-        <button class="btn" id="btn-pivoter">Pivoter ↻</button>
-        <button class="btn" id="btn-hasard">Placer au hasard</button>
+        <button class="btn" id="btn-pivoter">Sens ↔</button>
+        <button class="btn" id="btn-hasard">Au hasard</button>
         <button class="btn btn-principal" id="btn-pret" disabled>Flotte prête</button>
       </div>
     </div>
@@ -96,12 +97,13 @@
 
   <dialog class="regles" id="regles">
     <h2>Bataille navale</h2>
-    <p>Chaque joueur cache 5 bateaux sur sa grille de 10 × 10, puis on tire à tour de rôle pour couler la flotte adverse.</p>
+    <p>Chaque joueur cache 5 bateaux sur sa grille de 11 × 11 (de A à K et de 1 à 11), puis on tire à tour de rôle pour couler la flotte adverse.</p>
     <h3>Placement</h3>
     <ul>
-      <li>Choisis un bateau, puis touche la case où il commence.</li>
-      <li>« Pivoter » le met à l'horizontale ou à la verticale.</li>
-      <li>Touche un bateau déjà posé pour le reprendre.</li>
+      <li>Glisse un bateau de la réserve jusqu'à la grille, ou choisis-le puis touche la case où il commence.</li>
+      <li>Glisse un bateau posé pour le déplacer ; touche-le pour le faire pivoter.</li>
+      <li>Glisse-le hors de la grille pour le remettre dans la réserve.</li>
+      <li>« Sens ↔ / ↕ » règle le sens (horizontal ou vertical) des prochains bateaux posés.</li>
       <li>Flotte : porte-avions (5), croiseur (4), contre-torpilleur (3), sous-marin (3), torpilleur (2).</li>
     </ul>
     <h3>Combat</h3>

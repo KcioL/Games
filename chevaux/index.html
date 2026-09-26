@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Petits chevaux</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐴</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+    <link rel="stylesheet" href="chevaux.css">
+  <script type="module" src="chevaux.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1><span class="titre-long">Petits chevaux</span><span class="titre-court">Chevaux</span></h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter la table.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="nb-bots">
+            <option value="0">Aucun</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            </select>
+          </label>
+        </div>
+        <label>Chevaux par joueur
+          <select id="nb-chevaux">
+            <option value="4" selected>4 (partie classique)</option>
+            <option value="3">3</option>
+            <option value="2">2 (partie rapide)</option>
+          </select>
+        </label>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (4 places au total). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+            <option value="0">Aucun</option>
+            <option value="1" selected>1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            </select>
+          </label>
+        </div>
+        <label>Chevaux par joueur
+          <select id="local-chevaux">
+            <option value="4" selected>4 (partie classique)</option>
+            <option value="3">3</option>
+            <option value="2">2 (partie rapide)</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="plateau-zone">
+      <div class="plateau" id="plateau" role="img" aria-label="Plateau des petits chevaux"></div>
+    </div>
+
+    <div class="panneau">
+      <p class="statut" id="statut" aria-live="polite"></p>
+      <div class="lancer">
+        <div class="de" id="de" aria-label="Dé"></div>
+        <button class="btn btn-principal" id="btn-lancer">Lancer le dé</button>
+      </div>
+      <p class="dernier" id="dernier"></p>
+      <ul class="joueurs" id="joueurs"></ul>
+    </div>
+
+    <div class="voile" id="fin" hidden>
+      <div class="carte-salon">
+        <h2 id="fin-titre"></h2>
+        <p id="fin-texte"></p>
+        <button class="btn btn-principal" id="btn-rejouer">Nouvelle partie</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Petits chevaux</h2>
+    <p>Chaque joueur doit faire faire le tour du plateau à ses chevaux, puis les amener au centre en montant son escalier. Le premier qui amène tous ses chevaux au centre gagne.</p>
+    <h3>Le dé</h3>
+    <ul>
+      <li>Il faut un 6 pour sortir un cheval de l'écurie : il arrive sur la case de départ de sa couleur.</li>
+      <li>Un 6 fait rejouer.</li>
+      <li>À ton tour, lance le dé puis touche le cheval à déplacer (les chevaux jouables clignotent).</li>
+    </ul>
+    <h3>Sur le parcours</h3>
+    <ul>
+      <li>On tourne dans le sens des aiguilles d'une montre.</li>
+      <li>Une case ne peut accueillir qu'un seul cheval. Impossible de doubler un cheval, qu'il soit à toi ou à un adversaire.</li>
+      <li>En tombant pile sur un cheval adverse, on prend sa place et il retourne à l'écurie.</li>
+    </ul>
+    <h3>L'arrivée</h3>
+    <ul>
+      <li>Après un tour complet, il faut s'arrêter pile sur la case devant son escalier. Les points en trop font reculer d'autant.</li>
+      <li>Pour monter l'escalier, il faut faire 1, puis 2, puis 3, 4, 5 et 6, une marche à la fois.</li>
+      <li>Depuis la dernière marche, un 6 amène le cheval au centre.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>

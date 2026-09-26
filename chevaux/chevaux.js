@@ -1,0 +1,504 @@
+import { $, el, toast, initSalon, initRegles, de } from '../commun/salon.js';
+
+// =====================================================================
+// Plateau : grille de 15 × 15, parcours de 56 cases en forme de croix
+// =====================================================================
+function construireParcours() {
+  const c = [];
+  for (let r = 6; r >= 0; r--) c.push([r, 6]);     // montée à gauche du bras du haut
+  c.push([0, 7]);                                  // bout du bras du haut
+  for (let r = 0; r <= 6; r++) c.push([r, 8]);     // descente à droite
+  for (let k = 9; k <= 14; k++) c.push([6, k]);    // vers la droite
+  c.push([7, 14]);                                 // bout du bras de droite
+  for (let k = 14; k >= 8; k--) c.push([8, k]);    // retour vers le centre
+  for (let r = 9; r <= 14; r++) c.push([r, 8]);    // descente
+  c.push([14, 7]);                                 // bout du bras du bas
+  for (let r = 14; r >= 8; r--) c.push([r, 6]);    // remontée
+  for (let k = 5; k >= 0; k--) c.push([8, k]);     // vers la gauche
+  c.push([7, 0]);                                  // bout du bras de gauche
+  for (let k = 0; k <= 5; k++) c.push([6, k]);     // retour vers le centre
+  return c;
+}
+const PARCOURS = construireParcours();          // 56 cases
+const TOUR = PARCOURS.length;
+const ENTREE = 55;                              // case devant l'escalier (position relative)
+const CENTRE = 62;                              // 56 à 61 = marches 1 à 6, 62 = arrivé
+const ECURIE = -1;
+
+// Les 4 couleurs, dans le sens des aiguilles d'une montre
+const COULEURS = [
+  { nom: 'Rouge', cle: 'rouge', depart: 50, ecurie: [0, 0], escalier: (m) => [7, m] },        // en haut à gauche
+  { nom: 'Vert', cle: 'vert', depart: 8, ecurie: [0, 9], escalier: (m) => [m, 7] },            // en haut à droite
+  { nom: 'Jaune', cle: 'jaune', depart: 22, ecurie: [9, 9], escalier: (m) => [7, 14 - m] },   // en bas à droite
+  { nom: 'Bleu', cle: 'bleu', depart: 36, ecurie: [9, 0], escalier: (m) => [14 - m, 7] },     // en bas à gauche
+];
+// Couleurs attribuées selon le nombre de joueurs (à deux : couleurs opposées)
+const COULEURS_PAR_NB = { 2: [0, 2], 3: [0, 1, 2], 4: [0, 1, 2, 3] };
+
+const caseAbsolue = (couleur, pos) => (COULEURS[couleur].depart + pos) % TOUR;
+
+// =====================================================================
+// Règles
+// =====================================================================
+function normaliser(s) {
+  s.players = s.players || [];
+  s.players.forEach((p) => { p.chevaux = p.chevaux || []; });
+  return s;
+}
+
+// Cheval présent sur une case du parcours (hors écurie et escaliers)
+function occupant(s, abs, sauf) {
+  for (let i = 0; i < s.players.length; i++) {
+    const p = s.players[i];
+    for (let h = 0; h < p.chevaux.length; h++) {
+      if (sauf && sauf[0] === i && sauf[1] === h) continue;
+      const pos = p.chevaux[h];
+      if (pos >= 0 && pos <= ENTREE && caseAbsolue(p.couleur, pos) === abs) return [i, h];
+    }
+  }
+  return null;
+}
+
+// Déplacement du cheval h du joueur i avec le dé d : { pos, prise } ou null si impossible
+function mouvement(s, i, h, d) {
+  const p = s.players[i];
+  const pos = p.chevaux[h];
+  const coul = p.couleur;
+  const abs = (rel) => caseAbsolue(coul, rel);
+  const propreMarche = (m) => p.chevaux.some((x, k) => k !== h && x === m);
+
+  if (pos === CENTRE) return null;
+
+  if (pos === ECURIE) {
+    if (d !== 6) return null;
+    const occ = occupant(s, abs(0));
+    if (occ && occ[0] === i) return null;
+    return { pos: 0, prise: occ };
+  }
+
+  if (pos === ENTREE) {
+    if (d !== 1 || propreMarche(56)) return null;
+    return { pos: 56 };
+  }
+
+  if (pos > ENTREE) {
+    // Dans l'escalier : marche m (1 à 6), il faut faire m + 1 ; de la marche 6, un 6 pour le centre
+    const marche = pos - ENTREE;
+    if (marche === 6) return d === 6 ? { pos: CENTRE } : null;
+    if (d !== marche + 1 || propreMarche(pos + 1)) return null;
+    return { pos: pos + 1 };
+  }
+
+  // Sur le parcours : interdiction de doubler un cheval
+  const cible = pos + d;
+  const jusque = Math.min(cible, ENTREE);
+  for (let k = pos + 1; k <= jusque; k++) {
+    if (k === cible) break; // la case d'arrivée est traitée plus bas
+    if (occupant(s, abs(k), [i, h])) return null;
+  }
+  // Points en trop avant l'escalier : on recule d'autant
+  const arrivee = cible > ENTREE ? 2 * ENTREE - cible : cible;
+  if (arrivee === pos) return null;
+  const occ = occupant(s, abs(arrivee), [i, h]);
+  if (occ && occ[0] === i) return null;
+  return { pos: arrivee, prise: occ };
+}
+
+function coupsPossibles(s, i, d) {
+  const coups = [];
+  s.players[i].chevaux.forEach((_, h) => {
+    const m = mouvement(s, i, h, d);
+    if (m) coups.push({ h, ...m });
+  });
+  return coups;
+}
+
+function joueurSuivant(s) {
+  s.active = (s.active + 1) % s.players.length;
+  s.phase = 'lancer';
+}
+
+function nouvellePartie(s) {
+  const n = s.players.length;
+  const couleurs = COULEURS_PAR_NB[n];
+  s.players.forEach((p, i) => {
+    p.couleur = couleurs[i];
+    p.chevaux = new Array(s.nbChevaux).fill(ECURIE);
+  });
+  s.status = 'jeu';
+  s.active = Math.floor(Math.random() * n);
+  s.phase = 'lancer';
+  s.de = 0;
+  s.coup = 0;
+  s.dernier = `${s.players[s.active].name} commence.`;
+  s.bouge = null;
+  s.gagnant = null;
+}
+
+// Lancer du dé par le joueur i
+function lancer(s, i) {
+  if (s.status !== 'jeu' || s.active !== i || s.phase !== 'lancer') return false;
+  const d = 1 + Math.floor(Math.random() * 6);
+  const p = s.players[i];
+  s.de = d;
+  s.lancers = (s.lancers || 0) + 1;
+  s.coup = (s.coup || 0) + 1;
+  s.bouge = null;
+  const coups = coupsPossibles(s, i, d);
+  if (coups.length === 0) {
+    if (d === 6) {
+      s.dernier = `${p.name} fait 6, mais aucun cheval ne peut bouger. Il rejoue.`;
+      s.phase = 'lancer';
+    } else {
+      s.dernier = `${p.name} fait ${d} : aucun cheval ne peut bouger.`;
+      joueurSuivant(s);
+    }
+    return true;
+  }
+  s.phase = 'choisir';
+  s.dernier = `${p.name} fait ${d}.`;
+  return true;
+}
+
+// Le joueur i déplace son cheval h
+function deplacer(s, i, h) {
+  if (s.status !== 'jeu' || s.active !== i || s.phase !== 'choisir') return false;
+  const m = mouvement(s, i, h, s.de);
+  if (!m) return false;
+  const p = s.players[i];
+  const avant = p.chevaux[h];
+  p.chevaux[h] = m.pos;
+  s.coup = (s.coup || 0) + 1;
+  s.bouge = { i, h };
+  let texte;
+  if (avant === ECURIE) texte = `${p.name} sort un cheval.`;
+  else if (m.pos === CENTRE) texte = `${p.name} amène un cheval au centre !`;
+  else if (m.pos > ENTREE) texte = `${p.name} monte à la marche ${m.pos - ENTREE}.`;
+  else if (m.pos === ENTREE) texte = `${p.name} arrive devant son escalier.`;
+  else texte = `${p.name} avance de ${s.de}.`;
+  if (m.prise) {
+    const [j, k] = m.prise;
+    s.players[j].chevaux[k] = ECURIE;
+    texte = `${p.name} renvoie un cheval ${de(s.players[j].name)} à l'écurie !`;
+    s.lastEvent = { ts: Date.now(), texte };
+  }
+  if (p.chevaux.every((x) => x === CENTRE)) {
+    s.status = 'fin';
+    s.gagnant = i;
+    s.dernier = `${p.name} a amené tous ses chevaux au centre !`;
+    return true;
+  }
+  if (s.de === 6) {
+    s.phase = 'lancer';
+    texte += ' Il a fait 6 : il rejoue.';
+  } else {
+    joueurSuivant(s);
+  }
+  s.dernier = texte;
+  return true;
+}
+
+// =====================================================================
+// Bots
+// =====================================================================
+function choixBot(s, i) {
+  const coups = coupsPossibles(s, i, s.de);
+  let meilleur = null;
+  let meilleurScore = -Infinity;
+  coups.forEach((c) => {
+    const avant = s.players[i].chevaux[c.h];
+    let score = Math.random() * 8;
+    if (c.prise) score += 100;
+    if (avant === ECURIE) score += 70;
+    if (c.pos === CENTRE) score += 90;
+    else if (c.pos > ENTREE) score += 60;
+    else if (c.pos === ENTREE) score += 55;
+    if (c.pos < avant && avant !== ECURIE && c.pos <= ENTREE) score -= 40; // éviter de reculer
+    score += Math.max(0, c.pos) * 0.4; // faire avancer le cheval le plus avancé
+    if (score > meilleurScore) { meilleurScore = score; meilleur = c; }
+  });
+  return meilleur ? meilleur.h : -1;
+}
+
+// =====================================================================
+// Salon
+// =====================================================================
+let etat = null;
+let maPlace = 0;
+let botPrevu = '';
+let dernierTs = null;
+let premiereSynchro = true;
+let animationDe = null;
+
+const lireNombre = (id) => parseInt($(id).value, 10) || 0;
+
+const salon = initSalon({
+  jeu: 'chevaux',
+  etatInitial: (nom, nb, { local }) => {
+    const bots = lireNombre(local ? 'local-bots' : 'nb-bots');
+    const nbChevaux = lireNombre(local ? 'local-chevaux' : 'nb-chevaux') || 4;
+    const joueurs = Array.from({ length: nb }, (_, i) => ({ name: i === 0 ? nom : 'En attente', joined: i === 0, bot: false }));
+    for (let k = 1; k <= bots; k++) joueurs.push({ name: `Bot ${k}`, joined: true, bot: true });
+    return { players: joueurs, nbChevaux };
+  },
+  validerLocal: () => {
+    const total = lireNombre('local-nb') + lireNombre('local-bots');
+    if (total < 2) return 'Il faut au moins 2 joueurs : ajoute un bot ou un joueur.';
+    if (total > 4) return '4 places maximum autour du plateau.';
+    return '';
+  },
+  validerEnLigne: () => {
+    const total = lireNombre('nb-joueurs') + lireNombre('nb-bots');
+    if (total > 4) return '4 places maximum : enlève un bot ou un joueur.';
+    return '';
+  },
+  demarrer: (s) => { normaliser(s); nouvellePartie(s); },
+  afficher: (s, place) => {
+    etat = normaliser(s);
+    maPlace = place;
+    rendre();
+    planifierBot();
+  },
+  // Sur un seul téléphone : rien à cacher, l'écran suit le joueur humain dont c'est le tour
+  quiDoitJouer: (s) => {
+    const humains = (s.players || []).filter((p) => !p.bot);
+    if (humains.length <= 1) return -1;
+    if (s.status === 'jeu' && s.players[s.active] && !s.players[s.active].bot) return s.active;
+    return -1;
+  },
+  secret: false,
+});
+initRegles();
+
+function agir(fn) {
+  return salon.agir((s) => fn(normaliser(s)));
+}
+
+// Les bots sont joués par l'appareil du premier joueur ; les autres prennent le relais
+// après un délai si jamais il est déconnecté. Le compteur `coup` évite tout double coup.
+function planifierBot() {
+  if (!etat || etat.status !== 'jeu') return;
+  const actif = etat.players[etat.active];
+  if (!actif || !actif.bot) return;
+  const moi = etat.players[maPlace];
+  if (!moi || moi.bot) return;
+  const cle = `${etat.coup}-${etat.active}-${etat.phase}`;
+  if (botPrevu === cle) return;
+  botPrevu = cle;
+  const coup = etat.coup;
+  const delai = (salon.estLocal() || maPlace === 0) ? 800 + Math.random() * 500 : 4000 + maPlace * 1500;
+  setTimeout(() => {
+    agir((s) => {
+      if (s.status !== 'jeu' || s.coup !== coup) return false;
+      const b = s.players[s.active];
+      if (!b || !b.bot) return false;
+      if (s.phase === 'lancer') return lancer(s, s.active);
+      const h = choixBot(s, s.active);
+      return h >= 0 ? deplacer(s, s.active, h) : false;
+    });
+  }, delai);
+}
+
+// ---------- Actions du joueur ----------
+const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && !etat.players[maPlace].bot;
+
+$('btn-lancer').addEventListener('click', () => {
+  if (!monTour() || etat.phase !== 'lancer') return;
+  agir((s) => lancer(s, maPlace));
+});
+$('btn-rejouer').addEventListener('click', () => {
+  agir((s) => { if (s.status !== 'fin') return false; nouvellePartie(s); });
+});
+
+function choisirCheval(h) {
+  if (!monTour() || etat.phase !== 'choisir') return;
+  agir((s) => deplacer(s, maPlace, h));
+}
+
+// =====================================================================
+// Affichage
+// =====================================================================
+const plateau = $('plateau');
+let caseEls = null;
+
+function placer(e, r, c, hauteur = 1, largeur = 1) {
+  e.style.gridRow = `${r + 1} / span ${hauteur}`;
+  e.style.gridColumn = `${c + 1} / span ${largeur}`;
+}
+
+// Le décor du plateau ne change jamais : on le dessine une seule fois
+function dessinerPlateau() {
+  plateau.innerHTML = '';
+  COULEURS.forEach((col) => {
+    const e = el('div', `ecurie ${col.cle}`);
+    placer(e, col.ecurie[0], col.ecurie[1], 6, 6);
+    plateau.appendChild(e);
+  });
+  caseEls = PARCOURS.map(([r, c], k) => {
+    const e = el('div', 'case');
+    const couleurDepart = COULEURS.find((col) => col.depart === k);
+    if (couleurDepart) { e.classList.add('depart', couleurDepart.cle); e.title = `Départ ${couleurDepart.nom}`; }
+    const couleurEntree = COULEURS.find((col) => (col.depart + ENTREE) % TOUR === k);
+    if (couleurEntree) e.classList.add('entree', couleurEntree.cle);
+    placer(e, r, c);
+    plateau.appendChild(e);
+    return e;
+  });
+  COULEURS.forEach((col) => {
+    for (let m = 1; m <= 6; m++) {
+      const [r, c] = col.escalier(m);
+      const e = el('div', `marche ${col.cle}`, String(m));
+      placer(e, r, c);
+      plateau.appendChild(e);
+    }
+  });
+  const centre = el('div', 'centre-plateau');
+  placer(centre, 7, 7);
+  plateau.appendChild(centre);
+}
+
+// Position d'un cheval sur la grille
+function coordonnees(p, h) {
+  const col = COULEURS[p.couleur];
+  const pos = p.chevaux[h];
+  if (pos === ECURIE || pos === CENTRE) return null;
+  if (pos <= ENTREE) return PARCOURS[caseAbsolue(p.couleur, pos)];
+  return col.escalier(pos - ENTREE);
+}
+
+function rendrePlateau() {
+  if (!caseEls) dessinerPlateau();
+  plateau.querySelectorAll('.pion, .pion-ecurie, .arrives').forEach((e) => e.remove());
+  const choisir = monTour() && etat.phase === 'choisir';
+  const jouables = choisir ? new Set(coupsPossibles(etat, maPlace, etat.de).map((c) => c.h)) : new Set();
+
+  etat.players.forEach((p, i) => {
+    const col = COULEURS[p.couleur];
+    if (!col) return;
+    let enEcurie = 0;
+    let arrives = 0;
+    p.chevaux.forEach((pos, h) => {
+      const jouable = i === maPlace && jouables.has(h);
+      const pion = el(jouable ? 'button' : 'div', `pion ${col.cle}`);
+      if (jouable) {
+        pion.type = 'button';
+        pion.classList.add('jouable');
+        pion.setAttribute('aria-label', `Déplacer ce cheval ${col.nom.toLowerCase()}`);
+        pion.addEventListener('click', () => choisirCheval(h));
+      }
+      if (etat.bouge && etat.bouge.i === i && etat.bouge.h === h) pion.classList.add('vient-de-bouger');
+      if (pos === ECURIE) {
+        // 4 emplacements dans l'écurie, en carré
+        const [r0, c0] = col.ecurie;
+        const dr = enEcurie < 2 ? 1 : 3;
+        const dc = enEcurie % 2 === 0 ? 1 : 3;
+        enEcurie++;
+        pion.classList.add('dans-ecurie');
+        placer(pion, r0 + dr, c0 + dc, 2, 2);
+        plateau.appendChild(pion);
+      } else if (pos === CENTRE) {
+        arrives++;
+      } else {
+        const [r, c] = coordonnees(p, h);
+        placer(pion, r, c);
+        plateau.appendChild(pion);
+      }
+    });
+    if (arrives) {
+      // Chevaux arrivés : affichés dans un coin de l'écurie
+      const [r0, c0] = col.ecurie;
+      const badge = el('div', `arrives ${col.cle}`, `${arrives} au centre`);
+      placer(badge, r0 + 5, c0, 1, 6);
+      plateau.appendChild(badge);
+    }
+  });
+}
+
+const POINTS = { 1: [5], 2: [3, 7], 3: [3, 5, 7], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
+function dessinerDe(valeur, couleur) {
+  const d = $('de');
+  d.className = 'de' + (couleur ? ' ' + couleur : '');
+  d.innerHTML = '';
+  for (let k = 1; k <= 9; k++) {
+    const point = el('span');
+    if (valeur && POINTS[valeur].includes(k)) point.className = 'point';
+    d.appendChild(point);
+  }
+  d.setAttribute('aria-label', valeur ? `Dé : ${valeur}` : 'Dé pas encore lancé');
+}
+
+let dernierCoupDe = null;
+function rendrePanneau() {
+  const actif = etat.players[etat.active];
+  const couleurActive = actif && COULEURS[actif.couleur] ? COULEURS[actif.couleur].cle : '';
+  const statut = $('statut');
+  statut.innerHTML = '';
+  if (etat.status === 'jeu') {
+    const pastille = el('span', `pastille ${couleurActive}`);
+    statut.appendChild(pastille);
+    if (monTour()) {
+      const nom = salon.estLocal() ? `${actif.name}, ` : '';
+      statut.append(etat.phase === 'lancer' ? `${nom}à toi de lancer le dé` : `${nom}choisis un cheval`);
+    } else {
+      statut.append(actif.bot ? `${actif.name} joue…` : `Au tour ${de(actif.name)}`);
+    }
+  }
+
+  // Dé : il « roule » un instant à chaque nouveau lancer
+  const lancers = etat.lancers || 0;
+  if (dernierCoupDe !== null && lancers !== dernierCoupDe && etat.de) {
+    clearInterval(animationDe);
+    let n = 0;
+    animationDe = setInterval(() => {
+      dessinerDe(1 + Math.floor(Math.random() * 6), couleurActive);
+      if (++n >= 6) { clearInterval(animationDe); animationDe = null; dessinerDe(etat.de, couleurActive); }
+    }, 55);
+  } else if (!animationDe) {
+    dessinerDe(etat.de, couleurActive);
+  }
+  dernierCoupDe = lancers;
+
+  const btn = $('btn-lancer');
+  btn.disabled = !(monTour() && etat.phase === 'lancer');
+  btn.textContent = monTour() && etat.phase === 'choisir' ? 'Touche un cheval' : 'Lancer le dé';
+  $('dernier').textContent = etat.dernier || '';
+
+  const liste = $('joueurs');
+  liste.innerHTML = '';
+  etat.players.forEach((p, i) => {
+    const col = COULEURS[p.couleur];
+    const li = el('li', col ? col.cle : '');
+    if (etat.status === 'jeu' && i === etat.active) li.classList.add('actif');
+    li.appendChild(el('span', `pastille ${col ? col.cle : ''}`));
+    const nom = el('span', 'nom', p.name + (!salon.estLocal() && i === maPlace ? ' (toi)' : ''));
+    li.appendChild(nom);
+    const arrives = p.chevaux.filter((x) => x === CENTRE).length;
+    li.appendChild(el('span', 'score', `${arrives}/${p.chevaux.length} au centre`));
+    liste.appendChild(li);
+  });
+
+  const fin = $('fin');
+  if (etat.status === 'fin') {
+    const g = etat.players[etat.gagnant];
+    $('fin-titre').textContent = !salon.estLocal() && etat.gagnant === maPlace ? 'Tu as gagné !' : `Victoire ${de(g.name)} !`;
+    $('fin-texte').textContent = `${g.name} a amené tous ses chevaux au centre.`;
+    fin.hidden = false;
+  } else {
+    fin.hidden = true;
+  }
+}
+
+function rendre() {
+  if (!etat || !etat.players.length || etat.players[0].couleur === undefined) return;
+  const ev = etat.lastEvent || null;
+  if (premiereSynchro) {
+    premiereSynchro = false;
+    dernierTs = ev ? ev.ts : null;
+  } else if (ev && ev.ts !== dernierTs) {
+    dernierTs = ev.ts;
+    toast(ev.texte, true);
+  }
+  rendrePlateau();
+  rendrePanneau();
+}
+

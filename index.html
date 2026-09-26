@@ -97,6 +97,7 @@
     .blackjack .pastille, .poker .pastille { display: grid; place-items: center; font-size: 1.2rem; font-weight: 900; }
     .blackjack .pastille { background: #1B5646; color: #FBF7EE; border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1B5646; }
     .poker .pastille { background: #D7263D; color: #fff; border: 4px dashed #fff; box-shadow: 0 0 0 2px #D7263D; }
+    .chevaux .pastille { background: conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0); border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1A2238; }
 
     .notes {
       max-width: 620px;
@@ -194,6 +195,19 @@
           </div>
         </div>
         <div class="talon"><span class="pastille" aria-hidden="true">♠</span><span>Jouer</span></div>
+      </a>
+    </li>
+    <li>
+      <a class="billet chevaux" href="chevaux/">
+        <div class="corps">
+          <h2>Petits chevaux</h2>
+          <p class="desc">Faire le tour du plateau, renvoyer les autres à l'écurie et monter son escalier.</p>
+          <div class="champs">
+            <div class="champ"><small>Joueurs</small><strong>1 à 4</strong></div>
+            <div class="champ"><small>Partie</small><strong>30 à 60 min</strong></div>
+          </div>
+        </div>
+        <div class="talon"><span class="pastille" aria-hidden="true"></span><span>Jouer</span></div>
       </a>
     </li>
   </ul>

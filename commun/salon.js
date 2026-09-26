@@ -72,7 +72,7 @@ function genererCode() {
   return c;
 }
 
-export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret, validerLocal }) {
+export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret, validerLocal, validerEnLigne }) {
   const cleSession = 'jeux-vol:' + jeu;
   const clePseudo = 'jeux-vol:pseudo';
   const CODE_LOCAL = 'LOCAL';
@@ -181,6 +181,8 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   async function creer() {
     const nom = lirePseudo() || 'Joueur 1';
     const nb = ui.nb ? parseInt(ui.nb.value, 10) : 2;
+    const erreur = validerEnLigne ? validerEnLigne() : '';
+    if (erreur) { toast(erreur); return; }
     ui.creer.disabled = true;
     try {
       await passerEnLigne();

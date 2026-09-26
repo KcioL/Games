@@ -25,13 +25,15 @@
 }
 .plateau.adverse { width: min(440px, 100%); }
 .plateau.moi { width: min(300px, 100%); transition: opacity .2s; }
-.plateaux.en-placement .plateau.moi { width: min(440px, 100%); }
+/* Placement : la grille se cale sur la hauteur de l'écran pour que réserve et grille
+   soient visibles ensemble (sans descendre sous 250 px, pour garder des cases assez grandes) */
+.plateaux.en-placement .plateau.moi { width: max(250px, min(440px, 100%, calc(100vh - 375px))); width: max(250px, min(440px, 100%, calc(100svh - 375px))); }
 .plateau.moi.attente-tir { outline: 2px solid var(--soleil); outline-offset: 6px; border-radius: 4px; }
 
 /* ---------- Grille ---------- */
 .grille {
   display: grid;
-  grid-template-columns: 1.1em repeat(10, 1fr);
+  grid-template-columns: 1.3em repeat(11, 1fr);
   gap: 2px;
   font-size: .72rem;
   user-select: none;
@@ -83,9 +85,16 @@
 .case.coule { background: var(--coule); }
 .case.coule::after { opacity: .55; }
 
-/* Aperçu de placement (ordinateur) */
+/* Aperçu de placement (survol à la souris ou glissement) */
 .case.apercu { background: #7FB0E0; }
 .case.apercu-ko { background: #B04A5A; }
+
+/* Glisser-déposer : un bateau posé se déplace au doigt sans faire défiler la page */
+.case.deplacable { touch-action: none; cursor: grab; }
+.case.fantome { opacity: .3; }
+body.en-glisse, body.en-glisse * { cursor: grabbing !important; user-select: none; -webkit-user-select: none; }
+.piece { touch-action: none; }
+.aide-placement { font-size: .85rem; color: var(--brume); text-align: center; }
 
 /* Dernier tir : onde */
 .case.impact { animation: impact .7s ease-out; z-index: 1; }
@@ -109,30 +118,30 @@
 /* ---------- Placement ---------- */
 .outils-placement {
   max-width: 440px;
-  margin: 0 auto 16px;
+  margin: 0 auto 10px;
   padding: 0 12px;
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
-.dock { display: flex; flex-wrap: wrap; gap: 8px; }
+.dock { display: flex; flex-wrap: wrap; gap: 6px; }
 .piece {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   justify-items: start;
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: 10px;
   border: 2px solid transparent;
   background: var(--nuit-2);
 }
 .piece.choisi { border-color: #F2C230; }
 .piece.pose { opacity: .35; }
-.piece .nom { font-size: .78rem; font-weight: 700; }
+.piece .nom { font-size: .72rem; font-weight: 700; }
 .coque { display: flex; gap: 2px; }
-.coque i { width: 12px; height: 12px; background: var(--coque); }
+.coque i { width: 11px; height: 11px; background: var(--coque); }
 .coque i:first-child { border-radius: 50% 2px 2px 50%; }
 .coque i:last-child { border-radius: 2px 50% 50% 2px; }
-.outils-placement .boutons { display: flex; flex-wrap: wrap; gap: 8px; }
-.outils-placement .boutons .btn-principal { margin-left: auto; }
+.outils-placement .boutons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.outils-placement .boutons .btn { padding: 10px 6px; }
 
 @media (max-width: 480px) {
   .plateaux { gap: 18px; }

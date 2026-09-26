@@ -1,0 +1,191 @@
+/* Petits chevaux */
+:root {
+  --rouge: #D7263D;
+  --vert-j: #3FA56B;
+  --jaune: #F2C230;
+  --bleu: #3F6FD8;
+}
+
+#jeu {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 10px 10px 24px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+.ligne-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* Titre raccourci sur très petit écran */
+.titre-court { display: none; }
+@media (max-width: 360px) {
+  .titre-long { display: none; }
+  .titre-court { display: inline; }
+}
+
+/* ---------- Plateau ---------- */
+.plateau-zone { width: 100%; display: flex; justify-content: center; }
+.plateau {
+  /* Aussi grand que possible sans dépasser ni la largeur ni la hauteur de l'écran */
+  width: min(100%, 560px, calc(100vh - 250px));
+  width: min(100%, 560px, calc(100svh - 250px));
+  min-width: 280px;
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  gap: 2px;
+  padding: 6px;
+  background: #F4EEDD;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ecurie { border-radius: 10px; margin: 2px; }
+.ecurie.rouge { background: #F1C4C9; background: color-mix(in srgb, var(--rouge) 28%, #F4EEDD); border: 3px solid var(--rouge); }
+.ecurie.vert { background: #C9E5D2; background: color-mix(in srgb, var(--vert-j) 28%, #F4EEDD); border: 3px solid var(--vert-j); }
+.ecurie.jaune { background: #F5E3A8; background: color-mix(in srgb, var(--jaune) 35%, #F4EEDD); border: 3px solid var(--jaune); }
+.ecurie.bleu { background: #C9D5F2; background: color-mix(in srgb, var(--bleu) 28%, #F4EEDD); border: 3px solid var(--bleu); }
+
+.case {
+  background: #FFFDF8;
+  border: 1px solid #D9D0B8;
+  border-radius: 3px;
+}
+.case.depart.rouge { background: var(--rouge); }
+.case.depart.vert { background: var(--vert-j); }
+.case.depart.jaune { background: var(--jaune); }
+.case.depart.bleu { background: var(--bleu); }
+.case.entree { border: 2px solid; }
+.case.entree.rouge { border-color: var(--rouge); }
+.case.entree.vert { border-color: var(--vert-j); }
+.case.entree.jaune { border-color: var(--jaune); }
+.case.entree.bleu { border-color: var(--bleu); }
+
+.marche {
+  display: grid;
+  place-items: center;
+  border-radius: 3px;
+  font-weight: 900;
+  font-size: clamp(.5rem, 2.2vw, .85rem);
+  color: rgba(255, 255, 255, .9);
+}
+.marche.rouge { background: #E36475; background: color-mix(in srgb, var(--rouge) 75%, #fff); }
+.marche.vert { background: #6DBB8E; background: color-mix(in srgb, var(--vert-j) 75%, #fff); }
+.marche.jaune { background: #F4CD55; background: color-mix(in srgb, var(--jaune) 85%, #fff); color: rgba(26, 34, 56, .75); }
+.marche.bleu { background: #6F92E1; background: color-mix(in srgb, var(--bleu) 75%, #fff); }
+
+.centre-plateau {
+  background: conic-gradient(var(--vert-j) 0 25%, var(--jaune) 0 50%, var(--bleu) 0 75%, var(--rouge) 0);
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+
+/* ---------- Chevaux ---------- */
+.pion {
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .35);
+  margin: 8%;
+  position: relative;
+  z-index: 2;
+  padding: 0;
+  touch-action: manipulation;
+}
+.pion.dans-ecurie { margin: 22%; border-width: 3px; }
+.pion.rouge { background: var(--rouge); }
+.pion.vert { background: var(--vert-j); }
+.pion.jaune { background: var(--jaune); }
+.pion.bleu { background: var(--bleu); }
+.pion.vient-de-bouger { box-shadow: 0 0 0 3px rgba(26, 34, 56, .55), 0 2px 4px rgba(0, 0, 0, .35); }
+.pion.jouable {
+  cursor: pointer;
+  z-index: 3;
+  outline: 3px solid var(--encre);
+  outline-offset: 1px;
+  animation: clignote 1s ease-in-out infinite;
+}
+/* Zone tactile plus grande que le pion lui-même */
+.pion.jouable::after { content: ""; position: absolute; inset: -40%; border-radius: 50%; }
+@keyframes clignote { 50% { transform: scale(1.25); } }
+
+.arrives {
+  align-self: center;
+  justify-self: center;
+  font-size: clamp(.55rem, 2.3vw, .8rem);
+  font-weight: 900;
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 8px;
+  z-index: 2;
+}
+.arrives.rouge { background: var(--rouge); }
+.arrives.vert { background: var(--vert-j); }
+.arrives.jaune { background: var(--jaune); color: var(--encre); }
+.arrives.bleu { background: var(--bleu); }
+
+/* ---------- Panneau ---------- */
+.panneau { width: min(560px, 100%); display: grid; gap: 10px; }
+.panneau .statut { padding: 0; min-height: 1.5em; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.pastille { width: 14px; height: 14px; border-radius: 50%; flex: none; border: 2px solid #fff; }
+.pastille.rouge { background: var(--rouge); }
+.pastille.vert { background: var(--vert-j); }
+.pastille.jaune { background: var(--jaune); }
+.pastille.bleu { background: var(--bleu); }
+
+.lancer { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.lancer .btn { flex: 1; max-width: 260px; padding: 14px 16px; font-size: 1.05rem; }
+.de {
+  width: 58px;
+  height: 58px;
+  flex: none;
+  border-radius: 12px;
+  background: #FFFDF8;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: 8px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .3);
+  border: 3px solid #FFFDF8;
+}
+.de.rouge { border-color: var(--rouge); }
+.de.vert { border-color: var(--vert-j); }
+.de.jaune { border-color: var(--jaune); }
+.de.bleu { border-color: var(--bleu); }
+.de span { display: grid; place-items: center; }
+.de span.point::before { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--encre); }
+
+.dernier { text-align: center; color: var(--brume); min-height: 1.4em; font-size: .92rem; }
+
+.joueurs { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; }
+.joueurs li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "pastille nom" "pastille score";
+  align-items: center;
+  column-gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--nuit-2);
+  border: 2px solid transparent;
+  min-width: 0;
+}
+.joueurs li.actif { border-color: #F2C230; }
+.joueurs li .pastille { grid-area: pastille; }
+.joueurs .nom { grid-area: nom; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.joueurs .score { grid-area: score; font-size: .78rem; color: var(--brume); white-space: nowrap; }
+
+/* Téléphone à l'horizontale et grands écrans : plateau à gauche, panneau à droite */
+@media (orientation: landscape) and (min-width: 640px) {
+  #jeu { grid-template-columns: auto minmax(240px, 360px); align-items: start; justify-content: center; }
+  .plateau { width: min(560px, calc(100vh - 90px), 60vw); width: min(560px, calc(100svh - 90px), 60vw); }
+  .panneau { width: 100%; }
+  .joueurs { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pion.jouable { animation: none; }
+}
