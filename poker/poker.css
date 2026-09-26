@@ -1,0 +1,164 @@
+/* Poker */
+#jeu {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 10px 10px 24px;
+  display: grid;
+  gap: 10px;
+}
+
+.ligne-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ---------- Adversaires ---------- */
+.adversaires {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  justify-content: safe center;
+  padding: 2px 0 4px;
+}
+.siege {
+  flex: 0 0 auto;
+  width: 112px;
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--nuit-2);
+  border: 2px solid transparent;
+  position: relative;
+}
+.siege.actif { border-color: #F2C230; }
+.siege.couche { opacity: .45; }
+.siege.gagnant { border-color: var(--vert); }
+.siege-tete { display: flex; align-items: center; gap: 4px; max-width: 100%; }
+.siege-tete strong { font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.siege-argent { display: flex; gap: 6px; font-size: .8rem; align-items: baseline; }
+.siege-info { font-size: .72rem; color: var(--brume); text-align: center; min-height: 1.2em; line-height: 1.2; }
+.siege .main-cartes { min-height: 0; }
+.siege .main-cartes .carte-jeu + .carte-jeu { margin-left: 3px; }
+.mise-tour {
+  font-size: .75rem;
+  font-weight: 900;
+  color: var(--encre);
+  background: #F2C230;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.recharges { font-size: .75rem; color: var(--brume); }
+.donneur {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--encre);
+  font-size: .7rem;
+  font-weight: 900;
+  flex: none;
+  margin-left: 4px;
+}
+
+/* ---------- Table ---------- */
+.table-poker {
+  padding: 12px 8px 14px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+.pot {
+  font-weight: 700;
+  color: #D6EDE3;
+  background: rgba(0, 0, 0, .3);
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+.tableau { display: flex; gap: 6px; justify-content: center; }
+.tableau .carte-jeu, .tableau .emplacement { --l: clamp(46px, 15vw, 70px); }
+.emplacement {
+  width: var(--l);
+  aspect-ratio: 5 / 7;
+  border-radius: calc(var(--l) * .12);
+  border: 2px dashed rgba(255, 255, 255, .25);
+}
+.message {
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, .28);
+  padding: 8px 14px;
+  border-radius: 999px;
+  max-width: 100%;
+}
+
+/* ---------- Mon jeu ---------- */
+.moi {
+  background: var(--nuit-2);
+  border-radius: 16px;
+  padding: 10px 12px;
+  border: 2px solid transparent;
+  display: grid;
+  gap: 8px;
+}
+.moi.actif { border-color: #F2C230; }
+.moi.gagnant { border-color: var(--vert); }
+.moi.couche .main-cartes { opacity: .4; }
+.moi-tete { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.moi-tete strong { display: inline-flex; align-items: center; }
+.moi-milieu { display: flex; align-items: center; gap: 14px; }
+.moi-milieu .main-cartes { justify-content: flex-start; }
+.moi-etat { display: grid; gap: 4px; min-width: 0; }
+.moi-etat .mise-tour:empty { display: none; }
+.moi-etat .mise-tour { justify-self: start; }
+.derniere { color: var(--brume); font-size: .9rem; }
+
+/* ---------- Commandes ---------- */
+.commandes { display: grid; gap: 8px; width: min(480px, 100%); margin: 0 auto; }
+.commandes .btn { padding: 13px 10px; font-size: .98rem; }
+.rangee { display: grid; gap: 8px; }
+.rangee.trois { grid-template-columns: repeat(3, 1fr); }
+.rangee.quatre { grid-template-columns: repeat(4, 1fr); }
+.btn-danger { background: #5B2230; }
+.btn-secondaire { background: #2F3B63; }
+
+.relance {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--nuit-2);
+}
+.relance-montant { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: center; }
+.relance-montant small { display: block; color: var(--brume); font-size: .8rem; }
+.relance-montant .jetons { font-size: 1.3rem; }
+.btn.pas { width: 48px; height: 48px; padding: 0; font-size: 1.4rem; }
+.relance input[type="range"] { width: 100%; accent-color: #F2C230; height: 28px; }
+.btn.raccourci { padding: 10px 4px; font-size: .88rem; }
+
+@media (max-width: 380px) {
+  .siege { width: 100px; }
+  .commandes .btn { font-size: .9rem; padding: 12px 6px; }
+}
+
+/* Téléphone à l'horizontale */
+@media (orientation: landscape) and (max-height: 560px) {
+  #jeu {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+    grid-template-areas: "adv moi" "table cmd";
+    align-items: start;
+    padding: 6px 12px 16px;
+    gap: 8px 14px;
+  }
+  .adversaires { grid-area: adv; justify-content: flex-start; }
+  .table-poker { grid-area: table; padding: 8px; gap: 6px; }
+  .moi { grid-area: moi; padding: 8px 10px; }
+  .commandes { grid-area: cmd; }
+  .tableau .carte-jeu, .tableau .emplacement { --l: clamp(40px, 10vh, 58px); }
+  .moi .carte-jeu.grande { --l: clamp(44px, 12vh, 60px); }
+  .commandes .btn { padding: 10px 8px; }
+  .siege { width: 96px; padding: 4px; gap: 2px; }
+  .siege-info { font-size: .68rem; }
+}

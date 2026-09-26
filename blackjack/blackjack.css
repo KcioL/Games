@@ -1,0 +1,156 @@
+/* Blackjack */
+#jeu {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 10px 10px 24px;
+  display: grid;
+  gap: 10px;
+}
+
+.table-bj {
+  padding: 14px 10px 16px;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
+/* Croupier */
+.croupier { display: grid; justify-items: center; gap: 6px; }
+.etiquette { font-weight: 700; color: #D6EDE3; display: flex; gap: 8px; align-items: center; }
+.score {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .35);
+  color: #fff;
+  font-weight: 900;
+  font-size: .9rem;
+}
+.score.trop { background: var(--soleil); }
+.score:empty { display: none; }
+
+.message {
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, .28);
+  padding: 8px 14px;
+  border-radius: 999px;
+  max-width: 100%;
+}
+
+/* Autres joueurs : rangée compacte qui défile si besoin */
+.autres {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  overflow-x: auto;
+  justify-content: safe center;
+  padding-bottom: 2px;
+}
+.siege {
+  flex: 0 0 auto;
+  min-width: 128px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  background: rgba(0, 0, 0, .22);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 6px 8px;
+}
+.siege.actif { border-color: #F2C230; }
+.siege-tete { display: flex; gap: 8px; align-items: baseline; font-size: .85rem; }
+.siege .attente { font-size: .75rem; color: #BFD9CF; }
+.recharges { font-size: .75rem; color: #BFD9CF; }
+
+/* Mes mains */
+.moi {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 8px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+}
+.moi.actif { border-color: #F2C230; background: rgba(0, 0, 0, .12); }
+.moi-tete { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; justify-content: center; }
+.mes-mains { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+
+.main-bj {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  padding: 6px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+}
+.main-bj.active { border-color: #F2C230; }
+.main-info { display: flex; gap: 8px; align-items: center; font-size: .85rem; }
+.badge {
+  font-size: .8rem;
+  font-weight: 900;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .35);
+  color: #fff;
+}
+.main-bj.gagne .badge { background: var(--vert); }
+.main-bj.perdu .badge { background: var(--soleil); }
+.main-bj.egal .badge { background: #5A6690; }
+.main-bj.perdu .main-cartes { opacity: .6; }
+
+/* ---------- Commandes ---------- */
+.commandes {
+  display: grid;
+  gap: 8px;
+  width: min(440px, 100%);
+  margin: 0 auto;
+}
+.commandes .btn { padding: 13px 16px; font-size: 1rem; }
+.rangee { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-secondaire { background: #2F3B63; }
+.btn-recharger { background: #F2C230; color: var(--encre); }
+
+.mise-montant { text-align: center; font-weight: 700; }
+.mise-montant .jetons { font-size: 1.3rem; }
+.jetons-boutons { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.jeton {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: 4px dashed rgba(255, 255, 255, .8);
+  font-weight: 900;
+  font-size: .95rem;
+  color: #fff;
+  touch-action: manipulation;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, .35);
+}
+.jeton[data-ajout="10"] { background: #3F6FD8; }
+.jeton[data-ajout="50"] { background: #D7263D; }
+.jeton[data-ajout="100"] { background: #1E1E1E; }
+.jeton[data-ajout="500"] { background: #7B3FA0; }
+.jeton:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, .35); }
+.jeton:disabled { opacity: .35; cursor: default; }
+
+@media (max-width: 380px) {
+  .jeton { width: 52px; height: 52px; }
+  .siege { min-width: 112px; }
+}
+
+/* Téléphone à l'horizontale : table à gauche, commandes à droite */
+@media (orientation: landscape) and (max-height: 560px) {
+  #jeu {
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    align-items: start;
+    padding: 8px 12px 16px;
+  }
+  .table-bj { padding: 10px; gap: 8px; }
+  .carte-jeu.grande { --l: clamp(44px, 11vh, 60px); }
+  .commandes .btn { padding: 10px 12px; }
+  .jeton { width: 48px; height: 48px; font-size: .85rem; }
+}

@@ -1,0 +1,66 @@
+/* Cartes à jouer (Blackjack et Poker) */
+.carte-jeu {
+  --l: clamp(46px, 13vw, 64px);
+  width: var(--l);
+  aspect-ratio: 5 / 7;
+  border-radius: calc(var(--l) * .12);
+  background: #FFFDF8;
+  color: #1A2238;
+  position: relative;
+  flex: none;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .25), 0 4px 10px rgba(0, 0, 0, .25);
+  font-family: var(--police, system-ui, sans-serif);
+  font-weight: 900;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.carte-jeu.rouge { color: #D7263D; }
+.carte-jeu .coin {
+  position: absolute;
+  top: 6%;
+  left: 9%;
+  font-size: calc(var(--l) * .3);
+  line-height: 1;
+}
+.carte-jeu .coin.bas { top: auto; left: auto; bottom: 6%; right: 9%; transform: rotate(180deg); }
+.carte-jeu .centre {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: calc(var(--l) * .5);
+}
+.carte-jeu.dos {
+  background:
+    radial-gradient(circle at 50% 50%, #D7263D 0 20%, transparent 21%),
+    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
+  border: 2px solid #FBF7EE;
+}
+.carte-jeu.petite { --l: clamp(28px, 8vw, 38px); }
+.carte-jeu.petite .coin.bas { display: none; }
+.carte-jeu.petite .coin { font-size: calc(var(--l) * .36); }
+.carte-jeu.petite .centre { font-size: calc(var(--l) * .5); padding-top: 18%; }
+.carte-jeu.grande { --l: clamp(56px, 17vw, 84px); }
+
+.carte-jeu.arrivee { animation: carte-arrive .35s cubic-bezier(.2, 1.1, .4, 1) both; }
+@keyframes carte-arrive {
+  from { transform: translateY(-24px) rotate(-6deg); opacity: 0; }
+}
+
+/* Rangée de cartes qui se chevauchent un peu */
+.main-cartes { display: flex; justify-content: center; min-height: calc(clamp(46px, 13vw, 64px) * 1.4); }
+.main-cartes .carte-jeu + .carte-jeu { margin-left: calc(var(--l) * -.28); }
+.main-cartes.espacees .carte-jeu + .carte-jeu { margin-left: 6px; }
+/* Carte recouverte par la suivante : son coin du bas serait coupé */
+.main-cartes:not(.espacees) .carte-jeu:not(:last-child) .coin.bas { display: none; }
+
+/* Tapis de jeu */
+.tapis {
+  background: radial-gradient(ellipse at 50% 35%, #25705A 0%, #1B5646 60%, #164838 100%);
+  border-radius: 22px;
+  border: 3px solid #0F3A2D;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, .35);
+}
+
+/* Jetons / montants */
+.jetons { font-weight: 900; color: #F2C230; white-space: nowrap; }

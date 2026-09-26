@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Poker</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>♠</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="../commun/cartes.css">
+  <link rel="stylesheet" href="poker.css">
+  <script type="module" src="poker.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Poker</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+            <p>Texas Hold'em. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+      <label>Ton pseudo
+        <input id="pseudo" maxlength="16" autocomplete="nickname">
+      </label>
+      <label>Nombre de joueurs
+        <select id="nb-joueurs">
+          <option value="2">2 joueurs</option>
+          <option value="3">3 joueurs</option>
+          <option value="4">4 joueurs</option>
+          <option value="5">5 joueurs</option>
+          <option value="6">6 joueurs</option>
+        </select>
+      </label>
+      <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+      <div class="separateur">ou</div>
+      <div class="ligne">
+        <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+        <button class="btn" id="btn-rejoindre">Rejoindre</button>
+      </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (6 places au total). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option>
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+        </div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="adversaires" id="adversaires"></div>
+
+    <section class="tapis table-poker">
+      <div class="pot">Pot <span class="jetons" id="pot">0 €</span></div>
+      <div class="tableau" id="tableau"></div>
+      <p class="message" id="message" aria-live="polite"></p>
+    </section>
+
+    <section class="moi" id="moi">
+      <div class="moi-tete">
+        <strong id="moi-nom"></strong>
+        <span class="jetons" id="moi-jetons"></span>
+        <span class="recharges" id="moi-recharges"></span>
+      </div>
+      <div class="moi-milieu">
+        <div class="main-cartes espacees" id="mes-cartes"></div>
+        <div class="moi-etat">
+          <span class="mise-tour" id="moi-mise"></span>
+          <span class="derniere" id="moi-derniere"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Actions -->
+    <div class="commandes" id="panneau-actions" hidden>
+      <div class="rangee trois">
+        <button class="btn btn-danger" id="btn-coucher">Se coucher</button>
+        <button class="btn btn-principal" id="btn-suivre">Parole</button>
+        <button class="btn btn-secondaire" id="btn-ouvrir-relance">Relancer</button>
+      </div>
+      <div class="relance" id="relance" hidden>
+        <div class="relance-montant">
+          <button class="btn pas" id="btn-moins" aria-label="Diminuer">−</button>
+          <div><small>Relancer à</small><span class="jetons" id="relance-valeur"></span></div>
+          <button class="btn pas" id="btn-plus" aria-label="Augmenter">+</button>
+        </div>
+        <input type="range" id="relance-curseur" aria-label="Montant de la relance">
+        <div class="rangee quatre">
+          <button class="btn raccourci" data-rel="min">Min</button>
+          <button class="btn raccourci" data-rel="demi">½ pot</button>
+          <button class="btn raccourci" data-rel="pot">Pot</button>
+          <button class="btn raccourci" data-rel="tapis">Tapis</button>
+        </div>
+        <button class="btn btn-principal" id="btn-relancer">Relancer</button>
+      </div>
+    </div>
+
+    <div class="commandes" id="panneau-fin" hidden>
+      <button class="btn btn-principal" id="btn-suivante">Main suivante</button>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Poker (Texas Hold'em)</h2>
+    <p>Chacun reçoit 2 cartes cachées. 5 cartes communes sont posées au milieu. La meilleure combinaison de 5 cartes parmi les 7 gagne le pot.</p>
+    <h3>Déroulement d'une main</h3>
+    <ul>
+      <li>Les deux joueurs après le donneur (D) posent les blindes : 10 € et 20 €.</li>
+      <li>Tour d'enchères, puis 3 cartes communes (le flop), enchères, 1 carte (le turn), enchères, 1 dernière carte (la river), dernières enchères.</li>
+      <li>Si tout le monde se couche sauf un joueur, il gagne le pot sans montrer ses cartes.</li>
+      <li>Sinon, on retourne les cartes et la meilleure main gagne.</li>
+    </ul>
+    <h3>À ton tour</h3>
+    <ul>
+      <li>Parole : ne rien miser (si personne n'a misé).</li>
+      <li>Suivre : mettre autant que la plus grosse mise.</li>
+      <li>Relancer : miser plus. Tapis : miser tout ce qu'on a.</li>
+      <li>Se coucher : abandonner la main.</li>
+    </ul>
+    <h3>Combinaisons, de la plus forte à la plus faible</h3>
+    <ul>
+      <li>Quinte flush royale, quinte flush, carré, full, couleur, quinte, brelan, double paire, paire, carte haute.</li>
+    </ul>
+    <h3>Argent</h3>
+    <ul>
+      <li>Chacun commence avec 1000 €. Un joueur à sec est recavé de 1000 € à la main suivante ; le compteur ♻ l'indique.</li>
+      <li>Quand un joueur fait tapis avec moins que les autres, il ne peut gagner que ce qu'il a pu suivre (pot secondaire).</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>

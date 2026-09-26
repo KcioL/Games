@@ -81,6 +81,10 @@ html { -webkit-tap-highlight-color: transparent; }
   .barre .retour, .barre .btn-discret { padding: 6px 8px; font-size: .9rem; }
 }
 
+@media (max-width: 360px) {
+  .barre .retour .mot { display: none; }
+}
+
 /* ---------- Boutons ---------- */
 .btn {
   border: none;

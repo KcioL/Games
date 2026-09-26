@@ -94,6 +94,9 @@
     .uno .pastille { background: conic-gradient(#E0453A 0 25%, #F2C230 0 50%, #4FAE5A 0 75%, #3F6FD8 0); }
     .bataille .pastille { background: radial-gradient(circle, #fff 0 22%, #1E4A7A 23% 60%, #2F6BAA 61%); }
     .skyjo .pastille { background: linear-gradient(135deg, #3C3F9E 0 20%, #56B4E6 0 40%, #4FAE5A 0 60%, #F2C230 0 80%, #E0453A 0); }
+    .blackjack .pastille, .poker .pastille { display: grid; place-items: center; font-size: 1.2rem; font-weight: 900; }
+    .blackjack .pastille { background: #1B5646; color: #FBF7EE; border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1B5646; }
+    .poker .pastille { background: #D7263D; color: #fff; border: 4px dashed #fff; box-shadow: 0 0 0 2px #D7263D; }
 
     .notes {
       max-width: 620px;
@@ -165,6 +168,32 @@
           </div>
         </div>
         <div class="talon"><span class="pastille"></span><span>Jouer</span></div>
+      </a>
+    </li>
+    <li>
+      <a class="billet blackjack" href="blackjack/">
+        <div class="corps">
+          <h2>Blackjack</h2>
+          <p class="desc">S'approcher de 21 sans le dépasser, et battre le croupier.</p>
+          <div class="champs">
+            <div class="champ"><small>Joueurs</small><strong>1 à 4</strong></div>
+            <div class="champ"><small>Partie</small><strong>Libre</strong></div>
+          </div>
+        </div>
+        <div class="talon"><span class="pastille" aria-hidden="true">21</span><span>Jouer</span></div>
+      </a>
+    </li>
+    <li>
+      <a class="billet poker" href="poker/">
+        <div class="corps">
+          <h2>Poker</h2>
+          <p class="desc">Texas Hold'em entre amis, ou contre des bots quand on est seul.</p>
+          <div class="champs">
+            <div class="champ"><small>Joueurs</small><strong>1 à 6</strong></div>
+            <div class="champ"><small>Partie</small><strong>Libre</strong></div>
+          </div>
+        </div>
+        <div class="talon"><span class="pastille" aria-hidden="true">♠</span><span>Jouer</span></div>
       </a>
     </li>
   </ul>

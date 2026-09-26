@@ -72,7 +72,7 @@ function genererCode() {
   return c;
 }
 
-export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret }) {
+export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret, validerLocal }) {
   const cleSession = 'jeux-vol:' + jeu;
   const clePseudo = 'jeux-vol:pseudo';
   const CODE_LOCAL = 'LOCAL';
@@ -135,7 +135,8 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     ui.infoSalon.hidden = ecran === 'lobby';
     ui.quitter.hidden = ecran === 'lobby';
     const barre = document.querySelector('.barre');
-    if (barre) barre.classList.toggle('en-salon', ecran !== 'lobby');
+    // deuxième ligne (code du salon + Quitter) seulement en ligne ; sur un seul téléphone tout tient sur une ligne
+    if (barre) barre.classList.toggle('en-salon', ecran !== 'lobby' && !local);
   }
 
   // Session mémorisée : permet de revenir dans la partie après un rechargement de la page
@@ -185,7 +186,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
       await passerEnLigne();
       for (let essai = 0; essai < 6; essai++) {
         const c = genererCode();
-        const etat = etatInitial(nom, nb);
+        const etat = etatInitial(nom, nb, { local: false });
         etat.status = 'waiting';
         etat.createdAt = Date.now();
         const res = await api.runTransaction(api.ref(api.db, `${jeu}/${c}`), (actuel) => (actuel === null ? etat : undefined));
@@ -278,18 +279,21 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
 
   // ---------- Mode un seul téléphone ----------
   function commencerLocal() {
+    const erreur = validerLocal ? validerLocal() : '';
+    if (erreur) { toast(erreur); return; }
     const noms = [...ui.localNoms.querySelectorAll('input')]
       .map((i, k) => i.value.trim().slice(0, 16) || `Joueur ${k + 1}`);
     noms.forEach((n, k) => { if (noms.indexOf(n) !== k) noms[k] = `${n} ${k + 1}`; });
     if (noms[0]) { try { localStorage.setItem(clePseudo, noms[0]); } catch (e) { /* rien */ } }
     passerEnLocal();
-    const etat = etatInitial(noms[0], noms.length);
-    etat.players.forEach((p, k) => { p.name = noms[k]; p.joined = true; });
+    const etat = etatInitial(noms[0], noms.length, { local: true });
+    // Les joueurs au-delà des prénoms saisis (les bots du Poker) gardent leur nom
+    etat.players.forEach((p, k) => { if (k < noms.length) p.name = noms[k]; p.joined = true; });
     etat.createdAt = Date.now();
     etat.status = 'waiting';
     demarrer(etat);
     localDb.set(localDb.ref(localDb.db, `${jeu}/${CODE_LOCAL}`), etat).then(() => {
-      voileAuDebut = true;
+      voileAuDebut = !!secret;
       entrer(CODE_LOCAL, 0);
     });
   }
@@ -361,7 +365,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     if (!s) return;
     if (s.local) {
       passerEnLocal();
-      voileAuDebut = true;
+      voileAuDebut = !!secret;
       entrer(CODE_LOCAL, s.place || 0);
       return;
     }

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Blackjack</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🂡</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="../commun/cartes.css">
+  <link rel="stylesheet" href="blackjack.css">
+  <script type="module" src="blackjack.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Blackjack</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+            <p>Chacun contre le croupier. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+      <label>Ton pseudo
+        <input id="pseudo" maxlength="16" autocomplete="nickname">
+      </label>
+      <label>Nombre de joueurs
+        <select id="nb-joueurs">
+          <option value="2">2 joueurs</option>
+          <option value="3">3 joueurs</option>
+          <option value="4">4 joueurs</option>
+        </select>
+      </label>
+      <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+      <div class="separateur">ou</div>
+      <div class="ligne">
+        <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+        <button class="btn" id="btn-rejoindre">Rejoindre</button>
+      </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Seul contre le croupier, ou à plusieurs en se passant le téléphone. Pas besoin d'internet.</p>
+        <label>Nombre de joueurs
+          <select id="local-nb">
+            <option value="1">1 joueur (solo)</option>
+            <option value="2">2 joueurs</option>
+            <option value="3">3 joueurs</option>
+            <option value="4">4 joueurs</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <section class="tapis table-bj">
+      <div class="croupier">
+        <div class="etiquette">Croupier <span class="score" id="score-croupier"></span></div>
+        <div class="main-cartes" id="cartes-croupier"></div>
+      </div>
+
+      <p class="message" id="message" aria-live="polite"></p>
+
+      <div class="autres" id="autres"></div>
+
+      <div class="moi" id="moi">
+        <div class="moi-tete">
+          <strong id="moi-nom"></strong>
+          <span><span class="jetons" id="moi-jetons"></span> <span class="recharges" id="moi-recharges"></span></span>
+        </div>
+        <div class="mes-mains" id="mes-mains"></div>
+      </div>
+    </section>
+
+    <!-- Mise -->
+    <div class="commandes" id="panneau-mise" hidden>
+      <div class="mise-montant">Mise : <span class="jetons" id="mise-choisie">0 €</span></div>
+      <div class="jetons-boutons">
+        <button class="jeton" data-ajout="10">10</button>
+        <button class="jeton" data-ajout="50">50</button>
+        <button class="jeton" data-ajout="100">100</button>
+        <button class="jeton" data-ajout="500">500</button>
+      </div>
+      <div class="rangee">
+        <button class="btn" id="btn-effacer">Effacer</button>
+        <button class="btn btn-principal" id="btn-miser">Miser</button>
+      </div>
+      <button class="btn btn-recharger" id="btn-recharger" hidden>Recharger (+1000 €)</button>
+    </div>
+
+    <!-- Actions -->
+    <div class="commandes" id="panneau-actions" hidden>
+      <div class="rangee">
+        <button class="btn btn-principal" id="btn-tirer">Tirer</button>
+        <button class="btn" id="btn-rester">Rester</button>
+      </div>
+      <div class="rangee">
+        <button class="btn btn-secondaire" id="btn-doubler">Doubler</button>
+        <button class="btn btn-secondaire" id="btn-separer">Séparer</button>
+      </div>
+    </div>
+
+    <!-- Fin de la main -->
+    <div class="commandes" id="panneau-fin" hidden>
+      <button class="btn btn-principal" id="btn-suivante">Main suivante</button>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Blackjack</h2>
+    <p>Chaque joueur joue contre le croupier. Le but : s'approcher de 21 sans le dépasser, et faire mieux que le croupier.</p>
+    <h3>Valeur des cartes</h3>
+    <ul>
+      <li>De 2 à 10 : leur valeur. Valet, Dame, Roi : 10.</li>
+      <li>As : 11, ou 1 si on dépasserait 21.</li>
+    </ul>
+    <h3>Déroulement</h3>
+    <ul>
+      <li>Chacun mise (10 € minimum), puis reçoit 2 cartes. Le croupier en a 2, dont une cachée.</li>
+      <li>Tirer : prendre une carte. Rester : s'arrêter là.</li>
+      <li>Doubler : doubler sa mise sur ses 2 premières cartes, recevoir une seule carte (qui reste cachée jusqu'à la fin) et s'arrêter.</li>
+      <li>Séparer : avec deux cartes de même valeur, en faire deux mains, avec une mise sur chacune.</li>
+      <li>Au-dessus de 21, la main a sauté et la mise est perdue.</li>
+      <li>Le croupier tire jusqu'à 17 ou plus, puis s'arrête.</li>
+    </ul>
+    <h3>Gains</h3>
+    <ul>
+      <li>Mieux que le croupier (ou croupier qui saute) : mise × 2.</li>
+      <li>Blackjack (21 avec les 2 premières cartes) : mise × 2,5.</li>
+      <li>Égalité : mise rendue. Un blackjack du croupier bat un 21 en plus de 2 cartes.</li>
+      <li>Plus d'argent ? « Recharger » donne 1000 € ; le compteur ♻ indique combien de fois.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script>
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
+  </script>
+</body>
+</html>
