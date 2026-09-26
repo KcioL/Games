@@ -104,6 +104,11 @@ function mouvement(s, i, h, d) {
   return { pos: arrivee, prise: occ };
 }
 
+// Le dé dépasse la case devant l'escalier : le cheval y va puis recule du surplus
+function estRebond(avant, d, apres) {
+  return avant >= 0 && avant <= ENTREE && avant + d > ENTREE && apres <= ENTREE;
+}
+
 function coupsPossibles(s, i, d) {
   const coups = [];
   s.players[i].chevaux.forEach((_, h) => {
@@ -169,13 +174,16 @@ function deplacer(s, i, h) {
   const avant = p.chevaux[h];
   p.chevaux[h] = m.pos;
   s.coup = (s.coup || 0) + 1;
-  s.bouge = { i, h };
+  s.bouge = { i, h, de: avant, a: m.pos };
   let texte;
   if (avant === ECURIE) texte = `${p.name} sort un cheval.`;
   else if (m.pos === CENTRE) texte = `${p.name} amène un cheval au centre !`;
   else if (m.pos > ENTREE) texte = `${p.name} monte à la marche ${m.pos - ENTREE}.`;
   else if (m.pos === ENTREE) texte = `${p.name} arrive devant son escalier.`;
-  else texte = `${p.name} avance de ${s.de}.`;
+  else if (estRebond(avant, s.de, m.pos)) {
+    const recul = avant + s.de - ENTREE;
+    texte = `${p.name} va jusqu'à son escalier puis recule de ${recul} (${recul > 1 ? 'points' : 'point'} en trop).`;
+  } else texte = `${p.name} avance de ${s.de}.`;
   if (m.prise) {
     const [j, k] = m.prise;
     s.players[j].chevaux[k] = ECURIE;
@@ -355,6 +363,7 @@ function dessinerPlateau() {
   const centre = el('div', 'centre-plateau');
   placer(centre, 7, 7);
   plateau.appendChild(centre);
+  plateau.addEventListener('click', toucherPlateau);
 }
 
 // Position d'un cheval sur la grille
@@ -366,11 +375,24 @@ function coordonnees(p, h) {
   return col.escalier(pos - ENTREE);
 }
 
+// Cases de la grille pour une position donnée d'un cheval (null : écurie)
+function coordPosition(couleur, pos) {
+  if (pos === ECURIE) return null;
+  if (pos === CENTRE) return [7, 7];
+  if (pos <= ENTREE) return PARCOURS[caseAbsolue(couleur, pos)];
+  return COULEURS[couleur].escalier(pos - ENTREE);
+}
+
+// Chevaux jouables et leur case d'arrivée, pour retrouver ce que le doigt a touché
+let cibles = [];
+
 function rendrePlateau() {
   if (!caseEls) dessinerPlateau();
-  plateau.querySelectorAll('.pion, .pion-ecurie, .arrives').forEach((e) => e.remove());
+  plateau.querySelectorAll('.pion, .pion-ecurie, .arrives, .destination').forEach((e) => e.remove());
   const choisir = monTour() && etat.phase === 'choisir';
-  const jouables = choisir ? new Set(coupsPossibles(etat, maPlace, etat.de).map((c) => c.h)) : new Set();
+  const coups = choisir ? coupsPossibles(etat, maPlace, etat.de) : [];
+  const jouables = new Set(coups.map((c) => c.h));
+  cibles = [];
 
   etat.players.forEach((p, i) => {
     const col = COULEURS[p.couleur];
@@ -380,13 +402,15 @@ function rendrePlateau() {
     p.chevaux.forEach((pos, h) => {
       const jouable = i === maPlace && jouables.has(h);
       const pion = el(jouable ? 'button' : 'div', `pion ${col.cle}`);
+      pion.dataset.joueur = String(i);
+      pion.dataset.cheval = String(h);
       if (jouable) {
         pion.type = 'button';
         pion.classList.add('jouable');
         pion.setAttribute('aria-label', `Déplacer ce cheval ${col.nom.toLowerCase()}`);
-        pion.addEventListener('click', () => choisirCheval(h));
       }
       if (etat.bouge && etat.bouge.i === i && etat.bouge.h === h) pion.classList.add('vient-de-bouger');
+      if (jouable) cibles.push({ h, pion });
       if (pos === ECURIE) {
         // 4 emplacements dans l'écurie, en carré
         const [r0, c0] = col.ecurie;
@@ -412,6 +436,91 @@ function rendrePlateau() {
       plateau.appendChild(badge);
     }
   });
+
+  // Case d'arrivée de chaque coup possible ; anneau rouge si un adversaire y sera éjecté
+  const couleur = etat.players[maPlace] && etat.players[maPlace].couleur;
+  const dejaMarquees = new Set();
+  coups.forEach((c) => {
+    const rc = coordPosition(couleur, c.pos);
+    if (!rc) return;
+    const cle = rc.join(',');
+    const cible = cibles.find((x) => x.h === c.h);
+    if (dejaMarquees.has(cle)) return; // deux chevaux, même arrivée : on touche alors le cheval
+    dejaMarquees.add(cle);
+    const avant = etat.players[maPlace].chevaux[c.h];
+    const rebond = estRebond(avant, etat.de, c.pos);
+    const d = el('div', `destination ${COULEURS[couleur].cle}` + (c.prise ? ' prise' : '') + (rebond ? ' rebond' : ''), rebond ? '↩' : undefined);
+    if (rebond) d.title = 'Points en trop : le cheval va jusqu\'à l\'escalier puis recule';
+    placer(d, rc[0], rc[1]);
+    plateau.appendChild(d);
+    if (cible) cible.dest = d;
+  });
+}
+
+// Le cheval qui vient de bouger parcourt son chemin case par case (y compris le rebond)
+let dernierCoupAnime = null;
+let jetonAnimation = 0;
+const mouvementReduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function cheminDe(avant, apres, d) {
+  if (avant < 0 || apres === ECURIE) return [];
+  const chemin = [];
+  if (estRebond(avant, d, apres)) {
+    for (let k = avant + 1; k <= ENTREE; k++) chemin.push(k);
+    for (let k = ENTREE - 1; k >= apres; k--) chemin.push(k);
+  } else {
+    for (let k = avant + 1; k <= apres; k++) chemin.push(k);
+  }
+  return chemin;
+}
+
+function animerDeplacement() {
+  const b = etat.bouge;
+  const cle = `${etat.coup}`;
+  const premiere = dernierCoupAnime === null;
+  if (dernierCoupAnime === cle) return;
+  dernierCoupAnime = cle;
+  if (premiere || mouvementReduit || !b || b.de === undefined) return;
+  const p = etat.players[b.i];
+  const chemin = cheminDe(b.de, b.a, etat.de);
+  if (chemin.length < 2) return;
+  const pion = plateau.querySelector(`.pion[data-joueur="${b.i}"][data-cheval="${b.h}"]`);
+  if (!pion) return;
+  const jeton = ++jetonAnimation;
+  const depart = coordPosition(p.couleur, b.de);
+  if (depart) placer(pion, depart[0], depart[1]);
+  pion.classList.add('en-route');
+  chemin.forEach((pos, k) => {
+    setTimeout(() => {
+      if (jeton !== jetonAnimation || !pion.isConnected) return;
+      const rc = coordPosition(p.couleur, pos);
+      if (rc) placer(pion, rc[0], rc[1]);
+      if (k === chemin.length - 1) pion.classList.remove('en-route');
+    }, (k + 1) * 95);
+  });
+}
+
+// Un toucher sur le plateau choisit le cheval (ou la case d'arrivée) le plus proche du doigt
+function toucherPlateau(e) {
+  if (!cibles.length) return;
+  if (e.detail === 0) {
+    // Clavier (Entrée / Espace sur un cheval) : pas de coordonnées, on prend le cheval focalisé
+    const b = e.target.closest && e.target.closest('.pion.jouable');
+    if (b) choisirCheval(Number(b.dataset.cheval));
+    return;
+  }
+  const taille = plateau.getBoundingClientRect().width / 15;
+  let choix = null;
+  let distanceMin = Infinity;
+  cibles.forEach((c) => {
+    [c.pion, c.dest].forEach((elt) => {
+      if (!elt) return;
+      const r = elt.getBoundingClientRect();
+      const dist = Math.hypot(e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2));
+      if (dist < distanceMin) { distanceMin = dist; choix = c; }
+    });
+  });
+  if (choix && distanceMin <= taille * 1.2) choisirCheval(choix.h);
 }
 
 const POINTS = { 1: [5], 2: [3, 7], 3: [3, 5, 7], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
@@ -438,7 +547,7 @@ function rendrePanneau() {
     statut.appendChild(pastille);
     if (monTour()) {
       const nom = salon.estLocal() ? `${actif.name}, ` : '';
-      statut.append(etat.phase === 'lancer' ? `${nom}à toi de lancer le dé` : `${nom}choisis un cheval`);
+      statut.append(etat.phase === 'lancer' ? `${nom}à toi de lancer le dé` : `${nom}touche un cheval ou sa case d'arrivée`);
     } else {
       statut.append(actif.bot ? `${actif.name} joue…` : `Au tour ${de(actif.name)}`);
     }
@@ -499,6 +608,7 @@ function rendre() {
     toast(ev.texte, true);
   }
   rendrePlateau();
+  animerDeplacement();
   rendrePanneau();
 }
 

@@ -108,8 +108,35 @@
   outline-offset: 1px;
   animation: clignote 1s ease-in-out infinite;
 }
-/* Zone tactile plus grande que le pion lui-même */
-.pion.jouable::after { content: ""; position: absolute; inset: -40%; border-radius: 50%; }
+/* Case d'arrivée d'un coup possible (le toucher y choisit le cheval correspondant) */
+.destination {
+  z-index: 4;
+  pointer-events: none;
+  border-radius: 50%;
+  margin: 10%;
+  /* blanc cerclé de sombre : lisible sur les cases blanches comme sur les marches colorées */
+  border: 3px dashed #fff;
+  box-shadow: 0 0 0 2px var(--encre), inset 0 0 0 2px var(--encre);
+}
+/* Case d'arrivée d'un rebond (points en trop) : petite flèche de retour */
+.destination.rebond {
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: clamp(.6rem, 2.6vw, .95rem);
+  color: var(--encre);
+  line-height: 1;
+}
+/* Cheval en train de parcourir son chemin */
+.pion.en-route { z-index: 4; box-shadow: 0 0 0 3px #fff, 0 4px 10px rgba(0, 0, 0, .45); }
+
+.destination.prise {
+  margin: -6%;
+  border: 3px solid #D7263D;
+  box-shadow: 0 0 0 2px #fff;
+  animation: vise 0.9s ease-in-out infinite;
+}
+@keyframes vise { 50% { transform: scale(1.12); } }
 @keyframes clignote { 50% { transform: scale(1.25); } }
 
 .arrives {
@@ -187,5 +214,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pion.jouable { animation: none; }
+  .pion.jouable, .destination.prise { animation: none; }
 }

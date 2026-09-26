@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v7';
+const VERSION = 'jeux-vol-v8';
 
 const FICHIERS = [
   './', 'index.html', 'firebase.js',
