@@ -21,9 +21,9 @@
       
       <!-- Menu de salon en ligne avec sélecteur du nombre de joueurs et pseudo -->
       <div class="game-settings" id="lobby-controls">
-        <input type="text" id="player-name-input" placeholder="Ton pseudo" style="padding: 6px; border-radius: 6px; border: none; font-weight: bold; width: 120px; text-align: center;">
+        <input type="text" id="player-name-input" placeholder="Ton pseudo">
         
-        <select id="select-max-players" style="padding: 6px; border-radius: 6px; font-weight: bold; background: #ecf0f1; border: none;">
+        <select id="select-max-players">
           <option value="2">2 Joueurs</option>
           <option value="3">3 Joueurs</option>
           <option value="4">4 Joueurs</option>
@@ -31,14 +31,14 @@
           <option value="6">6 Joueurs</option>
         </select>
         <button id="btn-create-room" class="btn btn-start">Créer un salon</button>
-        <div id="join-section" style="display: flex; gap: 8px;">
-          <input type="text" id="room-code-input" placeholder="Code salon" style="text-transform: uppercase; width: 90px; padding: 6px; border-radius: 6px; border: none;">
-          <button id="btn-join-room" class="btn btn-secondary" style="background-color: #3498db; color: white;">Rejoindre</button>
+        <div id="join-section">
+          <input type="text" id="room-code-input" placeholder="Code salon">
+          <button id="btn-join-room" class="btn btn-secondary">Rejoindre</button>
         </div>
         <button id="btn-local" class="btn btn-local">Sur ce téléphone</button>
         <button id="btn-reprendre-local" class="btn btn-local" hidden>Reprendre (ce téléphone)</button>
       </div>
-      <div id="room-info" class="hidden" style="color: #f1c40f; font-weight: bold;">
+      <div id="room-info" class="hidden">
         Salon : <span id="display-room-code"></span>
       </div>
     </header>
@@ -103,8 +103,6 @@
   </div>
 
   <script src="script.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('../sw.js').catch(() => {});
-  </script>
+  <script src="../commun/service-worker.js"></script>
 </body>
 </html>

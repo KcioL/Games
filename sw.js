@@ -1,10 +1,10 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v9';
+const VERSION = 'jeux-vol-v10';
 
 const FICHIERS = [
-  './', 'index.html', 'firebase.js',
-  'commun/commun.css', 'commun/salon.js', 'commun/local-db.js', 'commun/relais.js', 'commun/relais.css', 'commun/perso.js', 'commun/cartes.js', 'commun/cartes.css',
+  './', 'index.html', 'menu.css', 'menu.js', 'firebase.js',
+  'commun/commun.css', 'commun/salon.js', 'commun/local-db.js', 'commun/relais.js', 'commun/relais.css', 'commun/perso.js', 'commun/cartes.js', 'commun/cartes.css', 'commun/service-worker.js',
   'uno/', 'uno/index.html', 'uno/script.js', 'uno/style.css', 'uno/uno-logo.png', 'uno/local.js',
   'bataille/', 'bataille/index.html', 'bataille/bataille.js', 'bataille/bataille.css',
   'skyjo/', 'skyjo/index.html', 'skyjo/skyjo.js', 'skyjo/skyjo.css',

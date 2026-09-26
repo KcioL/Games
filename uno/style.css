@@ -827,6 +827,44 @@ body {
 #local-overlay .overlay-card { margin-bottom: 16px; }
 
 /* ========================================================= */
+/* --- STYLES DE L'ACCUEIL (anciennement dans index.html) --- */
+/* ========================================================= */
+#player-name-input {
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+  font-weight: bold;
+  width: 120px;
+  text-align: center;
+}
+#select-max-players {
+  padding: 6px;
+  border-radius: 6px;
+  font-weight: bold;
+  background: #ecf0f1;
+  border: none;
+}
+#join-section {
+  display: flex;
+  gap: 8px;
+}
+#room-code-input {
+  text-transform: uppercase;
+  width: 90px;
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+}
+#btn-join-room {
+  background-color: #3498db;
+  color: white;
+}
+#room-info {
+  color: #f1c40f;
+  font-weight: bold;
+}
+
+/* ========================================================= */
 /* --- AJUSTEMENTS TÉLÉPHONE (tous formats d'écran) ---      */
 /* ========================================================= */
 
