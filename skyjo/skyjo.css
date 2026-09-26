@@ -149,3 +149,31 @@
   .grille-cartes.grande .carte { font-size: 1.6rem; }
   .pile { width: 58px; }
 }
+
+/* Téléphone à l'horizontale : adversaires et pioche à gauche, mon jeu à droite */
+@media (orientation: landscape) and (max-height: 560px) {
+  #jeu {
+    max-width: none;
+    padding: 8px 16px 16px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "adv mon" "centre mon" "statut mon" "bilan mon";
+    align-items: start;
+    align-content: start;
+    column-gap: 20px;
+    row-gap: 6px;
+  }
+  .adversaires { grid-area: adv; justify-content: safe center; }
+  .centre { grid-area: centre; padding: 0; }
+  .statut { grid-area: statut; padding: 4px 8px; min-height: 0; }
+  .btn-bilan { grid-area: bilan; }
+  .mon-jeu { grid-area: mon; width: min(420px, calc(100vh - 110px)); width: min(420px, calc(100svh - 110px)); padding: 8px; }
+  .mon-entete { margin-bottom: 4px; }
+  .grille-cartes.grande { gap: 6px; }
+  .grille-cartes.grande .carte { font-size: 1.4rem; }
+  .adversaire { width: 130px; padding: 6px; }
+  .pile { width: 50px; }
+  .pile .carte { font-size: 1.3rem; }
+  .main-tenue { width: 64px; }
+  .main-tenue #carte-tenue { width: 56px; }
+  .main-tenue .carte { font-size: 1.4rem; }
+}

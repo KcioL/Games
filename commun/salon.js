@@ -3,6 +3,7 @@
 // et pour le mode un seul téléphone : quiDoitJouer(etat) et secret (faut-il cacher le jeu entre deux tours).
 import { localDb } from './local-db.js';
 import { creerRelais, de } from './relais.js';
+import { EXEMPLE_PSEUDO } from './perso.js';
 
 export { de };
 
@@ -118,6 +119,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   }
   if (ui.localNb) ui.localNb.addEventListener('change', construireNoms);
 
+  ui.pseudo.placeholder = `Ex : ${EXEMPLE_PSEUDO}`;
   try { ui.pseudo.value = localStorage.getItem(clePseudo) || ''; } catch (e) { /* stockage indisponible */ }
 
   function lirePseudo() {
@@ -132,6 +134,8 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     ui.jeuZone.hidden = ecran !== 'jeu';
     ui.infoSalon.hidden = ecran === 'lobby';
     ui.quitter.hidden = ecran === 'lobby';
+    const barre = document.querySelector('.barre');
+    if (barre) barre.classList.toggle('en-salon', ecran !== 'lobby');
   }
 
   // Session mémorisée : permet de revenir dans la partie après un rechargement de la page

@@ -25,7 +25,12 @@ body {
 
 button, input, select { font: inherit; color: inherit; }
 
-button { cursor: pointer; }
+/* 16 px minimum : en dessous, l'iPhone zoome tout seul quand on touche un champ */
+input, select { font-size: max(16px, 1em); max-width: 100%; }
+
+button { cursor: pointer; touch-action: manipulation; }
+
+html { -webkit-tap-highlight-color: transparent; }
 
 :focus-visible { outline: 3px solid #F2C230; outline-offset: 2px; }
 
@@ -63,11 +68,17 @@ button { cursor: pointer; }
 .info-salon { color: var(--brume); font-size: 0.9rem; }
 .info-salon strong { color: var(--papier); letter-spacing: 0.12em; font-size: 1.05rem; }
 
+/* Petit écran : pendant une partie, l'en-tête passe sur deux lignes
+   (jeu + règles en haut, salon + quitter en dessous) pour ne rien couper */
 @media (max-width: 480px) {
-  .barre { gap: 4px; padding: 8px 6px; }
-  .barre h1 { font-size: 1rem; }
-  .barre .retour, .barre .btn-discret { padding: 6px 7px; font-size: .9rem; }
-  .info-salon .etiquette { display: none; }
+  .barre { flex-wrap: wrap; gap: 0 4px; padding: 6px 8px; }
+  .barre h1 { font-size: 1.05rem; order: 2; }
+  .barre .retour { order: 1; }
+  .barre #btn-regles { order: 3; }
+  .barre.en-salon::after { content: ""; order: 4; flex-basis: 100%; height: 0; }
+  .barre .info-salon { order: 5; padding-left: 10px; }
+  .barre #btn-quitter { order: 6; margin-left: auto; }
+  .barre .retour, .barre .btn-discret { padding: 6px 8px; font-size: .9rem; }
 }
 
 /* ---------- Boutons ---------- */
@@ -90,8 +101,8 @@ button { cursor: pointer; }
 /* ---------- Salon : accueil et attente ---------- */
 .ecran {
   max-width: 440px;
-  margin: 32px auto;
-  padding: 0 16px;
+  margin: 24px auto;
+  padding: 0 max(12px, env(safe-area-inset-left)) 32px max(12px, env(safe-area-inset-right));
 }
 .carte-salon {
   background: var(--papier);
@@ -99,8 +110,11 @@ button { cursor: pointer; }
   border-radius: 16px;
   padding: 22px;
   display: grid;
+  /* la colonne suit toujours la largeur de la carte, quel que soit le contenu */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
+.carte-salon > *, .volet > * { min-width: 0; }
 .carte-salon h2 { font-size: 1.3rem; font-weight: 900; }
 .carte-salon p { color: #4A5270; }
 .carte-salon label { font-weight: 700; font-size: .9rem; display: grid; gap: 4px; }
@@ -121,12 +135,15 @@ button { cursor: pointer; }
 }
 .separateur::before, .separateur::after { content: ""; flex: 1; border-top: 2px dashed #D9D3C2; }
 .ligne { display: flex; gap: 8px; }
-.ligne input { flex: 1; min-width: 0; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; }
+.ligne input { flex: 1 1 0; width: 0; min-width: 0; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; }
+.ligne .btn { flex: none; }
+.carte-salon label input, .carte-salon label select { width: 100%; }
 
 .code-grand {
-  font-size: 3rem;
+  font-size: clamp(2.2rem, 13vw, 3rem);
   font-weight: 900;
   letter-spacing: .25em;
+  padding-left: .25em; /* compense l'espacement après la dernière lettre */
   text-align: center;
   padding: 8px 0 4px;
   border-top: 2px dashed #D9D3C2;
@@ -161,7 +178,7 @@ button { cursor: pointer; }
   color: #6B6650;
 }
 .onglets button[aria-selected="true"] { background: #fff; color: var(--encre); box-shadow: 0 1px 3px rgba(26, 34, 56, .15); }
-.volet { display: grid; gap: 14px; }
+.volet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .local-noms { display: grid; gap: 8px; }
 .info-salon.local { display: none; }
 
@@ -179,7 +196,7 @@ button { cursor: pointer; }
 .toast {
   position: fixed;
   left: 50%;
-  top: 64px;
+  top: 84px;
   transform: translate(-50%, -150%);
   opacity: 0;
   background: var(--papier);

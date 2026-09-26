@@ -139,3 +139,32 @@
   .plateau.moi { width: min(260px, 100%); }
   .grille { font-size: .62rem; gap: 1.5px; }
 }
+
+/* Téléphone à l'horizontale : les grilles se calent sur la hauteur de l'écran */
+@media (orientation: landscape) and (max-height: 560px) {
+  .statut { padding: 6px 12px; min-height: 0; }
+  .plateaux { flex-wrap: nowrap; gap: 20px; }
+  .plateau h2 { margin-bottom: 4px; font-size: .9rem; }
+  .plateau.adverse { width: min(440px, calc(100vh - 150px)); width: min(440px, calc(100svh - 150px)); }
+  .plateau.moi { width: min(300px, calc(100vh - 190px)); width: min(300px, calc(100svh - 190px)); }
+  .plateaux.en-placement .plateau.moi { width: min(440px, calc(100vh - 130px)); width: min(440px, calc(100svh - 130px)); }
+  .etat-flotte { margin-top: 6px; font-size: .75rem; }
+
+  /* Placement : outils à gauche, grille à droite */
+  #jeu.placement {
+    display: grid;
+    grid-template-columns: minmax(0, 340px) auto;
+    grid-template-areas: "statut statut" "outils plateaux";
+    justify-content: center;
+    align-items: start;
+    column-gap: 20px;
+  }
+  #jeu.placement .statut { grid-area: statut; }
+  #jeu.placement .outils-placement { grid-area: outils; margin: 0; padding: 0; }
+  #jeu.placement .plateaux { grid-area: plateaux; padding: 0; }
+  .outils-placement { gap: 8px; }
+  .dock { gap: 6px; }
+  .piece { padding: 5px 8px; }
+  .outils-placement .boutons .btn { padding: 8px 12px; }
+  .outils-placement .boutons .btn-principal { margin-left: 0; }
+}

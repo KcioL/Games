@@ -796,6 +796,7 @@ body {
   background: rgba(255,255,255,0.08);
 }
 .uno-retour:hover { background: rgba(255,255,255,0.18); }
+.uno-retour { white-space: nowrap; }
 
 /* Mode « sur ce téléphone » */
 .btn-local {
@@ -820,3 +821,73 @@ body {
   color: #333;
 }
 .local-actions { display: flex; justify-content: flex-end; gap: 8px; }
+/* Fenêtres par-dessus le jeu : défilables si l'écran est trop bas (téléphone à l'horizontale) */
+.overlay { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#local-overlay { padding: max(16px, 6vh) 0 16px; }
+#local-overlay .overlay-card { margin-bottom: 16px; }
+
+/* ========================================================= */
+/* --- AJUSTEMENTS TÉLÉPHONE (tous formats d'écran) ---      */
+/* ========================================================= */
+
+/* 16 px minimum : en dessous, l'iPhone zoome tout seul quand on touche un champ */
+input, select { font-size: 16px !important; }
+button { touch-action: manipulation; }
+
+/* L'indicateur de tour passe à la ligne au lieu de dépasser de l'écran */
+.turn-indicator {
+  white-space: normal;
+  width: max-content;
+  max-width: calc(100% - 24px);
+}
+
+@media (max-width: 768px) {
+  /* En-tête : titre en haut, commandes du salon en dessous, sur toute la largeur */
+  .game-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+  .game-header h1 { flex: 1; text-align: center; margin: 0; }
+  .uno-retour { order: 0; }
+  #room-info { flex-basis: 100%; text-align: center; font-size: 15px; }
+  #lobby-controls {
+    flex-basis: 100%;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 8px;
+  }
+  #lobby-controls > input,
+  #lobby-controls > select,
+  #lobby-controls > button {
+    width: 100% !important;
+    padding: 10px !important;
+  }
+  #join-section { display: flex; gap: 8px; width: 100%; }
+  #join-section input { flex: 1 1 0; width: 0 !important; min-width: 0; padding: 10px !important; }
+  #join-section button { flex: none; padding: 10px 14px; }
+  .turn-indicator { font-size: 15px; padding: 8px 12px; top: 25%; }
+  /* Pioche à la même taille que les cartes */
+  .draw-pile { width: 50px; height: 75px; border-width: 3px; border-radius: 6px; }
+}
+
+/* Téléphone à l'horizontale : tout est plus compact pour tenir en hauteur */
+@media (orientation: landscape) and (max-height: 560px) {
+  .game-container { gap: 6px; padding: 4px 8px; }
+  .game-header { padding: 6px 12px; flex-wrap: nowrap; }
+  .game-header h1 { font-size: 20px; }
+  #lobby-controls { flex-direction: row !important; flex-wrap: wrap; justify-content: flex-end; flex-basis: auto; }
+  #lobby-controls > input, #lobby-controls > select, #lobby-controls > button { width: auto !important; padding: 6px 10px !important; }
+  #join-section { width: auto; }
+  #join-section input { width: 90px !important; flex: none; }
+  #room-info { flex-basis: auto; }
+  .uno-table { min-height: calc(100vh - 70px) !important; border-width: 5px; border-radius: 18px; }
+  .turn-indicator { top: 6%; font-size: 14px; padding: 6px 10px; }
+  .card { width: 44px; height: 66px; font-size: 18px; }
+  .center-table { transform: translate(-50%, -60%) scale(0.75) !important; }
+  .active-player-zone h2 { display: none; } /* pas la place : la main suffit */
+  .draw-pile { width: 44px; height: 66px; }
+  .hand-container { padding: 4px 10px; }
+  .opponent-zone { transform: scale(0.45); }
+  .pos-top { top: -2%; }
+}

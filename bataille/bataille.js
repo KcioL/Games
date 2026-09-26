@@ -70,7 +70,7 @@ const salon = initSalon({
   },
   afficher: (s, place) => {
     if (place !== maPlace) {
-      // Mode un seul téléphone : changement de joueuse, on oublie le placement en cours de l'autre
+      // Mode un seul téléphone : changement de joueur, on oublie le placement en cours de l'autre
       placement = [];
       bateauChoisi = 0;
       horizontal = true;
@@ -323,6 +323,7 @@ function rendre() {
 
   const enPlacement = etat.status === 'placement' && !moi.ready;
   $('outils-placement').hidden = !enPlacement;
+  $('jeu').classList.toggle('placement', enPlacement);
   $('bloc-adverse').hidden = etat.status === 'placement';
   $('plateaux').classList.toggle('en-placement', etat.status === 'placement');
 
@@ -331,7 +332,7 @@ function rendre() {
       statut.innerHTML = '';
       statut.append('Place tes 5 bateaux');
       let aide = 'Ton adversaire place les siens en même temps.';
-      if (adv.ready) aide = `${adv.name} est déjà prête. À toi !`;
+      if (adv.ready) aide = `${adv.name} a déjà placé sa flotte. À toi !`;
       else if (salon.estLocal()) aide = `Ensuite, tu passeras le téléphone à ${adv.name}.`;
       statut.appendChild(el('span', 'sous-statut', aide));
     } else {
@@ -360,11 +361,11 @@ function rendre() {
   const fin = $('fin');
   if (etat.status === 'finished') {
     const gagne = etat.winner === maPlace;
-    const gagnante = etat.players[etat.winner];
-    const perdante = etat.players[1 - etat.winner];
+    const gagnant = etat.players[etat.winner];
+    const perdant = etat.players[1 - etat.winner];
     if (salon.estLocal()) {
-      $('fin-titre').textContent = `Victoire ${de(gagnante.name)} !`;
-      $('fin-texte').textContent = `${gagnante.name} a coulé toute la flotte ${de(perdante.name)}.`;
+      $('fin-titre').textContent = `Victoire ${de(gagnant.name)} !`;
+      $('fin-texte').textContent = `${gagnant.name} a coulé toute la flotte ${de(perdant.name)}.`;
     } else {
       $('fin-titre').textContent = gagne ? 'Victoire !' : 'Défaite…';
       $('fin-texte').textContent = gagne
