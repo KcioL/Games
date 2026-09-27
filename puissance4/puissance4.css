@@ -1,0 +1,121 @@
+/* Puissance 4 */
+:root {
+  --p4-cadre: #2451A6;
+  --p4-cadre-sombre: #1A3C7E;
+  --p4-rouge: #D7263D;
+  --p4-jaune: #F2C230;
+}
+
+#jeu {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 10px 10px 24px;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+}
+
+/* ---------- Scores ---------- */
+.scores { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(480px, 100%); }
+.score-joueur {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--nuit-2);
+  border: 2px solid transparent;
+}
+.score-joueur.actif.rouge { border-color: var(--p4-rouge); }
+.score-joueur.actif.jaune { border-color: var(--p4-jaune); }
+.score-joueur .nom { font-weight: 700; min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.score-joueur .victoires { font-size: 1.3rem; font-weight: 900; }
+.pastille-jeton { width: 18px; height: 18px; border-radius: 50%; }
+.pastille-jeton.rouge { background: var(--p4-rouge); }
+.pastille-jeton.jaune { background: var(--p4-jaune); }
+
+.statut.rouge { color: #FF8A98; }
+.statut.jaune { color: var(--p4-jaune); }
+
+/* ---------- Grille ---------- */
+.zone-grille { width: 100%; display: flex; justify-content: center; }
+.grille-p4 {
+  /* Aussi grande que possible sans dépasser la largeur ni la hauteur de l'écran (7 × 6) */
+  width: min(100%, 480px, calc((100vh - 250px) * 7 / 6));
+  width: min(100%, 480px, calc((100svh - 250px) * 7 / 6));
+  min-width: 260px;
+  aspect-ratio: 7 / 6;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  gap: 4%;
+  gap: clamp(3px, 1.2vw, 7px);
+  padding: clamp(6px, 2vw, 12px);
+  background: var(--p4-cadre);
+  border-radius: 16px;
+  border-bottom: 8px solid var(--p4-cadre-sombre);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .4);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  overflow: hidden;
+}
+.trou {
+  border-radius: 50%;
+  background: var(--nuit);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, .5);
+  position: relative;
+}
+.grille-p4.a-moi .trou { cursor: pointer; }
+.trou.colonne-visee { background: #2A3558; }
+
+.jeton {
+  position: absolute;
+  inset: 6%;
+  border-radius: 50%;
+}
+.jeton.rouge { background: radial-gradient(circle at 35% 30%, #F2566A, var(--p4-rouge) 60%, #A81A2D); }
+.jeton.jaune { background: radial-gradient(circle at 35% 30%, #FFE07A, var(--p4-jaune) 60%, #C99A12); }
+.jeton.rouge::after, .jeton.jaune::after {
+  content: "";
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .25);
+}
+
+/* Chute du dernier jeton : --chute = nombre de cases à descendre */
+.jeton.tombe { animation: chute calc(.12s + var(--chute) * .05s) cubic-bezier(.45, 0, 1, 1) both; }
+@keyframes chute {
+  from { transform: translateY(calc(var(--chute) * -118%)); }
+}
+
+/* Alignement gagnant */
+.trou.gagnante .jeton { animation: gagne 1s ease-in-out infinite; box-shadow: 0 0 0 3px #fff; }
+@keyframes gagne { 50% { transform: scale(.82); } }
+
+/* ---------- Fin de manche ---------- */
+.commandes { width: min(480px, 100%); display: grid; }
+.commandes .btn { padding: 13px 16px; font-size: 1rem; }
+
+/* Téléphone à l'horizontale : scores et boutons à côté de la grille */
+@media (orientation: landscape) and (max-height: 560px) {
+  #jeu {
+    max-width: none;
+    grid-template-columns: auto minmax(200px, 280px);
+    grid-template-areas: "grille scores" "grille statut" "grille fin";
+    align-items: start;
+    align-content: start;
+    column-gap: 20px;
+  }
+  .zone-grille { grid-area: grille; }
+  .scores { grid-area: scores; grid-template-columns: 1fr; }
+  .statut { grid-area: statut; }
+  #panneau-fin { grid-area: fin; }
+  .grille-p4 { width: min(480px, calc((100vh - 80px) * 7 / 6)); width: min(480px, calc((100svh - 80px) * 7 / 6)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jeton.tombe, .trou.gagnante .jeton { animation: none; }
+}

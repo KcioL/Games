@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puissance 4</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔴</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+    <link rel="stylesheet" href="puissance4.css">
+  <script type="module" src="puissance4.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Puissance 4</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Une partie à deux. Un joueur crée le salon, l'autre entre le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>À deux en se passant le téléphone, ou seul contre un bot. Pas besoin d'internet.</p>
+        <label>Adversaire
+          <select id="local-nb">
+            <option value="2">Un autre joueur</option>
+            <option value="1">Un bot</option>
+          </select>
+        </label>
+        <label id="choix-niveau" hidden>Niveau du bot
+          <select id="local-niveau">
+            <option value="facile">Facile</option>
+            <option value="moyen" selected>Moyen</option>
+            <option value="difficile">Difficile</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente de ton adversaire</h2>
+      <p>Donne-lui ce code :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="scores" id="scores"></div>
+    <p class="statut" id="statut" aria-live="polite"></p>
+
+    <div class="zone-grille">
+      <div class="grille-p4" id="grille" role="grid" aria-label="Grille du Puissance 4"></div>
+    </div>
+
+    <div class="commandes" id="panneau-fin" hidden>
+      <button class="btn btn-principal" id="btn-rejouer">Nouvelle manche</button>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Puissance 4</h2>
+    <p>Chacun son tour, on fait tomber un jeton dans une des 7 colonnes. Il descend jusqu'à la case libre la plus basse.</p>
+    <h3>Gagner</h3>
+    <ul>
+      <li>Le premier qui aligne 4 jetons de sa couleur gagne : à l'horizontale, à la verticale ou en diagonale.</li>
+      <li>Si la grille est pleine sans alignement, la manche est nulle.</li>
+    </ul>
+    <h3>Jouer</h3>
+    <ul>
+      <li>À ton tour, touche n'importe quelle case de la colonne choisie.</li>
+      <li>Les victoires sont comptées d'une manche à l'autre, et on alterne celui qui commence.</li>
+      <li>Contre un bot : « Facile » fait parfois des erreurs, « Difficile » calcule plusieurs coups à l'avance.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

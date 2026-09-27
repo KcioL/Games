@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v10';
+const VERSION = 'jeux-vol-v11';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js',
@@ -11,6 +11,7 @@ const FICHIERS = [
   'blackjack/', 'blackjack/index.html', 'blackjack/blackjack.js', 'blackjack/blackjack.css',
   'poker/', 'poker/index.html', 'poker/poker.js', 'poker/poker.css',
   'chevaux/', 'chevaux/index.html', 'chevaux/chevaux.js', 'chevaux/chevaux.css',
+  'puissance4/', 'puissance4/index.html', 'puissance4/puissance4.js', 'puissance4/puissance4.css',
 ];
 
 // Fichiers externes utiles mais pas indispensables (le mode local s'en passe)

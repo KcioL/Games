@@ -114,3 +114,12 @@ h1 {
   .champs { gap: 16px; }
   .billet h2 { font-size: 1.45rem; }
 }
+
+/* Puissance 4 : un jeton rouge et un jeton jaune sur la grille bleue */
+.puissance4 .pastille {
+  background:
+    radial-gradient(circle at 32% 50%, #D7263D 0 21%, transparent 22%),
+    radial-gradient(circle at 68% 50%, #F2C230 0 21%, transparent 22%),
+    #2451A6;
+  box-shadow: 0 0 0 2px #1A3C7E;
+}
