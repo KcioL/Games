@@ -31,10 +31,11 @@
   font-size: calc(var(--l) * .5);
 }
 .carte-jeu.dos {
+  /* motif de dos : losanges bleu nuit et anneau doré au centre */
   background:
-    radial-gradient(circle at 50% 50%, #D7263D 0 20%, transparent 21%),
-    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
-  border: 2px solid #FBF7EE;
+    radial-gradient(circle at 50% 50%, transparent 0 15%, #F2B632 16% 23%, transparent 24%),
+    repeating-linear-gradient(45deg, #22306A 0 6px, #1A2550 6px 12px);
+  border: 2px solid #F4F1E8;
 }
 .carte-jeu.petite { --l: clamp(28px, 8vw, 38px); }
 .carte-jeu.petite .coin.bas { display: none; }

@@ -1,125 +1,168 @@
-/* Menu de choix des jeux (page d'accueil) */
-body { min-height: 100vh; }
+/* Menu : choix du jeu (page d'accueil) */
 
-.ciel {
-  max-width: 620px;
+/* ---------- En-tête ---------- */
+.entete {
+  max-width: 920px;
   margin: 0 auto;
   padding: 28px 20px 8px;
+  text-align: center;
 }
-.trajet { width: 100%; height: auto; display: block; }
-.trajet .route {
-  fill: none;
-  stroke: var(--brume);
-  stroke-width: 2;
-  stroke-dasharray: 2 9;
-  stroke-linecap: round;
-}
-.trajet .soleil { fill: var(--soleil); transform-origin: 540px 70px; animation: lever 1.2s .5s cubic-bezier(.2, 1.2, .4, 1) both; }
-.trajet .avion { offset-path: path("M 30 120 Q 280 -20 520 72"); offset-rotate: auto; animation: vol 2s cubic-bezier(.5, 0, .3, 1) both; }
-@keyframes vol { from { offset-distance: 0%; } to { offset-distance: 100%; opacity: 0; } }
-@keyframes lever { from { transform: scale(0); } to { transform: scale(1); } }
+.decor { width: min(300px, 80%); height: auto; display: block; margin: 0 auto; overflow: visible; }
+
+/* Cartes en éventail : elles s'ouvrent à l'arrivée sur la page */
+.carte-deco rect { fill: var(--papier); stroke: rgba(15, 22, 51, .25); stroke-width: 1; }
+.carte-deco text { font-family: var(--police); font-weight: 700; fill: var(--encre); }
+.carte-deco.rouge text { fill: var(--rouge); }
+.carte-deco .valeur { font-size: 17px; }
+.carte-deco .motif { font-size: 34px; text-anchor: middle; }
+.carte-deco { transform-box: view-box; transform-origin: 160px 150px; animation: ouvrir .7s cubic-bezier(.2, 1.1, .4, 1) .15s both; }
+.c1 { --angle: -26deg; }
+.c2 { --angle: 0deg; }
+.c3 { --angle: 26deg; }
+.carte-deco { transform: rotate(var(--angle)); }
+@keyframes ouvrir { from { transform: rotate(0deg); } to { transform: rotate(var(--angle)); } }
+
+/* Dé et pion, posés de part et d'autre */
+.de-deco { transform: translate(262px, 110px) rotate(14deg); animation: rouler .8s cubic-bezier(.2, 1.2, .4, 1) .35s both; }
+.de-deco rect { fill: var(--papier); }
+.de-deco circle { fill: var(--encre); }
+.pion-deco { transform: translate(58px, 124px); animation: poser .6s cubic-bezier(.2, 1.3, .4, 1) .45s both; }
+.pion-deco * { fill: var(--or); }
+@keyframes rouler { from { transform: translate(330px, 60px) rotate(-200deg); opacity: 0; } }
+@keyframes poser { from { transform: translate(58px, 84px); opacity: 0; } }
 
 h1 {
-  font-size: clamp(2.2rem, 8vw, 3.4rem);
-  font-weight: 900;
-  line-height: 1.05;
-  margin-top: 4px;
+  font-size: clamp(2.6rem, 10vw, 3.6rem);
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 6px;
+  color: var(--papier);
+  letter-spacing: .02em;
 }
-.intro { color: var(--brume); margin-top: 10px; max-width: 34em; }
+.intro { color: var(--brume); margin: 10px auto 0; max-width: 34em; }
 
-.billets {
-  list-style: none;
-  max-width: 620px;
-  margin: 24px auto 40px;
-  padding: 0 20px;
-  display: grid;
-  gap: 16px;
+/* ---------- Rayons de jeux ---------- */
+.rayons { max-width: 1000px; margin: 0 auto; padding: 8px 16px 40px; display: grid; gap: 26px; }
+.rayon h2, .modes h2 {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--or);
+  letter-spacing: .04em;
+  margin: 0 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
-.billet {
+.rayon h2::after, .modes h2::after { content: ""; flex: 1; height: 1px; background: var(--lisere); }
+
+.jeux { list-style: none; display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+/* Tuile d'un jeu : toute la tuile est cliquable.
+   Téléphone : une ligne (pastille, texte, « Jouer ») ; écran large : tuile verticale, comme une carte. */
+.jeu {
+  height: 100%;
   display: grid;
-  grid-template-columns: 1fr auto;
-  background: var(--papier);
-  color: var(--encre);
-  border-radius: 14px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "pastille texte jouer";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--nuit-2);
+  border: 1px solid rgba(255, 255, 255, .06);
+  color: var(--papier);
   text-decoration: none;
-  position: relative;
-  transition: transform .15s;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
 }
-.billet:hover { transform: translateY(-3px); }
-.billet:focus-visible { outline-offset: 4px; }
+.jeu:hover { transform: translateY(-3px); border-color: var(--lisere); box-shadow: 0 10px 30px rgba(79, 141, 224, .18); }
+.jeu:active { transform: translateY(-1px); }
+.jeu:focus-visible { outline-offset: 3px; }
+.texte { grid-area: texte; display: grid; gap: 4px; }
+.nom { font-size: 1.3rem; font-weight: 700; line-height: 1.15; }
+.desc { color: var(--brume); font-size: .92rem; line-height: 1.35; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag {
+  font-size: .75rem;
+  font-weight: 600;
+  color: #C9D1EA;
+  background: var(--nuit);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.jouer {
+  grid-area: jouer;
+  justify-self: end;
+  font-weight: 700;
+  color: var(--encre);
+  background: var(--or);
+  border-radius: 10px;
+  padding: 7px 16px;
+  transition: background .15s;
+}
+.jeu:hover .jouer { background: var(--or-clair); }
 
-.billet .corps { padding: 18px 20px; display: grid; gap: 12px; }
-.billet h2 { font-size: 1.7rem; font-weight: 900; line-height: 1; }
-.billet .desc { color: #4A5270; font-size: .95rem; }
-.champs { display: flex; gap: 22px; }
-.champ { display: grid; }
-.champ small { font-size: .75rem; color: #8A8570; }
-.champ strong { font-size: 1rem; }
-
-/* Talon détachable */
-.billet .talon {
-  width: 104px;
-  border-left: 2px dashed #CFC8B4;
+/* ---------- Pastilles des jeux ---------- */
+.pastille {
+  grid-area: pastille;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
-  align-content: center;
-  gap: 8px;
-  padding: 12px;
-  position: relative;
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 3px var(--nuit-2), 0 0 0 5px var(--nuit-3);
 }
-.billet .talon::before, .billet .talon::after {
-  content: "";
-  position: absolute;
-  left: -11px;
-  width: 20px; height: 20px;
-  border-radius: 50%;
-  background: var(--nuit);
-}
-.billet .talon::before { top: -10px; }
-.billet .talon::after { bottom: -10px; }
-.pastille { width: 34px; height: 34px; border-radius: 50%; }
-.talon span { font-weight: 900; font-size: 1.05rem; }
-
 .uno .pastille { background: conic-gradient(#E0453A 0 25%, #F2C230 0 50%, #4FAE5A 0 75%, #3F6FD8 0); }
-.bataille .pastille { background: radial-gradient(circle, #fff 0 22%, #1E4A7A 23% 60%, #2F6BAA 61%); }
+.bataille .pastille { background: radial-gradient(circle, #fff 0 20%, #1E4A7A 21% 58%, #2F6BAA 59%); }
 .skyjo .pastille { background: linear-gradient(135deg, #3C3F9E 0 20%, #56B4E6 0 40%, #4FAE5A 0 60%, #F2C230 0 80%, #E0453A 0); }
-.blackjack .pastille, .poker .pastille { display: grid; place-items: center; font-size: 1.2rem; font-weight: 900; }
-.blackjack .pastille { background: #1B5646; color: #FBF7EE; border: 3px solid #FBF7EE; box-shadow: 0 0 0 2px #1B5646; }
-.poker .pastille { background: #D7263D; color: #fff; border: 4px dashed #fff; box-shadow: 0 0 0 2px #D7263D; }
-/* Tête de cheval blanche sur fond nuit, entourée des 4 couleurs du plateau */
+.blackjack .pastille { background: #1B5646; color: var(--papier); }
+.poker .pastille { background: #D7263D; color: #fff; outline: 3px dashed rgba(255, 255, 255, .85); outline-offset: -8px; }
 .chevaux .pastille {
-  display: grid; place-items: center;
-  background: radial-gradient(circle, #1A2238 0 64%, transparent 65%), conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0);
-  box-shadow: 0 0 0 2px #1A2238;
-  color: #FBF7EE; font-size: 1.75rem; line-height: 1; padding-bottom: 2px;
+  background: radial-gradient(circle, var(--nuit) 0 62%, transparent 63%), conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0);
+  color: var(--papier);
+  font-size: 1.75rem;
   font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", "Noto Sans Symbols 2", sans-serif;
 }
-
-.notes {
-  max-width: 620px;
-  margin: 0 auto 40px;
-  padding: 0 20px;
-  display: grid;
-  gap: 14px;
-  color: var(--brume);
-  font-size: .9rem;
-}
-.notes h2 { font-size: 1rem; color: var(--papier); margin-bottom: 2px; }
-.hors-ligne { display: flex; align-items: center; gap: 8px; color: var(--papier); font-weight: 700; }
-.hors-ligne::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--brume); flex: none; }
-.hors-ligne.pret::before { background: var(--vert); }
-
-@media (max-width: 420px) {
-  .billet .talon { width: 84px; }
-  .champs { gap: 16px; }
-  .billet h2 { font-size: 1.45rem; }
-}
-
-/* Puissance 4 : un jeton rouge et un jeton jaune sur la grille bleue */
 .puissance4 .pastille {
   background:
-    radial-gradient(circle at 32% 50%, #D7263D 0 21%, transparent 22%),
-    radial-gradient(circle at 68% 50%, #F2C230 0 21%, transparent 22%),
+    radial-gradient(circle at 32% 50%, #D7263D 0 19%, transparent 20%),
+    radial-gradient(circle at 68% 50%, #F2C230 0 19%, transparent 20%),
     #2451A6;
-  box-shadow: 0 0 0 2px #1A3C7E;
+}
+
+/* ---------- Deux façons de jouer ---------- */
+.modes-liste { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.mode { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--nuit-3); display: grid; gap: 4px; }
+.mode strong { font-weight: 600; }
+.mode p { color: var(--brume); font-size: .92rem; }
+.hors-ligne { display: flex; align-items: center; gap: 8px; color: var(--papier); font-weight: 600; margin-top: 14px; font-size: .92rem; }
+.hors-ligne::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--brume); flex: none; }
+.hors-ligne.pret::before { background: var(--vert); box-shadow: 0 0 8px var(--vert); }
+
+@media (min-width: 640px) {
+  /* Autant de colonnes que de jeux dans le rayon (4 jeux de cartes, 3 jeux de plateau) */
+  .jeux { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .jeu {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "pastille" "texte" "jouer";
+    align-items: start;
+    padding: 18px;
+  }
+  .jouer { justify-self: stretch; text-align: center; padding: 9px 16px; }
+}
+
+@media (max-width: 420px) {
+  .entete { padding-top: 18px; }
+  .jeu { padding: 12px; column-gap: 12px; }
+  .jouer { padding: 7px 12px; }
+  .pastille { width: 48px; height: 48px; font-size: 1.2rem; }
+  .chevaux .pastille { font-size: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carte-deco, .de-deco, .pion-deco { animation: none; }
 }

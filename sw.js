@@ -1,9 +1,11 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v11';
+const VERSION = 'jeux-vol-v14';
 
 const FICHIERS = [
-  './', 'index.html', 'menu.css', 'menu.js', 'firebase.js',
+  './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'manifest.webmanifest',
+  'icones/favicon.ico', 'icones/favicon-32.png', 'icones/apple-touch-icon.png',
+  'icones/icone-192.png', 'icones/icone-512.png', 'icones/icone-adaptative-512.png',
   'commun/commun.css', 'commun/salon.js', 'commun/local-db.js', 'commun/relais.js', 'commun/relais.css', 'commun/perso.js', 'commun/cartes.js', 'commun/cartes.css', 'commun/service-worker.js',
   'uno/', 'uno/index.html', 'uno/script.js', 'uno/style.css', 'uno/uno-logo.png', 'uno/local.js',
   'bataille/', 'bataille/index.html', 'bataille/bataille.js', 'bataille/bataille.css',
@@ -18,7 +20,7 @@ const FICHIERS = [
 const EXTERNES = [
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js',
-  'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap',
+  'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap',
 ];
 const HOTES_EXTERNES = ['www.gstatic.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 

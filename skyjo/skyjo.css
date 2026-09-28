@@ -33,11 +33,11 @@
 .carte.f-jaune { background: #F2C230; color: var(--encre); }
 .carte.f-rouge { background: #E0453A; color: #fff; }
 
-/* Dos : un soleil levant sur fond de nuit */
+/* Dos : losanges bleu nuit et anneau doré au centre */
 .carte.cachee {
   background:
-    radial-gradient(circle at 50% 50%, var(--soleil) 0 22%, transparent 23%),
-    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
+    radial-gradient(circle at 50% 50%, transparent 0 15%, var(--or) 16% 24%, transparent 25%),
+    repeating-linear-gradient(45deg, #22306A 0 6px, #1A2550 6px 12px);
   border-color: #4A5687;
 }
 .carte.partie { background: transparent; border: 2px dashed #3A4570; }
@@ -64,7 +64,7 @@
   border: 2px solid transparent;
 }
 .adversaire.actif { border-color: #F2C230; }
-.adversaire.fini .adv-tete strong::after { content: " a fini"; color: var(--soleil); font-weight: 700; font-size: .8rem; }
+.adversaire.fini .adv-tete strong::after { content: " a fini"; color: var(--rouge); font-weight: 700; font-size: .8rem; }
 .adv-tete { display: grid; margin-bottom: 6px; }
 .adv-tete strong { font-size: .95rem; }
 .adv-tete span { font-size: .75rem; color: var(--brume); }
@@ -97,8 +97,8 @@
   border-radius: 8px;
   border: 2px solid #4A5687;
   background:
-    radial-gradient(circle at 50% 50%, var(--soleil) 0 22%, transparent 23%),
-    repeating-linear-gradient(45deg, #2C3760 0 6px, #273158 6px 12px);
+    radial-gradient(circle at 50% 50%, transparent 0 15%, var(--or) 16% 24%, transparent 25%),
+    repeating-linear-gradient(45deg, #22306A 0 6px, #1A2550 6px 12px);
   box-shadow: 3px 3px 0 #1F2847, 6px 6px 0 #18203A;
 }
 .pioche .legende {
@@ -139,10 +139,10 @@
 
 /* ---------- Bilan de manche ---------- */
 .tableau-scores { width: 100%; border-collapse: collapse; text-align: left; }
-.tableau-scores th { font-size: .8rem; color: #6B7090; padding: 4px 6px; }
-.tableau-scores td { padding: 8px 6px; border-top: 1px solid #E4DDCB; font-weight: 700; }
+.tableau-scores th { font-size: .8rem; color: var(--brume); padding: 4px 6px; }
+.tableau-scores td { padding: 8px 6px; border-top: 1px solid var(--nuit-3); font-weight: 700; }
 .tableau-scores td:not(:first-child), .tableau-scores th:not(:first-child) { text-align: right; }
-.tableau-scores tr.moi td { color: var(--soleil); }
+.tableau-scores tr.moi td { color: var(--or); }
 
 @media (max-width: 480px) {
   .adversaire { width: 140px; }

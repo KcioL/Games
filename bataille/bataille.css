@@ -28,7 +28,7 @@
 /* Placement : la grille se cale sur la hauteur de l'écran pour que réserve et grille
    soient visibles ensemble (sans descendre sous 250 px, pour garder des cases assez grandes) */
 .plateaux.en-placement .plateau.moi { width: max(250px, min(440px, 100%, calc(100vh - 375px))); width: max(250px, min(440px, 100%, calc(100svh - 375px))); }
-.plateau.moi.attente-tir { outline: 2px solid var(--soleil); outline-offset: 6px; border-radius: 4px; }
+.plateau.moi.attente-tir { outline: 2px solid var(--rouge); outline-offset: 6px; border-radius: 4px; }
 
 /* ---------- Grille ---------- */
 .grille {
@@ -73,7 +73,7 @@
   border-radius: 50%;
   background: rgba(255, 255, 255, .75);
 }
-.case.touche { background: var(--soleil); }
+.case.touche { background: var(--rouge); }
 .case.touche::after, .case.coule::after {
   content: "";
   position: absolute;
@@ -113,7 +113,7 @@ body.en-glisse, body.en-glisse * { cursor: grabbing !important; user-select: non
   font-size: .82rem;
   color: var(--papier);
 }
-.etat-flotte li.coule { color: var(--brume); text-decoration: line-through; text-decoration-color: var(--soleil); }
+.etat-flotte li.coule { color: var(--brume); text-decoration: line-through; text-decoration-color: var(--rouge); }
 
 /* ---------- Placement ---------- */
 .outils-placement {

@@ -1,5 +1,5 @@
 /* Écrans « passe le téléphone » (mode un seul téléphone) */
-.relais-barre, .relais-voile { font-family: "Zen Maru Gothic", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.relais-barre, .relais-voile { font-family: "Fredoka", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 .relais-barre[hidden], .relais-voile[hidden] { display: none !important; }
 
 .relais-barre {
@@ -13,8 +13,9 @@
   align-items: center;
   gap: 10px 12px;
   padding: 12px 12px 12px 18px;
-  background: #FBF7EE;
-  color: #1A2238;
+  background: #1A2550;
+  color: #F4F1E8;
+  border: 1px solid rgba(242, 182, 50, .35);
   border-radius: 16px;
   box-shadow: 0 12px 36px rgba(0, 0, 0, .5);
   z-index: 4000;
@@ -27,8 +28,8 @@
   border: none;
   border-radius: 10px;
   padding: 12px 16px;
-  background: #D7263D;
-  color: #fff;
+  background: #F2B632;
+  color: #0F1633;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -39,8 +40,8 @@
 .relais-voile {
   position: fixed;
   inset: 0;
-  background: #1A2238;
-  color: #FBF7EE;
+  background: #0F1633 radial-gradient(ellipse 80% 55% at 50% 0%, #25336E 0%, rgba(15, 22, 51, 0) 70%) no-repeat;
+  color: #F4F1E8;
   display: grid;
   place-items: center;
   z-index: 5000;
@@ -48,9 +49,17 @@
   text-align: center;
 }
 .relais-carte { display: grid; justify-items: center; gap: 14px; max-width: 360px; }
-.relais-soleil { width: 84px; height: 84px; border-radius: 50%; background: #D7263D; margin-bottom: 8px; }
-.relais-carte h2 { font-size: 2rem; font-weight: 900; line-height: 1.1; margin: 0; color: #FBF7EE; text-shadow: none; }
-.relais-carte p { color: #9AA3BF; margin: 0 0 8px; }
+.relais-jeton {
+  /* un jeton de jeu : centre bleu nuit, anneau doré, liseré bleu, comme le logo */
+  width: 88px; height: 88px; border-radius: 50%; margin-bottom: 8px;
+  display: grid; place-items: center;
+  background: radial-gradient(circle, #1A2550 0 58%, #F2B632 59% 70%, #1A2550 71% 76%, #4F8DE0 77%);
+  box-shadow: 0 0 30px rgba(79, 141, 224, .35);
+  color: #F2B632; font-size: 3rem; line-height: 1;
+  font-family: "Segoe UI Symbol", "Apple Symbols", "DejaVu Sans", sans-serif;
+}
+.relais-carte h2 { font-size: 2rem; font-weight: 700; line-height: 1.1; margin: 0; color: #F4F1E8; text-shadow: none; }
+.relais-carte p { color: #A3AED0; margin: 0 0 8px; }
 .relais-carte button { padding: 14px 22px; font-size: 1.05rem; }
 
 @media (prefers-reduced-motion: reduce) { .relais-barre { animation: none; } }

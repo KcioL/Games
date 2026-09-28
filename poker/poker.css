@@ -121,7 +121,7 @@
 .rangee.trois { grid-template-columns: repeat(3, 1fr); }
 .rangee.quatre { grid-template-columns: repeat(4, 1fr); }
 .btn-danger { background: #5B2230; }
-.btn-secondaire { background: #2F3B63; }
+.btn-secondaire { background: var(--nuit-3); }
 
 .relance {
   display: grid;

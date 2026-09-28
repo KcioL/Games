@@ -22,13 +22,14 @@ export function creerRelais() {
   voile.setAttribute('aria-modal', 'true');
   const carte = document.createElement('div');
   carte.className = 'relais-carte';
-  const soleil = document.createElement('div');
-  soleil.className = 'relais-soleil';
+  const jeton = document.createElement('div');
+  jeton.className = 'relais-jeton';
+  jeton.textContent = '\u265F\uFE0E'; // pion (♟), affiché comme symbole et non comme émoji
   const titre = document.createElement('h2');
   const texte = document.createElement('p');
   const boutonVoile = document.createElement('button');
   boutonVoile.type = 'button';
-  carte.append(soleil, titre, texte, boutonVoile);
+  carte.append(jeton, titre, texte, boutonVoile);
   voile.appendChild(carte);
 
   document.body.append(barre, voile);

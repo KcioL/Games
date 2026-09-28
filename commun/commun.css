@@ -1,14 +1,19 @@
-/* Styles partagés : menu, Bataille navale, Skyjo */
+/* Styles partagés par le menu et les jeux (sauf l'UNO, qui a son propre style)
+   Palette tirée du logo : bleu nuit, anneau doré, liseré bleu vif. */
 :root {
-  --nuit: #1A2238;      /* cabine de nuit */
-  --nuit-2: #242E4C;    /* panneaux */
-  --nuit-3: #34406A;    /* bordures, survols */
-  --papier: #FBF7EE;    /* carte d'embarquement */
-  --encre: #1A2238;
-  --soleil: #D7263D;    /* rouge hinomaru */
-  --brume: #9AA3BF;     /* texte secondaire */
+  --nuit: #0F1633;      /* fond */
+  --nuit-2: #1A2550;    /* panneaux, fenêtres */
+  --nuit-3: #2A3872;    /* boutons secondaires, bordures, survols */
+  --papier: #F4F1E8;    /* texte clair */
+  --encre: #0F1633;     /* texte sur fond clair ou doré */
+  --or: #F2B632;        /* actions principales (anneau doré du logo) */
+  --or-clair: #FFD36B;
+  --bleu: #4F8DE0;      /* touche de bleu vif (anneau extérieur du logo) */
+  --rouge: #E0445A;     /* touché, perdu, alertes */
+  --brume: #A3AED0;     /* texte secondaire */
   --vert: #3FA56B;
-  --police: "Zen Maru Gothic", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --lisere: rgba(242, 182, 50, .28);
+  --police: "Fredoka", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -17,7 +22,8 @@ html { -webkit-text-size-adjust: 100%; }
 
 body {
   font-family: var(--police);
-  background: var(--nuit);
+  /* halo bleuté en haut, comme la lueur autour du logo */
+  background: var(--nuit) radial-gradient(ellipse 90% 60% at 50% -10%, #25336E 0%, rgba(15, 22, 51, 0) 70%) no-repeat;
   color: var(--papier);
   min-height: 100vh;
   line-height: 1.45;
@@ -32,7 +38,7 @@ button { cursor: pointer; touch-action: manipulation; }
 
 html { -webkit-tap-highlight-color: transparent; }
 
-:focus-visible { outline: 3px solid #F2C230; outline-offset: 2px; }
+:focus-visible { outline: 3px solid var(--or-clair); outline-offset: 2px; }
 
 [hidden] { display: none !important; }
 
@@ -98,7 +104,7 @@ html { -webkit-tap-highlight-color: transparent; }
 .btn:hover { filter: brightness(1.15); }
 .btn:active { transform: scale(0.97); }
 .btn:disabled { opacity: .45; cursor: default; filter: none; }
-.btn-principal { background: var(--soleil); color: #fff; }
+.btn-principal { background: var(--or); color: var(--encre); }
 .btn-discret { background: transparent; color: var(--brume); padding: 6px 10px; }
 .btn-discret:hover { color: var(--papier); }
 
@@ -109,9 +115,11 @@ html { -webkit-tap-highlight-color: transparent; }
   padding: 0 max(12px, env(safe-area-inset-left)) 32px max(12px, env(safe-area-inset-right));
 }
 .carte-salon {
-  background: var(--papier);
-  color: var(--encre);
-  border-radius: 16px;
+  background: var(--nuit-2);
+  color: var(--papier);
+  border: 1px solid var(--lisere);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .35);
+  border-radius: 18px;
   padding: 22px;
   display: grid;
   /* la colonne suit toujours la largeur de la carte, quel que soit le contenu */
@@ -120,24 +128,25 @@ html { -webkit-tap-highlight-color: transparent; }
 }
 .carte-salon > *, .volet > * { min-width: 0; }
 .carte-salon h2 { font-size: 1.3rem; font-weight: 900; }
-.carte-salon p { color: #4A5270; }
+.carte-salon p { color: var(--brume); }
 .carte-salon label { font-weight: 700; font-size: .9rem; display: grid; gap: 4px; }
 .carte-salon input, .carte-salon select {
-  border: 2px solid #D9D3C2;
+  border: 2px solid var(--nuit-3);
   border-radius: 10px;
   padding: 10px 12px;
-  background: #fff;
-  color: var(--encre);
+  background: var(--nuit);
+  color: var(--papier);
 }
-.carte-salon input:focus, .carte-salon select:focus { border-color: var(--encre); outline: none; }
-.carte-salon .btn { background: var(--encre); }
-.carte-salon .btn-principal { background: var(--soleil); }
-.carte-salon .btn-discret { background: transparent; color: #4A5270; }
+.carte-salon input::placeholder { color: #6E7AA3; }
+.carte-salon input:focus, .carte-salon select:focus { border-color: var(--or); outline: none; }
+.carte-salon .btn { background: var(--nuit-3); }
+.carte-salon .btn-principal { background: var(--or); }
+.carte-salon .btn-discret { background: transparent; color: var(--brume); }
 .separateur {
   display: flex; align-items: center; gap: 10px;
-  color: #8A8570; font-size: .85rem;
+  color: var(--brume); font-size: .85rem;
 }
-.separateur::before, .separateur::after { content: ""; flex: 1; border-top: 2px dashed #D9D3C2; }
+.separateur::before, .separateur::after { content: ""; flex: 1; border-top: 1px solid var(--nuit-3); }
 .ligne { display: flex; gap: 8px; }
 .ligne input { flex: 1 1 0; width: 0; min-width: 0; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; }
 .ligne .btn { flex: none; }
@@ -150,26 +159,27 @@ html { -webkit-tap-highlight-color: transparent; }
   padding-left: .25em; /* compense l'espacement après la dernière lettre */
   text-align: center;
   padding: 8px 0 4px;
-  border-top: 2px dashed #D9D3C2;
-  border-bottom: 2px dashed #D9D3C2;
+  color: var(--or);
+  border-top: 1px solid var(--nuit-3);
+  border-bottom: 1px solid var(--nuit-3);
 }
 .liste-places { list-style: none; display: grid; gap: 6px; }
 .liste-places li {
   display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px; border-radius: 8px; background: #F1EBDC;
+  padding: 8px 10px; border-radius: 8px; background: var(--nuit);
 }
 .liste-places li::before {
   content: ""; width: 12px; height: 12px; border-radius: 50%;
-  border: 2px solid #B8B19C;
+  border: 2px solid var(--nuit-3);
 }
 .liste-places li.ok::before { background: var(--vert); border-color: var(--vert); }
-.liste-places li.vide { color: #8A8570; }
+.liste-places li.vide { color: var(--brume); }
 
 /* Onglets En ligne / Sur ce téléphone */
 .onglets {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #EDE6D4;
+  background: var(--nuit);
   border-radius: 12px;
   padding: 4px;
 }
@@ -179,9 +189,9 @@ html { -webkit-tap-highlight-color: transparent; }
   border-radius: 9px;
   padding: 9px 6px;
   font-weight: 700;
-  color: #6B6650;
+  color: var(--brume);
 }
-.onglets button[aria-selected="true"] { background: #fff; color: var(--encre); box-shadow: 0 1px 3px rgba(26, 34, 56, .15); }
+.onglets button[aria-selected="true"] { background: var(--nuit-3); color: var(--papier); box-shadow: inset 0 -2px 0 var(--or); }
 .volet { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .local-noms { display: grid; gap: 8px; }
 .info-salon.local { display: none; }
@@ -193,7 +203,7 @@ html { -webkit-tap-highlight-color: transparent; }
   padding: 10px 16px;
   min-height: 2.9em;
 }
-.statut .a-toi { color: #F2C230; }
+.statut .a-toi { color: var(--or); }
 .sous-statut { display: block; font-weight: 500; color: var(--brume); font-size: .9rem; }
 
 /* ---------- Message flottant ---------- */
@@ -205,7 +215,7 @@ html { -webkit-tap-highlight-color: transparent; }
   opacity: 0;
   background: var(--papier);
   color: var(--encre);
-  font-weight: 700;
+  font-weight: 600;
   padding: 12px 20px;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,.45);
@@ -216,30 +226,32 @@ html { -webkit-tap-highlight-color: transparent; }
   pointer-events: none;
 }
 .toast.visible { transform: translate(-50%, 0); opacity: 1; }
-.toast.fort { background: var(--soleil); color: #fff; }
+.toast.fort { background: var(--rouge); color: #fff; }
 
 /* ---------- Règles (dialog) ---------- */
 dialog.regles {
   margin: auto;
   max-width: min(560px, 92vw);
   max-height: 85vh;
-  border: none;
-  border-radius: 16px;
+  border: 1px solid var(--lisere);
+  border-radius: 18px;
   padding: 24px;
-  background: var(--papier);
-  color: var(--encre);
+  background: var(--nuit-2);
+  color: var(--papier);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
 }
-dialog.regles::backdrop { background: rgba(10, 14, 30, .7); }
-dialog.regles h2 { font-size: 1.3rem; font-weight: 900; margin-bottom: 10px; }
+dialog.regles::backdrop { background: rgba(6, 10, 26, .75); }
+dialog.regles h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 10px; color: var(--or); }
 dialog.regles h3 { font-size: 1rem; margin: 14px 0 4px; }
-dialog.regles p, dialog.regles li { color: #3B4260; }
+dialog.regles p, dialog.regles li { color: #C9D1EA; }
 dialog.regles ul { padding-left: 20px; display: grid; gap: 4px; }
-dialog.regles .btn { margin-top: 18px; background: var(--encre); }
+dialog.regles li::marker { color: var(--or); }
+dialog.regles .btn { margin-top: 18px; background: var(--nuit-3); }
 
 /* ---------- Fenêtre de fin ---------- */
 .voile {
   position: fixed; inset: 0;
-  background: rgba(10, 14, 30, .78);
+  background: rgba(6, 10, 26, .8);
   display: grid; place-items: center;
   z-index: 50;
   padding: 16px;
