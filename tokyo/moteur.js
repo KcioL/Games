@@ -225,8 +225,10 @@ export function lancer(s, i, des) {
     if (double) {
       p.prison = 0;
       journal(s, `${p.name} fait un double (${d1}+${d2}) et sort du kōban.`);
+      s.lastEvent = { ts: Date.now(), texte: `${p.name} fait un double (${d1}+${d2}) et sort du kōban !` };
     } else if (p.prison >= 3) {
-      journal(s, `${p.name} rate son 3e essai : il paie ${yens(AMENDE)} et sort.`);
+      journal(s, `${p.name} rate son 3e essai (${d1}+${d2}) : il paie ${yens(AMENDE)} et sort.`);
+      s.lastEvent = { ts: Date.now(), texte: `Pas de double au 3e essai (${d1}+${d2}) : ${p.name} paie ${yens(AMENDE)} et sort du kōban.` };
       p.prison = 0;
       if (!payer(s, i, AMENDE, -1, 'amende du kōban')) {
         // il devra d'abord régler l'amende ; son déplacement suit ensuite

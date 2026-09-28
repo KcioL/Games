@@ -326,7 +326,9 @@ function rendreActions() {
   switch (etat.phase) {
     case 'lancer':
       if (moi.prison) {
-        st.textContent = `${nom}tu es au kōban (essai ${moi.prison} sur 3).`;
+        st.textContent = moi.prison >= 3
+          ? `${nom}dernier essai au kōban : sans double, tu paieras ${yens(M.AMENDE)} et tu sortiras.`
+          : `${nom}tu es au kōban (essai ${moi.prison} sur 3).`;
         bouton(zone, `Payer ${yens(M.AMENDE)}`, { type: 'amende' }, { actif: moi.argent >= M.AMENDE });
         if (moi.sortie.length) bouton(zone, 'Utiliser l\'omamori', { type: 'omamori' });
         bouton(zone, 'Tenter un double', { type: 'lancer' }, { principal: true });
@@ -398,7 +400,7 @@ function rendreJoueurs() {
     li.appendChild(pastille);
     li.appendChild(el('span', 'nom', p.name + (!salon.estLocal() && k === maPlace ? ' (toi)' : '')));
     const infos = [];
-    if (p.prison) infos.push('au kōban');
+    if (p.prison) infos.push(`au kōban, essai ${p.prison}/3`);
     if (p.faillite) infos.push('ruiné');
     if (infos.length) li.appendChild(el('span', 'etat', infos.join(', ')));
     li.appendChild(el('span', 'argent', yens(p.argent)));
