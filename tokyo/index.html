@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tokyo Tycoon</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏯</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+    <link rel="stylesheet" href="tokyo.css">
+  <script type="module" src="tokyo.js"></script>
+</head>
+<body class="tokyo">
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Tokyo Tycoon</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="entete-tokyo" aria-hidden="true"><span class="hanko">東京</span></div>
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Achète les quartiers de Tokyo, construis et ruine tes adversaires. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="nb-bots">
+            <option value="0">Aucun</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            </select>
+          </label>
+        </div>
+        <label>Fin de la partie
+          <select id="nb-fin">
+            <option value="faillite" selected>Jusqu'à la faillite</option>
+            <option value="20">20 tours, le plus riche gagne</option>
+            <option value="30">30 tours, le plus riche gagne</option>
+            <option value="45">45 tours, le plus riche gagne</option>
+          </select>
+        </label>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (6 places au total). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+            <option value="0">Aucun</option>
+            <option value="1">1</option>
+            <option value="2" selected>2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            </select>
+          </label>
+        </div>
+        <label>Fin de la partie
+          <select id="local-fin">
+            <option value="faillite" selected>Jusqu'à la faillite</option>
+            <option value="20">20 tours, le plus riche gagne</option>
+            <option value="30">30 tours, le plus riche gagne</option>
+            <option value="45">45 tours, le plus riche gagne</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="zone-plateau">
+      <div class="plateau" id="plateau">
+        <div class="centre-plateau" id="centre-plateau">
+          <div class="titre-plateau"><span class="kanji">東京</span><span>Tokyo Tycoon</span></div>
+          <div class="des" id="des"></div>
+          <div class="carte-tiree" id="carte-tiree" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panneau">
+      <p class="statut" id="statut" aria-live="polite"></p>
+      <div class="actions" id="actions"></div>
+      <section class="bloc">
+        <h2>Mes biens <span class="argent" id="mon-argent"></span></h2>
+        <div class="mes-biens" id="mes-biens"></div>
+      </section>
+      <section class="bloc">
+        <h2>Joueurs <span class="tour" id="tour"></span></h2>
+        <ul class="joueurs" id="joueurs"></ul>
+      </section>
+      <section class="bloc">
+        <h2>Journal</h2>
+        <ol class="journal" id="journal"></ol>
+      </section>
+    </aside>
+
+    <!-- Fiche d'une case -->
+    <dialog class="regles fiche" id="fiche">
+      <div id="fiche-contenu"></div>
+      <div class="fiche-actions" id="fiche-actions"></div>
+      <button class="btn fermer-fiche" id="fiche-fermer">Fermer</button>
+    </dialog>
+
+    <!-- Proposer un échange -->
+    <dialog class="regles echange" id="echange">
+      <h2>Proposer un échange</h2>
+      <label class="avec">Avec
+        <select id="echange-avec"></select>
+      </label>
+      <div class="echange-colonnes">
+        <div>
+          <h3>Je donne</h3>
+          <div class="echange-liste" id="echange-donne"></div>
+          <label>Yens <input type="number" id="echange-donne-argent" min="0" step="1000" value="0"></label>
+        </div>
+        <div>
+          <h3>Je reçois</h3>
+          <div class="echange-liste" id="echange-recoit"></div>
+          <label>Yens <input type="number" id="echange-recoit-argent" min="0" step="1000" value="0"></label>
+        </div>
+      </div>
+      <p class="echange-note">Les quartiers avec des maisons (dans leur groupe) ne peuvent pas être échangés.</p>
+      <div class="rangee-boutons">
+        <button class="btn" id="echange-annuler">Annuler</button>
+        <button class="btn btn-principal" id="echange-proposer">Proposer</button>
+      </div>
+    </dialog>
+
+    <!-- Échange reçu -->
+    <div class="voile" id="offre-recue" hidden>
+      <div class="carte-salon offre">
+        <h2 id="offre-titre"></h2>
+        <div class="echange-colonnes">
+          <div><h3>Tu reçois</h3><ul id="offre-recois"></ul></div>
+          <div><h3>Tu donnes</h3><ul id="offre-donnes"></ul></div>
+        </div>
+        <div class="rangee-boutons">
+          <button class="btn" id="offre-refuser">Refuser</button>
+          <button class="btn btn-principal" id="offre-accepter">Accepter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fin de partie -->
+    <div class="voile" id="fin" hidden>
+      <div class="carte-salon">
+        <h2 id="fin-titre"></h2>
+        <ol class="classement" id="classement"></ol>
+        <button class="btn btn-principal" id="btn-rejouer">Nouvelle partie</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Tokyo Tycoon</h2>
+    <p>Achète les quartiers de Tokyo, construis des maisons et des hôtels, et fais payer des loyers à tes adversaires. Chacun commence avec 150 000 ¥.</p>
+    <h3>À ton tour</h3>
+    <ul>
+      <li>Lance les dés et avance. En passant par le Départ, tu reçois 20 000 ¥.</li>
+      <li>Un double fait rejouer ; trois doubles de suite envoient au kōban (le poste de police).</li>
+      <li>Quartier libre : achète-le, ou il est mis aux enchères entre tous les joueurs.</li>
+      <li>Quartier d'un autre joueur : paie-lui le loyer (sauf s'il est hypothéqué).</li>
+      <li>Omikuji et Matsuri : tire une carte et suis ses instructions.</li>
+    </ul>
+    <h3>Construire</h3>
+    <ul>
+      <li>Avec tous les quartiers d'une couleur, le loyer du terrain nu double et tu peux construire (touche un quartier pour ouvrir sa fiche).</li>
+      <li>Les maisons se construisent de façon équilibrée sur le groupe. Après 4 maisons, la suivante devient un hôtel.</li>
+      <li>Revendre un bâtiment rapporte la moitié de son prix.</li>
+    </ul>
+    <h3>Argent</h3>
+    <ul>
+      <li>Hypothéquer un quartier (sans bâtiment dans son groupe) rapporte la moitié de son prix ; il ne rapporte plus de loyer. Lever l'hypothèque coûte ce montant + 10 %.</li>
+      <li>Si tu ne peux pas payer, vends ou hypothèque. Sinon, c'est la faillite : tes biens vont à ton créancier.</li>
+      <li>Transports : 2 500 ¥ pour un, doublé pour chaque transport en plus. Compagnies : 4 fois les dés (10 fois avec les deux).</li>
+    </ul>
+    <h3>Kōban</h3>
+    <ul>
+      <li>Pour sortir : payer 5 000 ¥, utiliser un omamori, ou faire un double (3 essais, puis l'amende est obligatoire).</li>
+    </ul>
+    <h3>Échanges et fin</h3>
+    <ul>
+      <li>À ton tour, propose des échanges de quartiers et de yens aux autres joueurs.</li>
+      <li>Fin : dernier joueur non ruiné, ou après le nombre de tours choisi, le plus riche (argent + biens) gagne.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

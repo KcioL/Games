@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v16';
+const VERSION = 'jeux-vol-v17';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'manifest.webmanifest',
@@ -14,6 +14,7 @@ const FICHIERS = [
   'poker/', 'poker/index.html', 'poker/poker.js', 'poker/poker.css',
   'chevaux/', 'chevaux/index.html', 'chevaux/chevaux.js', 'chevaux/chevaux.css',
   'puissance4/', 'puissance4/index.html', 'puissance4/puissance4.js', 'puissance4/puissance4.css',
+  'tokyo/', 'tokyo/index.html', 'tokyo/tokyo.js', 'tokyo/tokyo.css', 'tokyo/moteur.js', 'tokyo/plateau.js',
 ];
 
 // Fichiers externes utiles mais pas indispensables (le mode local s'en passe)
@@ -21,6 +22,7 @@ const EXTERNES = [
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js',
   'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap',
+  'https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Shippori+Mincho:wght@600;800&display=swap',
 ];
 const HOTES_EXTERNES = ['www.gstatic.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
 

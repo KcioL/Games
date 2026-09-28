@@ -133,6 +133,13 @@ h1 {
     #2451A6;
 }
 
+.tokyo .pastille {
+  background: radial-gradient(circle, #D9412B 0 44%, #F5EFE3 45%);
+  color: #fff;
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-weight: 800;
+}
+
 /* ---------- Deux façons de jouer ---------- */
 .modes-liste { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .mode { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--nuit-3); display: grid; gap: 4px; }
