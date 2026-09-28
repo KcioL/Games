@@ -341,7 +341,8 @@ function rendreActions() {
       st.textContent = `${nom}${c.nom} est à vendre.`;
       bouton(zone, `Acheter (${yens(c.prix)})`, { type: 'acheter' }, { principal: true, actif: moi.argent >= c.prix });
       bouton(zone, 'Mettre aux enchères', { type: 'encheres' });
-      if (moi.argent < c.prix) zone.appendChild(el('p', 'aide', 'Pas assez de yens : hypothèque un quartier (touche-le) ou mets aux enchères.'));
+      bouton(zone, etat.rejoue ? 'Ne pas acheter' : 'Fin du tour', { type: 'refuser' });
+      if (moi.argent < c.prix) zone.appendChild(el('p', 'aide', 'Pas assez de yens : hypothèque un quartier (touche-le), mets aux enchères ou passe.'));
       break;
     }
     case 'dette': {

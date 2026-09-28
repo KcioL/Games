@@ -297,6 +297,17 @@ export function acheter(s, i) {
   return true;
 }
 
+// Ne pas acheter, sans enchères : le quartier reste libre.
+// Après un double, le joueur doit encore relancer ; sinon son tour se termine directement.
+export function refuserAchat(s, i) {
+  if (s.active !== i || s.phase !== 'acheter') return false;
+  const c = s.players[i].pos;
+  journal(s, `${s.players[i].name} n'achète pas ${CASES[c].nom}.`);
+  if (s.rejoue && s.players[i].prison === 0) { s.phase = 'lancer'; return true; }
+  joueurSuivant(s);
+  return true;
+}
+
 export function mettreAuxEncheres(s, i) {
   if (s.active !== i || s.phase !== 'acheter') return false;
   const c = s.players[i].pos;
@@ -686,6 +697,7 @@ function executer(s, i, a) {
     case 'omamori': return utiliserOmamori(s, i);
     case 'acheter': return acheter(s, i);
     case 'encheres': return mettreAuxEncheres(s, i);
+    case 'refuser': return refuserAchat(s, i);
     case 'encherir': return encherir(s, i, a.montant);
     case 'passer': return passerEnchere(s, i);
     case 'construire': return construire(s, i, a.c);
