@@ -1,4 +1,4 @@
-// Données du plateau « Tokyo Tycoon » : 40 cases, groupes de couleur et cartes.
+// Données du plateau du Monopoly, édition Tokyo : 40 cases, groupes de couleur et cartes.
 // Montants en yens. Loyers : [terrain nu, 1 maison, 2, 3, 4 maisons, hôtel].
 
 export const GROUPES = {

@@ -1,4 +1,4 @@
-// Moteur de règles de « Tokyo Tycoon » (sans affichage).
+// Moteur de règles du Monopoly, édition Tokyo (sans affichage).
 // Toutes les fonctions modifient l'état `s` et renvoient false si l'action est interdite.
 import { CASES, GROUPES, KOBAN, TRANSPORTS, COMPAGNIES, OMIKUJI, MATSURI, casesDuGroupe } from './plateau.js';
 

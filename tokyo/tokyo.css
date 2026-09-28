@@ -1,4 +1,4 @@
-/* Tokyo Tycoon : ambiance japonaise propre à cette page
+/* Monopoly, édition Tokyo : ambiance japonaise propre à cette page
    (papier washi, vermillon des torii, indigo, vagues seigaiha) */
 body.tokyo {
   --washi: #F5EFE3;
@@ -201,10 +201,11 @@ body.tokyo {
   letter-spacing: -.05em;
   box-shadow: 0 0 0 .08em rgba(217, 65, 43, .25);
 }
-.titre-plateau span:last-child { font-size: 1.9em; font-weight: 800; letter-spacing: .08em; }
+.titre-plateau .nom-jeu { font-size: 2.2em; font-weight: 800; letter-spacing: .08em; line-height: 1; }
+.titre-plateau .edition { font-size: 1.1em; color: var(--shu); font-weight: 600; letter-spacing: .12em; margin-top: -.4em; }
 .des { display: flex; gap: 8%; justify-content: center; width: 40%; }
 .de {
-  width: 4.6em; height: 4.6em;
+  width: max(34px, 4.6em); height: max(34px, 4.6em);
   flex: none;
   background: #fff;
   border-radius: 18%;
@@ -213,7 +214,7 @@ body.tokyo {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
-  padding: 12%;
+  padding: max(4px, .55em); /* en em : un pourcentage se calculerait sur la largeur du parent et écraserait les points */
 }
 .de span { display: grid; place-items: center; min-width: 0; min-height: 0; }
 .de span.point::before { content: ""; width: 72%; aspect-ratio: 1; border-radius: 50%; background: var(--sumi); }
