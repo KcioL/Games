@@ -177,3 +177,52 @@
   .main-tenue #carte-tenue { width: 56px; }
   .main-tenue .carte { font-size: 1.4rem; }
 }
+
+/* =====================================================================
+   Ordinateur (grand écran) : tout le jeu tient sans faire défiler.
+   Le téléphone garde la disposition en colonne ci-dessus.
+   ===================================================================== */
+@media (min-width: 900px) and (min-height: 600px) {
+  #jeu { max-width: 1280px; padding: 8px 20px 16px; column-gap: 28px; row-gap: 8px; }
+  .statut { min-height: 0; padding: 4px 8px; }
+
+  /* ----- À 2 joueurs : adversaire | pioche | moi ----- */
+  #jeu.deux-joueurs {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "statut statut statut" "adv centre moi" "bilan bilan bilan";
+    align-items: center;
+  }
+  .deux-joueurs .statut { grid-area: statut; }
+  .deux-joueurs .btn-bilan { grid-area: bilan; }
+  .deux-joueurs .adversaires { grid-area: adv; justify-content: flex-end; overflow: visible; }
+  .deux-joueurs .centre { grid-area: centre; flex-direction: column; gap: 22px; }
+  .deux-joueurs .mon-jeu { grid-area: moi; justify-self: start; margin: 0; }
+
+  /* Les deux jeux ont la même taille, calée sur la hauteur de l'écran */
+  .deux-joueurs .mon-jeu,
+  .deux-joueurs .adversaire { width: min(440px, calc(100vh - 210px), calc((100vw - 220px) / 2)); width: min(440px, calc(100svh - 210px), calc((100vw - 220px) / 2)); }
+  .deux-joueurs .adversaire { padding: 10px; border-radius: 16px; }
+  .deux-joueurs .adv-tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .deux-joueurs .adv-tete strong { font-size: 1rem; }
+  .deux-joueurs .adv-tete span { font-size: .85rem; }
+  .deux-joueurs .grille-cartes.mini { gap: 8px; }
+  .deux-joueurs .grille-cartes.mini .carte { font-size: 1.9rem; border-radius: 10px; border-width: 2px; }
+
+  /* ----- À plusieurs : adversaires côte à côte en haut, puis pioche et mon jeu ----- */
+  #jeu.multi {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "adv adv" "statut moi" "centre moi" "bilan moi";
+    grid-template-rows: auto 1fr auto 1fr;
+    justify-content: center;
+  }
+  .multi .adversaires { grid-area: adv; justify-content: safe center; }
+  .multi .statut { grid-area: statut; align-self: end; }
+  .multi .centre { grid-area: centre; }
+  .multi .btn-bilan { grid-area: bilan; align-self: start; }
+  .multi .mon-jeu { grid-area: moi; margin: 0; }
+  .multi .adversaire { width: clamp(150px, 17vw, 230px); }
+  .multi .grille-cartes.mini { gap: 5px; }
+  .multi .grille-cartes.mini .carte { font-size: clamp(.9rem, 1.4vw, 1.25rem); border-radius: 6px; }
+  /* mon jeu : la place qui reste sous la rangée des adversaires */
+  .multi .mon-jeu { width: min(420px, calc(100vh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); width: min(420px, calc(100svh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); }
+}

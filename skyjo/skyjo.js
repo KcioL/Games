@@ -76,7 +76,6 @@ function finDeManche(s, messages) {
   if (scores[f] > 0 && scores[f] >= minAutres) { scores[f] *= 2; double = true; }
   s.players.forEach((p, i) => { p.total += scores[i]; });
   s.bilan = { scores, double, finisher: f };
-  s.premierProchaine = f;
   s.status = s.players.some((p) => p.total >= SCORE_FIN) ? 'finished' : 'roundEnd';
   s.held = null;
 }
@@ -114,7 +113,6 @@ const salon = initSalon({
   }),
   demarrer: (s) => {
     s.round = 1;
-    s.premierProchaine = -1;
     s.players.forEach((p) => { p.total = 0; });
     nouvelleManche(s);
   },
@@ -180,17 +178,17 @@ function cliquerCarte(i) {
       if (carte.up || g.filter((c) => c.up).length >= 2) return false;
       carte.up = true;
       if (s.players.every((p) => p.grid.filter((c) => c.up).length >= 2)) {
-        let premier;
-        if (s.round > 1 && s.premierProchaine >= 0) {
-          premier = s.premierProchaine;
-        } else {
-          premier = 0;
-          s.players.forEach((p, k) => { if (sommeVisible(p.grid) > sommeVisible(s.players[premier].grid)) premier = k; });
-        }
+        // À chaque manche, le plus gros total des 2 cartes retournées commence.
+        // Égalité (non prévue par la règle) : tirage au sort entre les ex-aequo.
+        const totaux = s.players.map((p) => sommeVisible(p.grid));
+        const max = Math.max(...totaux);
+        const exAequo = totaux.map((t, k) => (t === max ? k : -1)).filter((k) => k >= 0);
+        const premier = exAequo[Math.floor(Math.random() * exAequo.length)];
         s.active = premier;
         s.status = 'playing';
         s.action = '';
-        s.lastEvent = { ts: Date.now(), textes: [`${s.players[premier].name} commence !`] };
+        const pourquoi = exAequo.length > 1 ? `égalité à ${max}, tirage au sort` : `plus gros total : ${max}`;
+        s.lastEvent = { ts: Date.now(), textes: [`${s.players[premier].name} commence (${pourquoi}) !`] };
       }
       return;
     }
@@ -224,8 +222,7 @@ function suite() {
       nouvelleManche(s);
     } else if (s.status === 'finished') {
       s.round = 1;
-      s.premierProchaine = -1;
-      s.players.forEach((p) => { p.total = 0; });
+        s.players.forEach((p) => { p.total = 0; });
       nouvelleManche(s);
     } else {
       return false;
@@ -427,6 +424,9 @@ function rendreBilan() {
 
 function rendre() {
   if (!etat) return;
+  // Disposition sur ordinateur : à 2, les deux jeux côte à côte ; à plusieurs, les adversaires en haut
+  $('jeu').classList.toggle('deux-joueurs', etat.players.length === 2);
+  $('jeu').classList.toggle('multi', etat.players.length > 2);
 
   if (statutPrecedent !== etat.status) {
     if (etat.status === 'roundEnd' || etat.status === 'finished') bilanMasque = false;
