@@ -142,6 +142,7 @@ function rendrePlateau() {
     const bat = e.querySelector('.batiments');
     if (bat) bat.textContent = etatCase.b === 5 ? '🏨' : '■'.repeat(etatCase.b);
   });
+  marquerEchange();
   placerPions();
 
   // Dés
@@ -157,9 +158,19 @@ function rendrePlateau() {
     zone.innerHTML = '';
     zone.appendChild(el('strong', '', etat.carte.type === 'omikuji' ? 'おみくじ Omikuji' : '祭 Matsuri'));
     zone.appendChild(el('span', '', etat.carte.texte));
-    if (derniereCarte !== etat.carte.ts && !premiereSynchro) toast(etat.carte.texte);
     derniereCarte = etat.carte.ts;
   } else zone.hidden = true;
+}
+
+// Échange en cours : quartiers entourés (vert = je reçois, rouge = je donne, doré pour les autres joueurs)
+function marquerEchange() {
+  casesEls.forEach((e) => e.classList.remove('echange-recois', 'echange-donne', 'echange-neutre'));
+  const o = etat.offre;
+  if (!o) return;
+  const classe = (versMoi) => (o.a !== maPlace && o.de !== maPlace ? 'echange-neutre' : (versMoi ? 'echange-recois' : 'echange-donne'));
+  // o.donne va du proposeur vers la cible ; o.recoit de la cible vers le proposeur
+  o.donne.forEach((c) => casesEls[c].classList.add(classe(o.a === maPlace)));
+  o.recoit.forEach((c) => casesEls[c].classList.add(classe(o.de === maPlace)));
 }
 
 // Pions : position animée pendant un trajet, sinon position réelle
@@ -177,7 +188,11 @@ function placerPions() {
   });
 }
 
-// Rejoue les déplacements du dernier coup, case par case (reculs compris ; le kōban est un saut direct)
+// Rejoue le dernier coup dans l'ordre : trajet des dés, carte tirée (en grand), puis trajet imposé par la carte.
+// Les reculs sont animés ; l'envoi au kōban est un saut direct.
+const DUREE_CARTE = 6000;
+const attendre = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
 function animerDeplacements() {
   const id = etat.mvtId || 0;
   if (dernierMvt === null) { dernierMvt = id; return; } // à l'ouverture de la page : pas d'animation
@@ -186,6 +201,7 @@ function animerDeplacements() {
   const mvts = etat.mouvements || [];
   const etapes = [];
   mvts.forEach((m) => {
+    if (m.carte) { etapes.push({ carte: m }); return; }
     if (m.sens === 0) { etapes.push({ i: m.i, pos: m.a }); return; }
     let pos = m.de;
     for (let garde = 0; pos !== m.a && garde < 45; garde++) {
@@ -195,24 +211,62 @@ function animerDeplacements() {
   });
   jetonAnimation += 1;
   positionsAnimees.clear();
-  if (!etapes.length || mouvementReduit) { enAnimation = false; return; }
-  const jeton = jetonAnimation;
-  const pas = Math.max(45, Math.min(130, 2200 / etapes.length)); // les longs trajets vont plus vite
-  mvts.forEach((m) => { if (!positionsAnimees.has(m.i)) positionsAnimees.set(m.i, m.de); });
+  fermerGrandeCarte();
+  if (!etapes.length) { enAnimation = false; return; }
+  const nbPas = etapes.filter((e) => !e.carte).length;
+  const nbCartes = etapes.length - nbPas;
+  const pas = mouvementReduit ? 0 : Math.max(45, Math.min(130, 2200 / Math.max(1, nbPas))); // les longs trajets vont plus vite
+  mvts.forEach((m) => { if (!m.carte && !positionsAnimees.has(m.i)) positionsAnimees.set(m.i, m.de); });
   enAnimation = true;
-  finAnimation = Date.now() + pas * etapes.length + 200;
-  etapes.forEach((etape, k) => setTimeout(() => {
-    if (jeton !== jetonAnimation) return;
-    positionsAnimees.set(etape.i, etape.pos);
-    placerPions();
-  }, (k + 1) * pas));
-  setTimeout(() => {
-    if (jeton !== jetonAnimation) return;
-    positionsAnimees.clear();
-    enAnimation = false;
-    rendre();
-  }, etapes.length * pas + 200);
+  finAnimation = Date.now() + pas * nbPas + nbCartes * DUREE_CARTE + 250;
+  derouler(etapes, pas, jetonAnimation);
 }
+
+async function derouler(etapes, pas, jeton) {
+  placerPions();
+  for (const e of etapes) {
+    if (jeton !== jetonAnimation) return;
+    if (e.carte) { await montrerGrandeCarte(e.carte, jeton); continue; }
+    if (pas) await attendre(pas);
+    if (jeton !== jetonAnimation) return;
+    positionsAnimees.set(e.i, e.pos);
+    placerPions();
+  }
+  await attendre(250);
+  if (jeton !== jetonAnimation) return;
+  positionsAnimees.clear();
+  enAnimation = false;
+  rendre();
+}
+
+// Carte en grand : se ferme après DUREE_CARTE, ou plus tôt d'un toucher
+let finirCarte = null;
+function montrerGrandeCarte(m, jeton) {
+  return new Promise((ok) => {
+    const carte = $('grande-carte');
+    carte.className = `grande-carte ${m.type}`;
+    $('grande-carte-type').textContent = m.type === 'omikuji' ? 'おみくじ Omikuji' : '祭 Matsuri';
+    const joueur = etat.players[m.i];
+    $('grande-carte-qui').textContent = joueur ? `${joueur.name} a tiré :` : '';
+    $('grande-carte-texte').textContent = m.texte;
+    const barre = $('grande-carte-barre');
+    barre.style.setProperty('--duree', `${DUREE_CARTE}ms`);
+    barre.style.animation = 'none';
+    void barre.offsetWidth; // relance la barre de temps
+    barre.style.animation = '';
+    $('annonce-carte').hidden = false;
+    const minuteur = setTimeout(() => finirCarte && finirCarte(), DUREE_CARTE);
+    finirCarte = () => {
+      clearTimeout(minuteur);
+      finirCarte = null;
+      $('annonce-carte').hidden = true;
+      if (jeton === jetonAnimation) finAnimation = Math.min(finAnimation, Date.now() + 2500);
+      ok();
+    };
+  });
+}
+function fermerGrandeCarte() { if (finirCarte) finirCarte(); }
+$('annonce-carte').addEventListener('click', fermerGrandeCarte);
 
 const POINTS = { 1: [5], 2: [3, 7], 3: [3, 5, 7], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
 function deEl(v) {
@@ -536,15 +590,31 @@ function rendreOffre() {
   voile.hidden = !pourMoi;
   if (!pourMoi) return;
   $('offre-titre').textContent = `${etat.players[o.de].name} te propose un échange`;
-  const remplir = (id, cases, argent) => {
+  // Après l'échange, qui posséderait la case k ?
+  const apres = (k) => {
+    if (o.donne.includes(k)) return o.a;
+    if (o.recoit.includes(k)) return o.de;
+    return etat.cases[k].p;
+  };
+  const completeGroupe = (c, j) => CASES[c].groupe && GROUPES[CASES[c].groupe]
+    && Object.keys(CASES).filter((k) => CASES[k].groupe === CASES[c].groupe).every((k) => apres(Number(k)) === j);
+  const remplir = (id, cases, argent, recu) => {
     const ul = $(id);
     ul.innerHTML = '';
-    cases.forEach((c) => ul.appendChild(el('li', '', CASES[c].nom + (etat.cases[c].m ? ' (hypothéqué)' : ''))));
+    cases.forEach((c) => {
+      const li = el('li');
+      const pastille = el('span', 'mini-bande');
+      pastille.style.background = CASES[c].groupe ? GROUPES[CASES[c].groupe].couleur : '#6B6B6B';
+      li.append(pastille, CASES[c].nom + (etat.cases[c].m ? ' (hypothéqué)' : ''));
+      if (recu && completeGroupe(c, maPlace)) li.appendChild(el('small', '', 'Complète ton groupe !'));
+      if (!recu && completeGroupe(c, o.de)) li.appendChild(el('small', '', `Complète le groupe ${de(etat.players[o.de].name)}`));
+      ul.appendChild(li);
+    });
     if (argent) ul.appendChild(el('li', '', yens(argent)));
     if (!cases.length && !argent) ul.appendChild(el('li', 'vide', 'Rien'));
   };
-  remplir('offre-recois', o.donne, o.donneArgent);
-  remplir('offre-donnes', o.recoit, o.recoitArgent);
+  remplir('offre-recois', o.donne, o.donneArgent, true);
+  remplir('offre-donnes', o.recoit, o.recoitArgent, false);
 }
 $('offre-accepter').addEventListener('click', () => action({ type: 'repondre', accepte: true }));
 $('offre-refuser').addEventListener('click', () => action({ type: 'repondre', accepte: false }));
