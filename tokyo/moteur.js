@@ -188,6 +188,9 @@ function tirerCarte(s, i, type) {
   const id = s.pioches[type].shift();
   const carte = paquet[id];
   s.carte = { type, texte: carte.texte, ts: Date.now(), joueur: i };
+  // La carte prend place dans la suite des déplacements : l'écran la montre avant un éventuel trajet
+  s.mouvements = s.mouvements || [];
+  s.mouvements.push({ carte: 1, i, type, texte: carte.texte });
   journal(s, `${p.name} tire ${type === 'omikuji' ? 'un omikuji' : 'une carte matsuri'}.`);
   if (carte.effet === 'sortie') p.sortie.push(`${type}:${id}`);
   else s.pioches[type].push(id);

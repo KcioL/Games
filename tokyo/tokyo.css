@@ -308,14 +308,87 @@ body.tokyo {
 .mini-bande { width: 10px; height: 16px; border-radius: 2px; flex: none; }
 .echange label:not(.choix-case):not(.avec) { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; }
 .echange-note { font-size: .8rem; margin: 10px 0; }
-.offre ul { list-style: none; display: grid; gap: 4px; text-align: left; }
-.offre h3 { text-align: left; }
+/* Échange reçu : panneau sans voile sombre, pour garder le plateau visible */
+.offre-panneau {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  max-height: 48vh;
+  overflow-y: auto;
+  z-index: 40;
+  background: var(--washi);
+  color: var(--sumi);
+  border-top: 6px solid var(--shu);
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, .45);
+  padding: 14px 16px calc(14px + env(safe-area-inset-bottom));
+  display: grid;
+  gap: 10px;
+  animation: monte .25s ease-out;
+}
+@keyframes monte { from { transform: translateY(100%); } }
+.offre-panneau h2 { font-size: 1.1rem; color: var(--shu); }
+.offre-panneau h3 { font-size: .95rem; margin-bottom: 4px; }
+.offre-panneau h3.recois { color: #2F7A3A; }
+.offre-panneau h3.donnes { color: var(--shu); }
+.offre-panneau ul { list-style: none; display: grid; gap: 4px; }
+.offre-panneau li { display: grid; grid-template-columns: auto 1fr; column-gap: 6px; align-items: center; font-size: .9rem; font-weight: 500; }
+.offre-panneau li small { grid-column: 2; color: #8A5A00; font-weight: 700; font-size: .78rem; }
+.offre-aide { font-size: .8rem; color: #6B6152; }
+.offre-panneau .btn { background: var(--sumi); color: var(--washi); }
+.offre-panneau .btn-principal { background: var(--shu); color: #fff; }
+
+/* Quartiers concernés par un échange, entourés sur le plateau */
+.case.echange-recois, .case.echange-donne { z-index: 2; animation: clignote-echange 1.2s ease-in-out infinite; }
+.case.echange-recois { box-shadow: inset 0 0 0 3px #2F9E44; }
+.case.echange-donne { box-shadow: inset 0 0 0 3px var(--shu); }
+.case.echange-neutre { box-shadow: inset 0 0 0 3px var(--kin); }
+@keyframes clignote-echange { 50% { filter: brightness(1.12); } }
+
+/* Carte tirée en grand */
+.annonce-carte {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(10, 16, 34, .45);
+  animation: apparait .2s ease-out;
+}
+@keyframes apparait { from { opacity: 0; } }
+.grande-carte {
+  width: min(440px, 92vw);
+  background: #fff;
+  color: var(--sumi);
+  border-top: 10px solid var(--shu);
+  border-radius: 8px;
+  padding: 22px 24px 16px;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+  cursor: pointer;
+  animation: deplie .35s cubic-bezier(.2, 1.2, .4, 1);
+}
+@keyframes deplie { from { transform: scale(.7) rotate(-4deg); opacity: 0; } }
+.grande-carte.matsuri { border-top-color: #C0507A; }
+.grande-carte-type { font-family: var(--titre); font-size: 1.5rem; color: var(--shu); }
+.grande-carte.matsuri .grande-carte-type { color: #C0507A; }
+.grande-carte-qui { font-size: .9rem; color: #6B6152; font-weight: 700; }
+.grande-carte-texte { font-size: 1.25rem; line-height: 1.4; font-weight: 500; margin: 6px 0; }
+.grande-carte-temps { height: 4px; background: #EDE4D2; border-radius: 2px; overflow: hidden; }
+.grande-carte-temps span { display: block; height: 100%; background: var(--shu); transform-origin: left; animation: decompte var(--duree, 6s) linear forwards; }
+.grande-carte.matsuri .grande-carte-temps span { background: #C0507A; }
+@keyframes decompte { to { transform: scaleX(0); } }
+.grande-carte-aide { font-size: .75rem; color: #8A7F6E; }
 
 .classement { text-align: left; display: grid; gap: 6px; padding-left: 22px; }
 .classement li.faillite { opacity: .5; }
 
 /* ---------- Grands écrans : plateau à gauche, panneau à droite ---------- */
 @media (min-width: 900px) and (min-height: 600px) {
+  /* l'échange reçu s'affiche au-dessus du panneau de droite, le plateau reste entièrement visible */
+  .offre-panneau { left: auto; right: 20px; bottom: auto; top: 72px; width: 380px; max-height: calc(100vh - 100px); border-radius: 8px; }
   #jeu { grid-template-columns: auto minmax(300px, 380px); justify-content: center; align-items: start; gap: 20px; padding: 12px 20px; }
   .plateau { width: min(calc(100vh - 90px), calc(100vw - 460px), 900px); width: min(calc(100svh - 90px), calc(100vw - 460px), 900px); font-size: clamp(6px, 1.25vh, 12px); }
   .panneau { max-height: calc(100vh - 90px); overflow-y: auto; padding-right: 4px; }
@@ -329,4 +402,6 @@ body.tokyo {
 @media (max-width: 700px) {
   .case .prix { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .pion.actif { animation: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .pion.actif, .case.echange-recois, .case.echange-donne { animation: none; }
+}

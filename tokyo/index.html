@@ -188,17 +188,28 @@
     </dialog>
 
     <!-- Échange reçu -->
-    <div class="voile" id="offre-recue" hidden>
-      <div class="carte-salon offre">
-        <h2 id="offre-titre"></h2>
-        <div class="echange-colonnes">
-          <div><h3>Tu reçois</h3><ul id="offre-recois"></ul></div>
-          <div><h3>Tu donnes</h3><ul id="offre-donnes"></ul></div>
-        </div>
-        <div class="rangee-boutons">
-          <button class="btn" id="offre-refuser">Refuser</button>
-          <button class="btn btn-principal" id="offre-accepter">Accepter</button>
-        </div>
+    <!-- Échange reçu : panneau qui laisse le plateau visible (les quartiers concernés y sont entourés) -->
+    <section class="offre-panneau" id="offre-recue" aria-live="polite" hidden>
+      <h2 id="offre-titre"></h2>
+      <div class="echange-colonnes">
+        <div><h3 class="recois">Tu reçois</h3><ul id="offre-recois"></ul></div>
+        <div><h3 class="donnes">Tu donnes</h3><ul id="offre-donnes"></ul></div>
+      </div>
+      <p class="offre-aide">Sur le plateau : en vert ce que tu reçois, en rouge ce que tu donnes.</p>
+      <div class="rangee-boutons">
+        <button class="btn" id="offre-refuser">Refuser</button>
+        <button class="btn btn-principal" id="offre-accepter">Accepter</button>
+      </div>
+    </section>
+
+    <!-- Carte tirée, affichée en grand pour tout le monde -->
+    <div class="annonce-carte" id="annonce-carte" hidden>
+      <div class="grande-carte" id="grande-carte" role="dialog" aria-live="assertive">
+        <strong class="grande-carte-type" id="grande-carte-type"></strong>
+        <span class="grande-carte-qui" id="grande-carte-qui"></span>
+        <p class="grande-carte-texte" id="grande-carte-texte"></p>
+        <span class="grande-carte-temps"><span id="grande-carte-barre"></span></span>
+        <span class="grande-carte-aide">Touche la carte pour continuer</span>
       </div>
     </div>
 
