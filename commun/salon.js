@@ -96,12 +96,18 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   };
 
   // ---------- Onglets « En ligne » / « Sur ce téléphone » ----------
-  ui.onglets.forEach((o) => o.addEventListener('click', () => {
+  function choisirOnglet(o) {
     ui.onglets.forEach((x) => {
       const actif = x === o;
       x.setAttribute('aria-selected', String(actif));
       $(x.dataset.volet).hidden = !actif;
     });
+  }
+  ui.onglets.forEach((o) => o.addEventListener('click', () => choisirOnglet(o)));
+  // Liens qui mènent directement à un onglet (ex. « Joue sur ce téléphone »)
+  document.querySelectorAll('[data-aller-volet]').forEach((l) => l.addEventListener('click', () => {
+    const cible = [...ui.onglets].find((o) => o.dataset.volet === l.dataset.allerVolet);
+    if (cible) { choisirOnglet(cible); cible.focus(); }
   }));
 
   function construireNoms() {

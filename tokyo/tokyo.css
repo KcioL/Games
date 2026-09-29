@@ -50,6 +50,7 @@ body.tokyo {
 .tokyo .carte-salon .btn, .tokyo dialog.regles .btn { background: var(--sumi); color: var(--washi); }
 .tokyo .carte-salon .btn-principal, .tokyo dialog.regles .btn-principal { background: var(--shu); color: #fff; }
 .tokyo .separateur { color: #8A7F6E; }
+.tokyo .lien { color: var(--shu); }
 .tokyo .separateur::before, .tokyo .separateur::after { border-top-color: #D8CCB4; }
 .tokyo .onglets { background: var(--washi-2); }
 .tokyo .onglets button { color: #6B6152; }
@@ -169,6 +170,7 @@ body.tokyo {
 }
 .pion.actif { outline: 2px solid var(--sumi); outline-offset: 1px; animation: sautille 1.2s ease-in-out infinite; }
 .pion.en-prison { border-style: dashed; }
+.pion.en-route { z-index: 3; transform: scale(1.25); box-shadow: 0 0 0 2px var(--sumi), 0 3px 6px rgba(0, 0, 0, .5); animation: none; }
 @keyframes sautille { 50% { transform: translateY(-2px); } }
 
 /* ---------- Centre du plateau ---------- */

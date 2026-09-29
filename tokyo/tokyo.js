@@ -16,6 +16,14 @@ let derniereCarte = null;
 let dernierEvenement = null;
 let premiereSynchro = true;
 
+// Animation des pions : chaque déplacement est rejoué case par case
+let dernierMvt = null;
+let enAnimation = false;
+let finAnimation = 0;
+let jetonAnimation = 0;
+const positionsAnimees = new Map();
+const mouvementReduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const salon = initSalon({
   jeu: 'tokyo',
   etatInitial: (nom, nb, { local }) => {
@@ -69,7 +77,8 @@ function planifierBot() {
   botPrevu = cle;
   const coup = etat.coup;
   const premierHumain = etat.players.findIndex((p) => !p.bot && !p.faillite);
-  const delai = (salon.estLocal() || maPlace === premierHumain) ? 650 + Math.random() * 350 : 4000 + maPlace * 1500;
+  const attente = Math.max(0, finAnimation - Date.now());
+  const delai = attente + ((salon.estLocal() || maPlace === premierHumain) ? 650 + Math.random() * 350 : 4000 + maPlace * 1500);
   setTimeout(() => {
     agir((s) => {
       if (s.status !== 'jeu' || s.coup !== coup) return false;
@@ -132,26 +141,17 @@ function rendrePlateau() {
     e.classList.toggle('hypotheque', !!etatCase.m);
     const bat = e.querySelector('.batiments');
     if (bat) bat.textContent = etatCase.b === 5 ? '🏨' : '■'.repeat(etatCase.b);
-    const pions = e.querySelector('.pions');
-    pions.innerHTML = '';
-    etat.players.forEach((p, k) => {
-      if (p.faillite || p.pos !== i) return;
-      const pion = el('span', 'pion', p.name.charAt(0).toUpperCase());
-      pion.style.background = COULEURS_JOUEURS[p.couleur];
-      if (k === etat.active) pion.classList.add('actif');
-      if (p.prison) pion.classList.add('en-prison');
-      pions.appendChild(pion);
-    });
   });
+  placerPions();
 
   // Dés
   const des = $('des');
   des.innerHTML = '';
   (etat.des || [0, 0]).forEach((v) => des.appendChild(deEl(v)));
 
-  // Dernière carte tirée
+  // Dernière carte tirée (affichée quand le pion est arrivé)
   const zone = $('carte-tiree');
-  if (etat.carte) {
+  if (etat.carte && !enAnimation) {
     zone.hidden = false;
     zone.className = `carte-tiree ${etat.carte.type}`;
     zone.innerHTML = '';
@@ -160,6 +160,58 @@ function rendrePlateau() {
     if (derniereCarte !== etat.carte.ts && !premiereSynchro) toast(etat.carte.texte);
     derniereCarte = etat.carte.ts;
   } else zone.hidden = true;
+}
+
+// Pions : position animée pendant un trajet, sinon position réelle
+function placerPions() {
+  casesEls.forEach((e) => { e.querySelector('.pions').innerHTML = ''; });
+  etat.players.forEach((p, k) => {
+    if (p.faillite) return;
+    const pos = positionsAnimees.has(k) ? positionsAnimees.get(k) : p.pos;
+    const pion = el('span', 'pion', p.name.charAt(0).toUpperCase());
+    pion.style.background = COULEURS_JOUEURS[p.couleur];
+    if (k === etat.active) pion.classList.add('actif');
+    if (positionsAnimees.has(k)) pion.classList.add('en-route');
+    else if (p.prison) pion.classList.add('en-prison');
+    casesEls[pos].querySelector('.pions').appendChild(pion);
+  });
+}
+
+// Rejoue les déplacements du dernier coup, case par case (reculs compris ; le kōban est un saut direct)
+function animerDeplacements() {
+  const id = etat.mvtId || 0;
+  if (dernierMvt === null) { dernierMvt = id; return; } // à l'ouverture de la page : pas d'animation
+  if (id === dernierMvt) return;
+  dernierMvt = id;
+  const mvts = etat.mouvements || [];
+  const etapes = [];
+  mvts.forEach((m) => {
+    if (m.sens === 0) { etapes.push({ i: m.i, pos: m.a }); return; }
+    let pos = m.de;
+    for (let garde = 0; pos !== m.a && garde < 45; garde++) {
+      pos = (pos + m.sens + 40) % 40;
+      etapes.push({ i: m.i, pos });
+    }
+  });
+  jetonAnimation += 1;
+  positionsAnimees.clear();
+  if (!etapes.length || mouvementReduit) { enAnimation = false; return; }
+  const jeton = jetonAnimation;
+  const pas = Math.max(45, Math.min(130, 2200 / etapes.length)); // les longs trajets vont plus vite
+  mvts.forEach((m) => { if (!positionsAnimees.has(m.i)) positionsAnimees.set(m.i, m.de); });
+  enAnimation = true;
+  finAnimation = Date.now() + pas * etapes.length + 200;
+  etapes.forEach((etape, k) => setTimeout(() => {
+    if (jeton !== jetonAnimation) return;
+    positionsAnimees.set(etape.i, etape.pos);
+    placerPions();
+  }, (k + 1) * pas));
+  setTimeout(() => {
+    if (jeton !== jetonAnimation) return;
+    positionsAnimees.clear();
+    enAnimation = false;
+    rendre();
+  }, etapes.length * pas + 200);
 }
 
 const POINTS = { 1: [5], 2: [3, 7], 3: [3, 5, 7], 4: [1, 3, 7, 9], 5: [1, 3, 5, 7, 9], 6: [1, 3, 4, 6, 7, 9] };
@@ -314,6 +366,11 @@ function rendreActions() {
     } else {
       zone.appendChild(el('p', 'attente', qui(etat.players[e.actif])));
     }
+    return;
+  }
+
+  if (enAnimation) {
+    st.textContent = `${actif.name} avance…`;
     return;
   }
 
@@ -518,6 +575,8 @@ $('btn-rejouer').addEventListener('click', () => {
 // =====================================================================
 function rendre() {
   if (!etat || !etat.cases) return;
+  if (!casesEls) construirePlateau();
+  animerDeplacements();
   rendrePlateau();
   rendreActions();
   rendreBiens();

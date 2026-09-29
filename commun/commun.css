@@ -196,6 +196,20 @@ html { -webkit-tap-highlight-color: transparent; }
 .local-noms { display: grid; gap: 8px; }
 .info-salon.local { display: none; }
 
+/* Astuce avec un lien vers l'autre onglet */
+.astuce { font-size: .88rem; }
+.lien {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--or);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
 /* ---------- Zone de jeu ---------- */
 .statut {
   text-align: center;

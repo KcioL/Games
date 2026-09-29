@@ -22,6 +22,7 @@ export function normaliser(s) {
   s.pioches = s.pioches || {};
   s.pioches.omikuji = s.pioches.omikuji || [];
   s.pioches.matsuri = s.pioches.matsuri || [];
+  s.mouvements = s.mouvements || [];
   if (s.enchere) s.enchere.passes = s.enchere.passes || s.players.map(() => false);
   if (s.offre) { s.offre.donne = s.offre.donne || []; s.offre.recoit = s.offre.recoit || []; }
   return s;
@@ -109,8 +110,21 @@ function terminer(s) {
   s.phase = p.prison === 0 && s.rejoue ? 'lancer' : 'fin-tour';
 }
 
+// Chaque déplacement est noté pour que l'écran puisse le rejouer case par case.
+// sens : 1 = avance, -1 = recule, 0 = saut direct (kōban)
+function noterMouvement(s, i, de, a, sens) {
+  s.mouvements = s.mouvements || [];
+  s.mouvements.push({ i, de, a, sens });
+}
+
+function nouveauxMouvements(s) {
+  s.mouvements = [];
+  s.mvtId = (s.mvtId || 0) + 1;
+}
+
 function avancer(s, i, cible, salaire = true) {
   const p = s.players[i];
+  noterMouvement(s, i, p.pos, cible, 1);
   if (salaire && cible <= p.pos && cible !== p.pos) {
     p.argent += SALAIRE;
     journal(s, `${p.name} passe par le Départ : +${yens(SALAIRE)}.`);
@@ -122,6 +136,7 @@ function avancer(s, i, cible, salaire = true) {
 
 function allerAuKoban(s, i) {
   const p = s.players[i];
+  noterMouvement(s, i, p.pos, KOBAN, 0);
   p.pos = KOBAN;
   p.prison = 1;
   s.rejoue = false;
@@ -187,7 +202,13 @@ function tirerCarte(s, i, type) {
       const cible = COMPAGNIES.find((t) => t > p.pos) ?? COMPAGNIES[0];
       avancer(s, i, cible); resoudreCase(s, i, { compagnie10: true }); break;
     }
-    case 'reculer': p.pos = (p.pos - carte.montant + 40) % 40; resoudreCase(s, i); break;
+    case 'reculer': {
+      const cible = (p.pos - carte.montant + 40) % 40;
+      noterMouvement(s, i, p.pos, cible, -1);
+      p.pos = cible;
+      resoudreCase(s, i);
+      break;
+    }
     case 'prison': allerAuKoban(s, i); break;
     case 'gain': p.argent += carte.montant; break;
     case 'perte': payer(s, i, carte.montant, -1, 'carte'); break;
@@ -217,6 +238,7 @@ export function lancer(s, i, des) {
   s.des = [d1, d2];
   s.coup = (s.coup || 0) + 1;
   s.carte = null;
+  nouveauxMouvements(s);
   const double = d1 === d2;
   const total = d1 + d2;
 
@@ -450,6 +472,7 @@ export function reglerDette(s, i) {
   s.phase = 'resolu';
   s.coup = (s.coup || 0) + 1;
   if (deplacement) {
+    nouveauxMouvements(s);
     avancer(s, i, (p.pos + deplacement) % 40);
     resoudreCase(s, i);
   }
