@@ -23,6 +23,7 @@ export function normaliser(s) {
   s.pioches.omikuji = s.pioches.omikuji || [];
   s.pioches.matsuri = s.pioches.matsuri || [];
   s.mouvements = s.mouvements || [];
+  s.aAvancer = s.aAvancer || 0;
   if (s.enchere) s.enchere.passes = s.enchere.passes || s.players.map(() => false);
   if (s.offre) { s.offre.donne = s.offre.donne || []; s.offre.recoit = s.offre.recoit || []; }
   return s;
@@ -233,14 +234,17 @@ function tirerCarte(s, i, type) {
   }
 }
 
-// Lancer les dés (avec la règle du kōban et des doubles)
+// Lancer les dés (avec la règle du kōban et des doubles).
+// Le pion n'avance pas encore : le joueur voit le résultat, puis choisit « Avancer » (phase 'avancer').
 export function lancer(s, i, des) {
   if (s.status !== 'jeu' || s.active !== i || s.phase !== 'lancer' || s.offre) return false;
   const p = s.players[i];
   const [d1, d2] = des || [1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)];
   s.des = [d1, d2];
+  s.desId = (s.desId || 0) + 1;
   s.coup = (s.coup || 0) + 1;
   s.carte = null;
+  s.aAvancer = 0;
   nouveauxMouvements(s);
   const double = d1 === d2;
   const total = d1 + d2;
@@ -256,7 +260,7 @@ export function lancer(s, i, des) {
       s.lastEvent = { ts: Date.now(), texte: `Pas de double au 3e essai (${d1}+${d2}) : ${p.name} paie ${yens(AMENDE)} et sort du kōban.` };
       p.prison = 0;
       if (!payer(s, i, AMENDE, -1, 'amende du kōban')) {
-        // il devra d'abord régler l'amende ; son déplacement suit ensuite
+        // il devra d'abord régler l'amende ; il pourra ensuite avancer
         s.dette.deplacement = total;
         return true;
       }
@@ -266,10 +270,8 @@ export function lancer(s, i, des) {
       s.phase = 'fin-tour';
       return true;
     }
-    avancer(s, i, (p.pos + total) % 40);
-    journal(s, `${p.name} avance jusqu'à ${CASES[p.pos].nom}.`);
-    resoudreCase(s, i);
-    terminer(s);
+    s.aAvancer = total;
+    s.phase = 'avancer';
     return true;
   }
 
@@ -277,13 +279,28 @@ export function lancer(s, i, des) {
   if (double) {
     s.doubles = (s.doubles || 0) + 1;
     if (s.doubles >= 3) {
-      journal(s, `${p.name} fait 3 doubles de suite !`);
+      journal(s, `${p.name} fait ${d1}+${d2} : 3 doubles de suite !`);
       allerAuKoban(s, i);
       return true;
     }
   }
+  journal(s, `${p.name} fait ${d1}+${d2}${double ? ' (double)' : ''}.`);
+  s.aAvancer = total;
+  s.phase = 'avancer';
+  return true;
+}
+
+// Déplacement du pion après le lancer
+export function avancerPion(s, i) {
+  if (s.status !== 'jeu' || s.active !== i || s.phase !== 'avancer' || !s.aAvancer || s.offre) return false;
+  const p = s.players[i];
+  const total = s.aAvancer;
+  s.aAvancer = 0;
+  s.coup = (s.coup || 0) + 1;
+  nouveauxMouvements(s);
   avancer(s, i, (p.pos + total) % 40);
-  journal(s, `${p.name} fait ${d1}+${d2}${double ? ' (double)' : ''} et arrive à ${CASES[p.pos].nom}.`);
+  journal(s, `${p.name} avance jusqu'à ${CASES[p.pos].nom}.`);
+  s.phase = 'resolu';
   resoudreCase(s, i);
   terminer(s);
   return true;
@@ -475,9 +492,10 @@ export function reglerDette(s, i) {
   s.phase = 'resolu';
   s.coup = (s.coup || 0) + 1;
   if (deplacement) {
-    nouveauxMouvements(s);
-    avancer(s, i, (p.pos + deplacement) % 40);
-    resoudreCase(s, i);
+    // après l'amende forcée du kōban, le joueur choisit lui aussi quand avancer
+    s.aAvancer = deplacement;
+    s.phase = 'avancer';
+    return true;
   }
   terminer(s);
   return true;
@@ -674,6 +692,7 @@ export function decisionBot(s, i) {
     return s.enchere.mise + pas <= max ? { type: 'encherir', montant: pas } : { type: 'passer' };
   }
   if (s.active !== i) return null;
+  if (s.phase === 'avancer') return { type: 'avancer' };
 
   if (s.phase === 'dette') {
     if (p.argent >= s.dette.montant) return { type: 'regler' };
@@ -721,6 +740,7 @@ function executer(s, i, a) {
   if (!a) return false;
   switch (a.type) {
     case 'lancer': return lancer(s, i);
+    case 'avancer': return avancerPion(s, i);
     case 'amende': return payerAmende(s, i);
     case 'omamori': return utiliserOmamori(s, i);
     case 'acheter': return acheter(s, i);

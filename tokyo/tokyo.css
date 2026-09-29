@@ -222,6 +222,10 @@ body.tokyo {
 .de span.point::before { content: ""; width: 72%; aspect-ratio: 1; border-radius: 50%; background: var(--sumi); }
 .de span:nth-child(5).point::before { background: var(--shu); }
 
+.total-des { font-weight: 700; font-size: max(10px, 1.25em); color: var(--sumi); margin-top: -3%; }
+.des.roule .de { animation: secoue .13s linear infinite alternate; }
+@keyframes secoue { from { transform: rotate(-12deg) translateY(-2px); } to { transform: rotate(12deg) translateY(2px); } }
+
 /* Carte tirée (papier d'omikuji) */
 .carte-tiree {
   width: min(92%, 34em);

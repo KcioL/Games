@@ -16,6 +16,11 @@ let derniereCarte = null;
 let dernierEvenement = null;
 let premiereSynchro = true;
 
+// Roulement des dés à chaque nouveau lancer
+let dernierLancer = null;
+let desQuiRoulent = false;
+let finRoulement = 0;
+
 // Animation des pions : chaque déplacement est rejoué case par case
 let dernierMvt = null;
 let enAnimation = false;
@@ -77,8 +82,10 @@ function planifierBot() {
   botPrevu = cle;
   const coup = etat.coup;
   const premierHumain = etat.players.findIndex((p) => !p.bot && !p.faillite);
-  const attente = Math.max(0, finAnimation - Date.now());
-  const delai = attente + ((salon.estLocal() || maPlace === premierHumain) ? 650 + Math.random() * 350 : 4000 + maPlace * 1500);
+  const attente = Math.max(0, finAnimation - Date.now(), finRoulement - Date.now());
+  // après son lancer, le bot laisse le temps de voir ses dés avant d'avancer
+  const reflexion = etat.phase === 'avancer' ? 1500 : 850 + Math.random() * 400;
+  const delai = attente + ((salon.estLocal() || maPlace === premierHumain) ? reflexion : 4000 + maPlace * 1500);
   setTimeout(() => {
     agir((s) => {
       if (s.status !== 'jeu' || s.coup !== coup) return false;
@@ -145,10 +152,11 @@ function rendrePlateau() {
   marquerEchange();
   placerPions();
 
-  // Dés
-  const des = $('des');
-  des.innerHTML = '';
-  (etat.des || [0, 0]).forEach((v) => des.appendChild(deEl(v)));
+  // Dés : ils roulent un instant à chaque nouveau lancer, puis affichent le résultat et le total
+  const lancerId = etat.desId || 0;
+  if (dernierLancer !== null && lancerId !== dernierLancer && !mouvementReduit) roulerDes();
+  else if (!desQuiRoulent) dessinerDes(etat.des);
+  dernierLancer = lancerId;
 
   // Dernière carte tirée (affichée quand le pion est arrivé)
   const zone = $('carte-tiree');
@@ -171,6 +179,32 @@ function marquerEchange() {
   // o.donne va du proposeur vers la cible ; o.recoit de la cible vers le proposeur
   o.donne.forEach((c) => casesEls[c].classList.add(classe(o.a === maPlace)));
   o.recoit.forEach((c) => casesEls[c].classList.add(classe(o.de === maPlace)));
+}
+
+function dessinerDes(valeurs) {
+  const des = $('des');
+  des.innerHTML = '';
+  (valeurs || [0, 0]).forEach((v) => des.appendChild(deEl(v)));
+  const total = $('total-des');
+  const [a, b] = etat.des || [0, 0];
+  total.hidden = desQuiRoulent || !a;
+  total.textContent = a ? `${a} + ${b} = ${a + b}${a === b ? ' (double !)' : ''}` : '';
+}
+
+function roulerDes() {
+  desQuiRoulent = true;
+  finRoulement = Date.now() + 650;
+  $('des').classList.add('roule');
+  let n = 0;
+  const minuteur = setInterval(() => {
+    dessinerDes([1 + Math.floor(Math.random() * 6), 1 + Math.floor(Math.random() * 6)]);
+    if (++n >= 10) {
+      clearInterval(minuteur);
+      desQuiRoulent = false;
+      $('des').classList.remove('roule');
+      rendre();
+    }
+  }, 65);
 }
 
 // Pions : position animée pendant un trajet, sinon position réelle
@@ -215,7 +249,11 @@ function animerDeplacements() {
   if (!etapes.length) { enAnimation = false; return; }
   const nbPas = etapes.filter((e) => !e.carte).length;
   const nbCartes = etapes.length - nbPas;
-  const pas = mouvementReduit ? 0 : Math.max(45, Math.min(130, 2200 / Math.max(1, nbPas))); // les longs trajets vont plus vite
+  // Les longs trajets vont plus vite. Les pions des bots avancent plus posément, pour qu'on voie où ils vont.
+  const parUnBot = mvts.some((m) => !m.carte && etat.players[m.i] && etat.players[m.i].bot);
+  const pas = mouvementReduit ? 0 : (parUnBot
+    ? Math.max(110, Math.min(210, 3500 / Math.max(1, nbPas)))
+    : Math.max(45, Math.min(130, 2200 / Math.max(1, nbPas))));
   mvts.forEach((m) => { if (!m.carte && !positionsAnimees.has(m.i)) positionsAnimees.set(m.i, m.de); });
   enAnimation = true;
   finAnimation = Date.now() + pas * nbPas + nbCartes * DUREE_CARTE + 250;
@@ -423,13 +461,19 @@ function rendreActions() {
     return;
   }
 
+  if (desQuiRoulent) {
+    st.textContent = `${actif.name} lance les dés…`;
+    return;
+  }
   if (enAnimation) {
     st.textContent = `${actif.name} avance…`;
     return;
   }
+  const [d1, d2] = etat.des || [0, 0];
+  const resultat = `${d1} + ${d2} = ${d1 + d2}${d1 === d2 ? ' (double !)' : ''}`;
 
   if (!monTour() || moi.bot) {
-    st.textContent = qui(actif);
+    st.textContent = etat.phase === 'avancer' ? `${actif.name} a fait ${resultat}` : qui(actif);
     return;
   }
 
@@ -448,6 +492,10 @@ function rendreActions() {
         bouton(zone, 'Lancer les dés', { type: 'lancer' }, { principal: true });
       }
       bouton(zone, 'Proposer un échange', ouvrirEchange);
+      break;
+    case 'avancer':
+      st.textContent = `${nom}tu as fait ${resultat}.`;
+      bouton(zone, `Avancer de ${etat.aAvancer} cases`, { type: 'avancer' }, { principal: true });
       break;
     case 'acheter': {
       const c = CASES[moi.pos];
