@@ -572,20 +572,40 @@ export function finPartie(s) {
 // ---------------------------------------------------------------------
 export const echangeable = (s, i, c) => achetable(c) && s.cases[c].p === i && groupeSansBatiment(s, c);
 
-export function proposer(s, i, o) {
-  if (s.status !== 'jeu' || s.active !== i || !['lancer', 'fin-tour'].includes(s.phase) || s.offre) return false;
+// Vérifie une offre de i vers o.a ; renvoie l'offre nettoyée, ou null si elle n'est pas valable
+function offreValide(s, i, o) {
   const a = o.a;
-  if (a === i || !s.players[a] || s.players[a].faillite) return false;
-  const donne = o.donne || [];
-  const recoit = o.recoit || [];
+  if (a === i || !s.players[a] || s.players[a].faillite) return null;
+  const donne = [...new Set(o.donne || [])];
+  const recoit = [...new Set(o.recoit || [])];
   const donneArgent = Math.max(0, Math.round(o.donneArgent || 0));
   const recoitArgent = Math.max(0, Math.round(o.recoitArgent || 0));
-  if (!donne.length && !recoit.length && !donneArgent && !recoitArgent) return false;
-  if (!donne.every((c) => echangeable(s, i, c)) || !recoit.every((c) => echangeable(s, a, c))) return false;
-  if (donneArgent > s.players[i].argent || recoitArgent > s.players[a].argent) return false;
-  s.offre = { de: i, a, donne, recoit, donneArgent, recoitArgent };
+  if (!donne.length && !recoit.length && !donneArgent && !recoitArgent) return null;
+  if (!donne.every((c) => echangeable(s, i, c)) || !recoit.every((c) => echangeable(s, a, c))) return null;
+  if (donneArgent > s.players[i].argent || recoitArgent > s.players[a].argent) return null;
+  return { de: i, a, donne, recoit, donneArgent, recoitArgent };
+}
+
+export function proposer(s, i, o) {
+  if (s.status !== 'jeu' || s.active !== i || !['lancer', 'fin-tour'].includes(s.phase) || s.offre) return false;
+  const offre = offreValide(s, i, o);
+  if (!offre) return false;
+  s.offre = offre;
   s.coup = (s.coup || 0) + 1;
-  journal(s, `${s.players[i].name} propose un échange à ${s.players[a].name}.`);
+  journal(s, `${s.players[i].name} propose un échange à ${s.players[offre.a].name}.`);
+  return true;
+}
+
+// Contre-offre : celui qui reçoit une offre en renvoie une autre à celui qui l'a faite
+export function contreProposer(s, j, o) {
+  const ancienne = s.offre;
+  if (s.status !== 'jeu' || !ancienne || ancienne.a !== j) return false;
+  const offre = offreValide(s, j, { ...o, a: ancienne.de });
+  if (!offre) return false;
+  offre.contre = (ancienne.contre || 0) + 1;
+  s.offre = offre;
+  s.coup = (s.coup || 0) + 1;
+  journal(s, `${s.players[j].name} fait une contre-offre à ${s.players[offre.a].name}.`);
   return true;
 }
 
@@ -640,6 +660,51 @@ function valeurPour(s, i, c, gagne) {
   return v;
 }
 
+// Évaluation d'une offre reçue par le bot i : valeur de ce qu'il gagne et de ce qu'il cède.
+//  - un quartier qui complète une de ses couleurs vaut son prix + la moitié de la valeur du groupe entier ;
+//  - un quartier d'une couleur où il en a déjà vaut son prix + 30 % ;
+//  - céder un quartier qui complète la couleur de l'adversaire coûte son prix + 30 % (prime) ;
+//  - casser une de ses couleurs complètes coûte le triple.
+export function evaluerOffre(s, i, o) {
+  const j = o.de; // l'autre joueur
+  const apres = (k) => {
+    if (o.donne.includes(k)) return i;   // ce que l'autre donne arrive chez le bot
+    if (o.recoit.includes(k)) return j;  // ce que le bot cède part chez l'autre
+    return s.cases[k].p;
+  };
+  const prix = (c) => (s.cases[c].m ? CASES[c].prix / 2 : CASES[c].prix);
+  const groupeDe = (c) => (CASES[c].groupe ? casesDuGroupe(CASES[c].groupe) : (CASES[c].type === 'transport' ? TRANSPORTS : COMPAGNIES));
+  const complet = (groupe, qui, proprio) => groupe.every((k) => proprio(k) === qui);
+
+  let recue = o.donneArgent;
+  const groupesCompletes = new Set();
+  o.donne.forEach((c) => {
+    const groupe = groupeDe(c);
+    const cle = CASES[c].groupe || CASES[c].type;
+    if (CASES[c].groupe && complet(groupe, i, apres) && !complet(groupe, i, (k) => s.cases[k].p)) {
+      recue += prix(c);
+      if (!groupesCompletes.has(cle)) {
+        groupesCompletes.add(cle);
+        recue += groupe.reduce((t, k) => t + CASES[k].prix, 0) / 2;
+      }
+    } else if (groupe.some((k) => k !== c && s.cases[k].p === i)) {
+      recue += prix(c) * 1.3;
+    } else {
+      recue += prix(c);
+    }
+  });
+
+  let cedee = o.recoitArgent;
+  o.recoit.forEach((c) => {
+    const groupe = groupeDe(c);
+    if (CASES[c].groupe && complet(groupe, i, (k) => s.cases[k].p)) cedee += prix(c) * 3;          // casserait ma couleur
+    else if (CASES[c].groupe && complet(groupe, j, apres)) cedee += prix(c) * 1.3;                  // complète la sienne
+    else if (groupe.some((k) => k !== c && s.cases[k].p === i)) cedee += prix(c) * 1.15;             // j'en ai d'autres
+    else cedee += prix(c);
+  });
+  return { recue, cedee };
+}
+
 // Un bot cherche à compléter un groupe dont il possède déjà une partie, auprès d'un seul autre joueur :
 // d'abord un troc où chacun complète un groupe, sinon un rachat au-dessus du prix.
 function propositionBot(s, i) {
@@ -675,15 +740,9 @@ function propositionBot(s, i) {
 export function decisionBot(s, i) {
   const p = s.players[i];
   if (s.offre && s.offre.a === i) {
-    const o = s.offre;
-    const gain = o.donne.reduce((a, c) => a + valeurPour(s, i, c, true), 0) + o.donneArgent
-      - o.recoit.reduce((a, c) => a + valeurPour(s, i, c, false), 0) - o.recoitArgent;
-    // ne pas offrir un groupe complet à l'adversaire… sauf si l'échange m'en complète un aussi
-    const completeGroupe = (cases, pour) => cases.some((c) => CASES[c].groupe
-      && casesDuGroupe(CASES[c].groupe).every((k) => cases.includes(k) || s.cases[k].p === pour));
-    const donneGroupe = completeGroupe(o.recoit, o.de);
-    const recoitGroupe = completeGroupe(o.donne, i);
-    return { type: 'repondre', accepte: gain > 0 && (!donneGroupe || recoitGroupe) };
+    const { recue, cedee } = evaluerOffre(s, i, s.offre);
+    const resteArgent = s.players[i].argent - s.offre.recoitArgent + s.offre.donneArgent;
+    return { type: 'repondre', accepte: recue > cedee && resteArgent >= 10000 };
   }
   if (s.phase === 'enchere' && s.enchere && s.enchere.actif === i) {
     const c = s.enchere.case;
@@ -761,6 +820,7 @@ function executer(s, i, a) {
       return ok;
     }
     case 'repondre': return repondre(s, i, a.accepte);
+    case 'contre': return contreProposer(s, i, a.offre);
     case 'annuler': return annulerOffre(s, i);
     default: return false;
   }

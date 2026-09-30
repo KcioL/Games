@@ -222,6 +222,18 @@ body.tokyo {
 .de span.point::before { content: ""; width: 72%; aspect-ratio: 1; border-radius: 50%; background: var(--sumi); }
 .de span:nth-child(5).point::before { background: var(--shu); }
 
+.tour-plateau {
+  font-family: var(--titre);
+  font-weight: 800;
+  font-size: max(11px, 1.7em);
+  color: var(--sumi);
+  background: #fff;
+  border: 2px solid var(--sumi);
+  border-radius: 999px;
+  padding: .15em .9em;
+  margin-top: -2%;
+}
+.tour-plateau.dernier { background: var(--shu); border-color: var(--shu); color: #fff; }
 .total-des { font-weight: 700; font-size: max(10px, 1.25em); color: var(--sumi); margin-top: -3%; }
 .des.roule .de { animation: secoue .13s linear infinite alternate; }
 @keyframes secoue { from { transform: rotate(-12deg) translateY(-2px); } to { transform: rotate(12deg) translateY(2px); } }
@@ -302,16 +314,26 @@ body.tokyo {
 .fermer-fiche { width: 100%; }
 
 /* ---------- Échanges ---------- */
-.echange { width: min(620px, 94vw); }
-.echange .avec { display: grid; gap: 4px; font-weight: 700; margin-bottom: 10px; }
-.echange select, .echange input[type="number"] { border: 2px solid #D8CCB4; border-radius: 6px; padding: 8px; background: #fff; color: var(--sumi); width: 100%; }
 .echange-colonnes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .echange-colonnes h3 { margin: 0 0 6px; }
-.echange-liste { display: grid; gap: 4px; max-height: 34vh; overflow-y: auto; margin-bottom: 8px; }
-.choix-case { display: flex; align-items: center; gap: 6px; font-size: .88rem; }
 .mini-bande { width: 10px; height: 16px; border-radius: 2px; flex: none; }
-.echange label:not(.choix-case):not(.avec) { display: grid; gap: 4px; font-size: .85rem; font-weight: 700; }
-.echange-note { font-size: .8rem; margin: 10px 0; }
+
+/* Composition d'un échange sur le plateau */
+.plateau.mode-echange .case:not(.selectionnable):not(.echange-donne):not(.echange-recois) { opacity: .35; }
+.plateau.mode-echange .case.selectionnable { cursor: copy; }
+.compo .compo-avec { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; }
+.compo select, .compo input[type="number"] {
+  border: 2px solid #D8CCB4; border-radius: 6px; padding: 7px 8px; background: #fff; color: var(--sumi); width: 100%; min-width: 0;
+}
+.compo-liste { list-style: none; display: grid; gap: 4px; min-height: 1.6em; }
+.compo .compo-liste li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; font-size: .88rem; font-weight: 500; }
+.compo .compo-liste li.vide { display: block; color: #8A7F6E; font-size: .8rem; font-weight: 400; }
+.retirer { border: none; background: #E3D8C4; color: var(--sumi); width: 24px; height: 24px; border-radius: 50%; font-weight: 700; line-height: 1; }
+.montant { display: grid; gap: 4px; margin-top: 8px; font-size: .85rem; font-weight: 700; }
+.pas-a-pas { display: grid; grid-template-columns: 36px minmax(0, 1fr) 36px; gap: 4px; }
+.pas-a-pas .btn.pas { padding: 0; height: 36px; font-size: 1.2rem; }
+.pas-a-pas input { text-align: center; }
+
 /* Échange reçu : panneau sans voile sombre, pour garder le plateau visible */
 .offre-panneau {
   position: fixed;
@@ -340,6 +362,7 @@ body.tokyo {
 .offre-aide { font-size: .8rem; color: #6B6152; }
 .offre-panneau .btn { background: var(--sumi); color: var(--washi); }
 .offre-panneau .btn-principal { background: var(--shu); color: #fff; }
+.offre-panneau .btn.pas { background: var(--washi-2); color: var(--sumi); }
 
 /* Quartiers concernés par un échange, entourés sur le plateau */
 .case.echange-recois, .case.echange-donne { z-index: 2; animation: clignote-echange 1.2s ease-in-out infinite; }

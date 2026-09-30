@@ -132,6 +132,7 @@
       <div class="plateau" id="plateau">
         <div class="centre-plateau" id="centre-plateau">
           <div class="titre-plateau"><span class="kanji">東京</span><span class="nom-jeu">Monopoly</span><span class="edition">Édition Tokyo</span></div>
+          <div class="tour-plateau" id="tour-plateau" hidden></div>
           <div class="des" id="des"></div>
           <div class="total-des" id="total-des" hidden></div>
           <div class="carte-tiree" id="carte-tiree" hidden></div>
@@ -163,30 +164,45 @@
       <button class="btn fermer-fiche" id="fiche-fermer">Fermer</button>
     </dialog>
 
-    <!-- Proposer un échange -->
-    <dialog class="regles echange" id="echange">
-      <h2>Proposer un échange</h2>
-      <label class="avec">Avec
-        <select id="echange-avec"></select>
+    <!-- Composer un échange : on choisit les quartiers directement sur le plateau -->
+    <section class="offre-panneau compo" id="compo-echange" hidden>
+      <h2 id="compo-titre">Proposer un échange</h2>
+      <p class="offre-aide">Touche sur le plateau tes quartiers à donner (en rouge) et ceux que tu veux recevoir (en vert).</p>
+      <label class="compo-avec">Avec
+        <select id="compo-avec"></select>
       </label>
       <div class="echange-colonnes">
         <div>
-          <h3>Je donne</h3>
-          <div class="echange-liste" id="echange-donne"></div>
-          <label>Yens <input type="number" id="echange-donne-argent" min="0" step="1000" value="0"></label>
+          <h3 class="donnes">Je donne</h3>
+          <ul class="compo-liste" id="compo-donne"></ul>
+          <div class="montant">
+            <span>+ yens</span>
+            <div class="pas-a-pas">
+              <button type="button" class="btn pas" data-champ="compo-donne-argent" data-pas="-1000" aria-label="Moins 1000 yens">−</button>
+              <input type="number" id="compo-donne-argent" min="0" step="1000" value="0" inputmode="numeric" aria-label="Yens que je donne en plus">
+              <button type="button" class="btn pas" data-champ="compo-donne-argent" data-pas="1000" aria-label="Plus 1000 yens">+</button>
+            </div>
+          </div>
         </div>
         <div>
-          <h3>Je reçois</h3>
-          <div class="echange-liste" id="echange-recoit"></div>
-          <label>Yens <input type="number" id="echange-recoit-argent" min="0" step="1000" value="0"></label>
+          <h3 class="recois">Je reçois</h3>
+          <ul class="compo-liste" id="compo-recoit"></ul>
+          <div class="montant">
+            <span>+ yens</span>
+            <div class="pas-a-pas">
+              <button type="button" class="btn pas" data-champ="compo-recoit-argent" data-pas="-1000" aria-label="Moins 1000 yens">−</button>
+              <input type="number" id="compo-recoit-argent" min="0" step="1000" value="0" inputmode="numeric" aria-label="Yens que je demande en plus">
+              <button type="button" class="btn pas" data-champ="compo-recoit-argent" data-pas="1000" aria-label="Plus 1000 yens">+</button>
+            </div>
+          </div>
         </div>
       </div>
-      <p class="echange-note">Les quartiers avec des maisons (dans leur groupe) ne peuvent pas être échangés.</p>
       <div class="rangee-boutons">
-        <button class="btn" id="echange-annuler">Annuler</button>
-        <button class="btn btn-principal" id="echange-proposer">Proposer</button>
+        <button class="btn" id="compo-annuler">Annuler</button>
+        <button class="btn btn-principal" id="compo-proposer">Proposer</button>
       </div>
-    </dialog>
+    </section>
+
 
     <!-- Échange reçu -->
     <!-- Échange reçu : panneau qui laisse le plateau visible (les quartiers concernés y sont entourés) -->
@@ -199,6 +215,7 @@
       <p class="offre-aide">Sur le plateau : en vert ce que tu reçois, en rouge ce que tu donnes.</p>
       <div class="rangee-boutons">
         <button class="btn" id="offre-refuser">Refuser</button>
+        <button class="btn" id="offre-contre">Contre-offre</button>
         <button class="btn btn-principal" id="offre-accepter">Accepter</button>
       </div>
     </section>
@@ -253,7 +270,7 @@
     </ul>
     <h3>Échanges et fin</h3>
     <ul>
-      <li>À ton tour, propose des échanges de quartiers et de yens aux autres joueurs.</li>
+      <li>À ton tour, propose des échanges : touche sur le plateau les quartiers à donner et à recevoir, et ajoute des yens si tu veux. Celui qui reçoit l'offre peut accepter, refuser ou faire une contre-offre.</li>
       <li>Fin : dernier joueur non ruiné, ou après le nombre de tours choisi, le plus riche (argent + biens) gagne.</li>
     </ul>
     <button class="btn fermer">Fermer</button>

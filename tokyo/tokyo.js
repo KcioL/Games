@@ -130,7 +130,7 @@ function construirePlateau() {
     e.appendChild(el('span', 'proprio'));
     e.appendChild(el('span', 'pions'));
     e.setAttribute('aria-label', c.nom);
-    e.addEventListener('click', () => ouvrirFiche(i));
+    e.addEventListener('click', () => (compo ? basculerCase(i) : ouvrirFiche(i)));
     plateau.appendChild(e);
     return e;
   });
@@ -152,6 +152,15 @@ function rendrePlateau() {
   marquerEchange();
   placerPions();
 
+  // Nombre de tours, bien visible au centre (parties à durée limitée)
+  const tourEl = $('tour-plateau');
+  tourEl.hidden = etat.finMode !== 'tours';
+  if (etat.finMode === 'tours') {
+    const t = Math.min(etat.tour || 1, etat.toursMax);
+    tourEl.textContent = t >= etat.toursMax ? `Dernier tour ! (${t} / ${etat.toursMax})` : `Tour ${t} / ${etat.toursMax}`;
+    tourEl.classList.toggle('dernier', t >= etat.toursMax);
+  }
+
   // Dés : ils roulent un instant à chaque nouveau lancer, puis affichent le résultat et le total
   const lancerId = etat.desId || 0;
   if (dernierLancer !== null && lancerId !== dernierLancer && !mouvementReduit) roulerDes();
@@ -172,7 +181,17 @@ function rendrePlateau() {
 
 // Échange en cours : quartiers entourés (vert = je reçois, rouge = je donne, doré pour les autres joueurs)
 function marquerEchange() {
-  casesEls.forEach((e) => e.classList.remove('echange-recois', 'echange-donne', 'echange-neutre'));
+  casesEls.forEach((e) => e.classList.remove('echange-recois', 'echange-donne', 'echange-neutre', 'selectionnable'));
+  plateau.classList.toggle('mode-echange', !!compo);
+  if (compo) {
+    compo.donne.forEach((c) => casesEls[c].classList.add('echange-donne'));
+    compo.recoit.forEach((c) => casesEls[c].classList.add('echange-recois'));
+    casesEls.forEach((e, c) => {
+      const p = etat.cases[c].p;
+      if (p >= 0 && !etat.players[p].faillite && M.echangeable(etat, p, c) && (p === maPlace || !compo.contre || p === compo.a)) e.classList.add('selectionnable');
+    });
+    return;
+  }
   const o = etat.offre;
   if (!o) return;
   const classe = (versMoi) => (o.a !== maPlace && o.de !== maPlace ? 'echange-neutre' : (versMoi ? 'echange-recois' : 'echange-donne'));
@@ -429,6 +448,11 @@ function rendreActions() {
   const actif = etat.players[etat.active];
   const qui = (p) => (p.bot ? `${p.name} réfléchit…` : `Au tour ${de(p.name)}`);
 
+  if (compo) {
+    st.textContent = compo.contre ? 'Compose ta contre-offre sur le plateau.' : 'Compose ton échange sur le plateau.';
+    return;
+  }
+
   // Échange en cours
   if (etat.offre) {
     const o = etat.offre;
@@ -491,7 +515,7 @@ function rendreActions() {
         st.textContent = etat.rejoue ? `${nom}double ! Tu rejoues.` : `${nom}à toi de lancer les dés.`;
         bouton(zone, 'Lancer les dés', { type: 'lancer' }, { principal: true });
       }
-      bouton(zone, 'Proposer un échange', ouvrirEchange);
+      bouton(zone, 'Proposer un échange', () => entrerModeEchange());
       break;
     case 'avancer':
       st.textContent = `${nom}tu as fait ${resultat}.`;
@@ -519,7 +543,7 @@ function rendreActions() {
     case 'fin-tour':
       st.textContent = `${nom}tu peux construire, échanger, ou finir ton tour.`;
       bouton(zone, 'Fin du tour', { type: 'fin' }, { principal: true });
-      bouton(zone, 'Proposer un échange', ouvrirEchange);
+      bouton(zone, 'Proposer un échange', () => entrerModeEchange());
       break;
     default:
       st.textContent = '';
@@ -541,7 +565,7 @@ function rendreBiens() {
     b.style.setProperty('--couleur', def.groupe ? GROUPES[def.groupe].couleur : '#6B6B6B');
     b.append(def.icone && !def.groupe ? `${def.icone} ` : '', def.court);
     if (e.b) b.appendChild(el('span', 'nb-bat', e.b === 5 ? '🏨' : `${e.b}■`));
-    b.addEventListener('click', () => ouvrirFiche(c));
+    b.addEventListener('click', () => (compo ? basculerCase(c) : ouvrirFiche(c)));
     zone.appendChild(b);
   });
   if (moi.sortie.length) zone.appendChild(el('span', 'omamori', `Omamori × ${moi.sortie.length}`));
@@ -571,73 +595,130 @@ function rendreJoueurs() {
 }
 
 // =====================================================================
-// Échanges
+// Échanges : composition directement sur le plateau
 // =====================================================================
-function listeCases(zone, joueur) {
-  zone.innerHTML = '';
-  const cases = etat.cases.map((e, c) => (M.echangeable(etat, joueur, c) ? c : -1)).filter((c) => c >= 0);
-  if (!cases.length) zone.appendChild(el('p', 'vide', 'Rien d\'échangeable.'));
-  cases.forEach((c) => {
-    const lab = el('label', 'choix-case');
-    const cb = el('input');
-    cb.type = 'checkbox';
-    cb.value = String(c);
-    const pastille = el('span', 'mini-bande');
-    pastille.style.background = CASES[c].groupe ? GROUPES[CASES[c].groupe].couleur : '#6B6B6B';
-    lab.append(cb, pastille, CASES[c].nom + (etat.cases[c].m ? ' (hyp.)' : ''));
-    zone.appendChild(lab);
-  });
-}
+// compo = null, ou { a, donne: [], recoit: [], contre } pendant qu'on compose une offre
+let compo = null;
+const champDonne = $('compo-donne-argent');
+const champRecoit = $('compo-recoit-argent');
 
-function ouvrirEchange() {
-  const sel = $('echange-avec');
+function entrerModeEchange(depart) {
+  const autres = etat.players.map((p, k) => k).filter((k) => k !== maPlace && !etat.players[k].faillite);
+  if (!autres.length) return;
+  compo = depart || { a: autres[0], donne: [], recoit: [], contre: false };
+  champDonne.value = String(depart ? depart.donneArgent || 0 : 0);
+  champRecoit.value = String(depart ? depart.recoitArgent || 0 : 0);
+  const sel = $('compo-avec');
   sel.innerHTML = '';
-  etat.players.forEach((p, k) => {
-    if (k === maPlace || p.faillite) return;
-    const o = el('option', '', p.name);
+  autres.forEach((k) => {
+    const o = el('option', '', etat.players[k].name);
     o.value = String(k);
     sel.appendChild(o);
   });
-  if (!sel.options.length) return;
-  $('echange-donne-argent').value = '0';
-  $('echange-recoit-argent').value = '0';
-  $('echange-donne-argent').max = String(etat.players[maPlace].argent);
-  const majListes = () => {
-    listeCases($('echange-donne'), maPlace);
-    listeCases($('echange-recoit'), Number(sel.value));
-    $('echange-recoit-argent').max = String(etat.players[Number(sel.value)].argent);
-  };
-  sel.onchange = majListes;
-  majListes();
-  $('echange').showModal();
+  sel.value = String(compo.a);
+  sel.disabled = compo.contre;
+  $('compo-titre').textContent = compo.contre ? `Contre-offre à ${etat.players[compo.a].name}` : 'Proposer un échange';
+  $('compo-proposer').textContent = compo.contre ? 'Envoyer la contre-offre' : 'Proposer';
+  rendre();
 }
-$('echange-annuler').addEventListener('click', () => $('echange').close());
-$('echange-proposer').addEventListener('click', () => {
-  const coches = (id) => [...$(id).querySelectorAll('input:checked')].map((x) => Number(x.value));
+
+function quitterModeEchange() {
+  compo = null;
+  rendre();
+}
+
+// Toucher un quartier : l'ajouter ou le retirer de l'offre
+function basculerCase(c) {
+  const p = etat.cases[c].p;
+  if (p < 0) { toast('Ce quartier n\'appartient à personne.'); return; }
+  if (etat.players[p].faillite) return;
+  if (!M.echangeable(etat, p, c)) { toast('Impossible : il y a des maisons dans ce groupe.'); return; }
+  const bascule = (liste) => (liste.includes(c) ? liste.filter((x) => x !== c) : [...liste, c]);
+  if (p === maPlace) {
+    compo.donne = bascule(compo.donne);
+  } else {
+    if (p !== compo.a) {
+      if (compo.contre) { toast(`La contre-offre se fait avec ${etat.players[compo.a].name}.`); return; }
+      // un quartier d'un autre joueur : l'échange se fera avec lui
+      if (compo.recoit.length) toast(`Échange maintenant avec ${etat.players[p].name}.`);
+      compo.a = p;
+      compo.recoit = [];
+      $('compo-avec').value = String(p);
+    }
+    compo.recoit = bascule(compo.recoit);
+  }
+  rendre();
+}
+
+$('compo-avec').addEventListener('change', (e) => {
+  compo.a = Number(e.target.value);
+  compo.recoit = [];
+  rendre();
+});
+document.querySelectorAll('#compo-echange .pas').forEach((b) => b.addEventListener('click', () => {
+  const champ = $(b.dataset.champ);
+  champ.value = String(Math.max(0, (Number(champ.value) || 0) + Number(b.dataset.pas)));
+}));
+$('compo-annuler').addEventListener('click', quitterModeEchange);
+$('compo-proposer').addEventListener('click', () => {
   const offre = {
-    a: Number($('echange-avec').value),
-    donne: coches('echange-donne'),
-    recoit: coches('echange-recoit'),
-    donneArgent: Number($('echange-donne-argent').value) || 0,
-    recoitArgent: Number($('echange-recoit-argent').value) || 0,
+    a: compo.a,
+    donne: compo.donne,
+    recoit: compo.recoit,
+    donneArgent: Math.max(0, Number(champDonne.value) || 0),
+    recoitArgent: Math.max(0, Number(champRecoit.value) || 0),
   };
   if (!offre.donne.length && !offre.recoit.length && !offre.donneArgent && !offre.recoitArgent) {
-    toast('Choisis au moins un quartier ou un montant.');
+    toast('Touche au moins un quartier, ou indique un montant.');
     return;
   }
   if (offre.donneArgent > etat.players[maPlace].argent) { toast('Tu n\'as pas autant de yens.'); return; }
   if (offre.recoitArgent > etat.players[offre.a].argent) { toast(`${etat.players[offre.a].name} n'a pas autant de yens.`); return; }
-  $('echange').close();
-  action({ type: 'proposer', offre });
+  const type = compo.contre ? 'contre' : 'proposer';
+  compo = null;
+  action({ type, offre });
 });
+
+function rendreCompo() {
+  const panneau = $('compo-echange');
+  // l'offre composée n'est plus possible (tour terminé, offre retirée…) : on referme
+  if (compo && (etat.status !== 'jeu' || (compo.contre ? !(etat.offre && etat.offre.a === maPlace) : !(etat.active === maPlace && ['lancer', 'fin-tour'].includes(etat.phase) && !etat.offre)))) compo = null;
+  panneau.hidden = !compo;
+  if (!compo) return;
+  // on retire ce qui n'est plus échangeable
+  compo.donne = compo.donne.filter((c) => M.echangeable(etat, maPlace, c));
+  compo.recoit = compo.recoit.filter((c) => M.echangeable(etat, compo.a, c));
+  const liste = (id, cases) => {
+    const ul = $(id);
+    ul.innerHTML = '';
+    if (!cases.length) ul.appendChild(el('li', 'vide', 'Touche un quartier sur le plateau'));
+    cases.forEach((c) => {
+      const li = el('li');
+      const b = el('button', 'retirer', '×');
+      b.type = 'button';
+      b.setAttribute('aria-label', `Retirer ${CASES[c].nom}`);
+      b.addEventListener('click', () => basculerCase(c));
+      const pastille = el('span', 'mini-bande');
+      pastille.style.background = CASES[c].groupe ? GROUPES[CASES[c].groupe].couleur : '#6B6B6B';
+      li.append(pastille, CASES[c].nom + (etat.cases[c].m ? ' (hyp.)' : ''), b);
+      ul.appendChild(li);
+    });
+  };
+  liste('compo-donne', compo.donne);
+  liste('compo-recoit', compo.recoit);
+  champDonne.max = String(etat.players[maPlace].argent);
+  champRecoit.max = String(etat.players[compo.a].argent);
+}
 
 function rendreOffre() {
   const voile = $('offre-recue');
   const o = etat.offre;
-  const pourMoi = o && o.a === maPlace && !etat.players[maPlace].bot && etat.status === 'jeu';
+  const pourMoi = o && o.a === maPlace && !etat.players[maPlace].bot && etat.status === 'jeu' && !compo;
   voile.hidden = !pourMoi;
   if (!pourMoi) return;
-  $('offre-titre').textContent = `${etat.players[o.de].name} te propose un échange`;
+  $('offre-titre').textContent = o.contre
+    ? `${etat.players[o.de].name} te fait une contre-offre`
+    : `${etat.players[o.de].name} te propose un échange`;
   // Après l'échange, qui posséderait la case k ?
   const apres = (k) => {
     if (o.donne.includes(k)) return o.a;
@@ -666,6 +747,12 @@ function rendreOffre() {
 }
 $('offre-accepter').addEventListener('click', () => action({ type: 'repondre', accepte: true }));
 $('offre-refuser').addEventListener('click', () => action({ type: 'repondre', accepte: false }));
+// Contre-offre : on part de l'offre reçue, inversée, et on la modifie sur le plateau
+$('offre-contre').addEventListener('click', () => {
+  const o = etat.offre;
+  if (!o || o.a !== maPlace) return;
+  entrerModeEchange({ a: o.de, donne: [...o.recoit], recoit: [...o.donne], donneArgent: o.recoitArgent, recoitArgent: o.donneArgent, contre: true });
+});
 
 // =====================================================================
 // Fin de partie
@@ -699,6 +786,8 @@ function rendre() {
   rendreActions();
   rendreBiens();
   rendreJoueurs();
+  rendreCompo();
+  if (casesEls) marquerEchange();
   rendreOffre();
   rendreFin();
   rendreFiche();
