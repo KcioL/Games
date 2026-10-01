@@ -16,6 +16,86 @@ let derniereCarte = null;
 let dernierEvenement = null;
 let premiereSynchro = true;
 
+// Fin de tour : résumé du tour, puis « À … de jouer »
+const DUREE_SUIVANT = 1800;
+let dernierResume = null;
+let resumeAffiche = false;
+
+// Nouveau résumé à montrer ? (attend la fin des animations en cours)
+function verifierResume() {
+  const r = etat.dernierResume;
+  const ts = r ? r.ts : 0;
+  if (dernierResume === null) { dernierResume = ts; return; } // à l'ouverture de la page : rien à montrer
+  if (!r || ts === dernierResume || enAnimation || desQuiRoulent) return;
+  dernierResume = ts;
+  afficherFinDeTour(r);
+}
+
+async function afficherFinDeTour(r) {
+  resumeAffiche = true;
+  const p = etat.players[r.i];
+  // durée adaptée au contenu : environ 4 s pour un tour simple, 7 s au plus pour un tour chargé
+  const nbLignes = (r.lignes || []).length;
+  const dureeResume = Math.min(7000, 2500 + 700 * nbLignes);
+  finAnimation = Math.max(finAnimation, Date.now() + dureeResume + DUREE_SUIVANT + 400);
+  const bilan = (r.argentFin || 0) - (r.argentDebut || 0);
+  // 1) ce que le joueur a fait pendant son tour
+  const resume = el('div', 'resume');
+  resume.appendChild(el('span', 'resume-sur-titre', 'Fin du tour'));
+  const titre = el('h2', '', p.name);
+  titre.style.setProperty('--couleur-joueur', COULEURS_JOUEURS[p.couleur]);
+  resume.appendChild(titre);
+  const lignes = (r.lignes || []).filter((t) => !t.endsWith('commence.'));
+  const ul = el('ul', 'resume-lignes');
+  (lignes.length ? lignes : ['Rien de particulier.']).forEach((t) => ul.appendChild(el('li', '', t)));
+  resume.appendChild(ul);
+  const b = el('p', 'resume-bilan ' + (bilan > 0 ? 'gain' : bilan < 0 ? 'perte' : 'neutre'));
+  b.textContent = bilan === 0 ? 'Bilan : aucun changement' : `Bilan : ${bilan > 0 ? '+' : '−'}${yens(Math.abs(bilan))}`;
+  resume.appendChild(b);
+  resume.appendChild(el('span', 'resume-solde', `Il lui reste ${yens(r.argentFin || 0)}`));
+  await montrerFenetreTour(resume, dureeResume);
+  // 2) à qui de jouer
+  if (etat.status === 'jeu' && r.suivant !== undefined && etat.players[r.suivant]) {
+    const q = etat.players[r.suivant];
+    const suivant = el('div', 'suivant');
+    const pastille = el('span', 'suivant-pastille', q.name.charAt(0).toUpperCase());
+    pastille.style.background = COULEURS_JOUEURS[q.couleur];
+    const moi = !salon.estLocal() && r.suivant === maPlace;
+    suivant.append(pastille, el('h2', '', moi ? 'À toi de jouer !' : `À ${q.name} de jouer`));
+    if (q.prison) suivant.appendChild(el('p', '', `(au kōban, essai ${q.prison}/3)`));
+    await montrerFenetreTour(suivant, DUREE_SUIVANT);
+  }
+  resumeAffiche = false;
+  finAnimation = Date.now();
+  botPrevu = '';
+  rendre();
+  planifierBot();
+}
+
+// Fenêtre au centre, qui se ferme seule après `duree` ou d'un toucher
+let fermerFenetreTour = null;
+function montrerFenetreTour(contenu, duree) {
+  return new Promise((ok) => {
+    const zone = $('fenetre-tour-contenu');
+    zone.innerHTML = '';
+    zone.appendChild(contenu);
+    const barre = $('fenetre-tour-barre');
+    barre.style.setProperty('--duree', `${duree}ms`);
+    barre.style.animation = 'none';
+    void barre.offsetWidth;
+    barre.style.animation = '';
+    $('annonce-tour').hidden = false;
+    const minuteur = setTimeout(() => fermerFenetreTour && fermerFenetreTour(), duree);
+    fermerFenetreTour = () => {
+      clearTimeout(minuteur);
+      fermerFenetreTour = null;
+      $('annonce-tour').hidden = true;
+      ok();
+    };
+  });
+}
+$('annonce-tour').addEventListener('click', () => fermerFenetreTour && fermerFenetreTour());
+
 // Roulement des dés à chaque nouveau lancer
 let dernierLancer = null;
 let desQuiRoulent = false;
@@ -427,7 +507,7 @@ function rendreFiche() {
 }
 
 // =====================================================================
-// Panneau : statut, actions, biens, joueurs, journal
+// Panneau : statut, actions, biens, joueurs
 // =====================================================================
 const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace;
 
@@ -485,6 +565,10 @@ function rendreActions() {
     return;
   }
 
+  if (resumeAffiche) {
+    st.textContent = 'Fin du tour…';
+    return;
+  }
   if (desQuiRoulent) {
     st.textContent = `${actif.name} lance les dés…`;
     return;
@@ -550,14 +634,12 @@ function rendreActions() {
   }
 }
 
-function rendreBiens() {
-  const moi = etat.players[maPlace];
-  $('mon-argent').textContent = yens(moi.argent);
-  const zone = $('mes-biens');
+// Liste des biens d'un joueur (quartiers dans l'ordre du plateau, bâtiments, omamori)
+function remplirBiens(zone, joueur) {
   zone.innerHTML = '';
-  const miens = etat.cases.map((e, c) => (e.p === maPlace ? c : -1)).filter((c) => c >= 0);
-  if (!miens.length) zone.appendChild(el('p', 'vide', 'Aucun quartier pour l\'instant.'));
-  miens.forEach((c) => {
+  const siens = etat.cases.map((e, c) => (e.p === joueur ? c : -1)).filter((c) => c >= 0);
+  if (!siens.length) zone.appendChild(el('p', 'vide', 'Aucun quartier pour l\'instant.'));
+  siens.forEach((c) => {
     const def = CASES[c];
     const e = etat.cases[c];
     const b = el('button', 'bien' + (e.m ? ' hypotheque' : ''));
@@ -568,8 +650,33 @@ function rendreBiens() {
     b.addEventListener('click', () => (compo ? basculerCase(c) : ouvrirFiche(c)));
     zone.appendChild(b);
   });
-  if (moi.sortie.length) zone.appendChild(el('span', 'omamori', `Omamori × ${moi.sortie.length}`));
+  const p = etat.players[joueur];
+  if (p.sortie.length) zone.appendChild(el('span', 'omamori', `Omamori × ${p.sortie.length}`));
 }
+
+function rendreBiens() {
+  $('mon-argent').textContent = yens(etat.players[maPlace].argent);
+  remplirBiens($('mes-biens'), maPlace);
+  if (biensOuverts >= 0) rendreBiensJoueur();
+}
+
+// Biens d'un autre joueur (en touchant son nom)
+let biensOuverts = -1;
+function ouvrirBiensJoueur(k) {
+  biensOuverts = k;
+  rendreBiensJoueur();
+  $('biens-joueur').showModal();
+}
+function rendreBiensJoueur() {
+  const p = etat.players[biensOuverts];
+  if (!p) return;
+  $('biens-joueur-titre').textContent = biensOuverts === maPlace && !salon.estLocal() ? 'Mes biens' : `Biens ${de(p.name)}`;
+  const nb = etat.cases.filter((e) => e.p === biensOuverts).length;
+  $('biens-joueur-argent').textContent = `${yens(p.argent)} en poche, ${nb} propriété${nb > 1 ? 's' : ''}, patrimoine total ${yens(M.patrimoine(etat, biensOuverts))}`;
+  remplirBiens($('biens-joueur-liste'), biensOuverts);
+}
+$('biens-joueur-fermer').addEventListener('click', () => $('biens-joueur').close());
+$('biens-joueur').addEventListener('close', () => { biensOuverts = -1; });
 
 function rendreJoueurs() {
   $('tour').textContent = etat.finMode === 'tours' ? `tour ${Math.min(etat.tour, etat.toursMax)} / ${etat.toursMax}` : `tour ${etat.tour}`;
@@ -578,20 +685,25 @@ function rendreJoueurs() {
   etat.players.forEach((p, k) => {
     const li = el('li', p.faillite ? 'faillite' : '');
     if (k === etat.active && etat.status === 'jeu') li.classList.add('actif');
+    // toucher un joueur affiche tous ses biens
+    li.tabIndex = 0;
+    li.setAttribute('role', 'button');
+    li.setAttribute('aria-label', `Voir les biens ${de(p.name)}`);
+    li.addEventListener('click', () => ouvrirBiensJoueur(k));
+    li.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ouvrirBiensJoueur(k); } });
     const pastille = el('span', 'pastille-joueur', p.name.charAt(0).toUpperCase());
     pastille.style.background = COULEURS_JOUEURS[p.couleur];
     li.appendChild(pastille);
     li.appendChild(el('span', 'nom', p.name + (!salon.estLocal() && k === maPlace ? ' (toi)' : '')));
     const infos = [];
+    const nb = etat.cases.filter((e) => e.p === k).length;
+    if (!p.faillite) infos.push(`${nb} propriété${nb > 1 ? 's' : ''}`);
     if (p.prison) infos.push(`au kōban, essai ${p.prison}/3`);
     if (p.faillite) infos.push('ruiné');
     if (infos.length) li.appendChild(el('span', 'etat', infos.join(', ')));
     li.appendChild(el('span', 'argent', yens(p.argent)));
     liste.appendChild(li);
   });
-  const journal = $('journal');
-  journal.innerHTML = '';
-  [...etat.journal].reverse().forEach((t) => journal.appendChild(el('li', '', t)));
 }
 
 // =====================================================================
@@ -783,6 +895,7 @@ function rendre() {
   if (!casesEls) construirePlateau();
   animerDeplacements();
   rendrePlateau();
+  verifierResume();
   rendreActions();
   rendreBiens();
   rendreJoueurs();

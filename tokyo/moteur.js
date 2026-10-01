@@ -33,8 +33,33 @@ export const vivants = (s) => s.players.map((p, i) => (p.faillite ? -1 : i)).fil
 export const achetable = (i) => ['propriete', 'transport', 'compagnie'].includes(CASES[i].type);
 
 function journal(s, texte) {
-  s.journal.push(texte.replace(/([!?])\.$/, '$1'));
+  const t = texte.replace(/([!?])\.$/, '$1');
+  s.journal.push(t);
   if (s.journal.length > 8) s.journal.splice(0, s.journal.length - 8);
+  // tout ce qui se passe pendant le tour d'un joueur alimente son résumé de fin de tour
+  if (s.resumeTour) {
+    s.resumeTour.lignes = s.resumeTour.lignes || [];
+    s.resumeTour.lignes.push(t);
+    if (s.resumeTour.lignes.length > 30) s.resumeTour.lignes.shift();
+  }
+}
+
+// Début du tour d'un joueur : on note son argent pour calculer son bilan en fin de tour
+function debutTour(s) {
+  s.resumeTour = { i: s.active, lignes: [], argentDebut: s.players[s.active].argent };
+}
+
+// Fin du tour : résumé de ce que le joueur a fait, affiché ensuite à tout le monde
+function clotureTour(s) {
+  const r = s.resumeTour;
+  if (!r) return;
+  s.dernierResume = {
+    i: r.i,
+    lignes: r.lignes || [],
+    argentDebut: r.argentDebut,
+    argentFin: s.players[r.i].argent,
+    ts: Date.now(),
+  };
 }
 
 export function possedeGroupe(s, i, groupe) {
@@ -95,7 +120,9 @@ export function nouvellePartie(s) {
   s.offre = null;
   s.classement = null;
   s.status = 'jeu';
+  s.dernierResume = null;
   journal(s, `${s.players[s.active].name} commence.`);
+  debutTour(s);
 }
 
 // ---------------------------------------------------------------------
@@ -532,6 +559,7 @@ export function faireFaillite(s, i) {
 // Fin du tour et fin de partie
 // ---------------------------------------------------------------------
 function joueurSuivant(s) {
+  clotureTour(s);
   const n = s.players.length;
   const avant = s.active;
   for (let k = 1; k <= n; k++) {
@@ -545,6 +573,8 @@ function joueurSuivant(s) {
   s.phase = 'lancer';
   s.doubles = 0;
   s.rejoue = false;
+  if (s.dernierResume) s.dernierResume.suivant = s.active;
+  debutTour(s);
   if (s.finMode === 'tours' && s.tour > s.toursMax) finPartie(s);
 }
 

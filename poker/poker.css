@@ -130,6 +130,25 @@
   border-radius: 14px;
   background: var(--nuit-2);
 }
+/* Relance ouverte : les autres boutons disparaissent, et le panneau est fixé en bas de l'écran
+   pour que le bouton de confirmation soit toujours visible, sans faire défiler */
+#panneau-actions.relance-ouverte .rangee.trois { display: none; }
+.relance {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: min(480px, 100%);
+  z-index: 30;
+  border-radius: 16px 16px 0 0;
+  border-top: 2px solid var(--or);
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  box-shadow: 0 -14px 40px rgba(0, 0, 0, .55);
+  animation: relance-monte .2s ease-out;
+}
+@keyframes relance-monte { from { transform: translate(-50%, 100%); } }
+.rangee.deux { grid-template-columns: 1fr 2fr; }
+body.relance-ouverte #jeu { padding-bottom: 320px; } /* rien ne reste caché derrière le panneau */
 .relance-montant { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; text-align: center; }
 .relance-montant small { display: block; color: var(--brume); font-size: .8rem; }
 .relance-montant .jetons { font-size: 1.3rem; }
@@ -162,3 +181,5 @@
   .siege { width: 96px; padding: 4px; gap: 2px; }
   .siege-info { font-size: .68rem; }
 }
+
+@media (prefers-reduced-motion: reduce) { .relance { animation: none; } }

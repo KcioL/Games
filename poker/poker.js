@@ -446,18 +446,33 @@ function planifierBot() {
 // ---------- Actions du joueur ----------
 const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && etat.players[maPlace].etat === 'actif';
 
+// Relance ouverte : les boutons « Se coucher » et « Parole/Suivre » sont masqués (pas de clic par erreur)
+// et le panneau est fixé en bas de l'écran, bouton de confirmation toujours visible.
+function ouvrirRelance(ouvert) {
+  $('relance').hidden = !ouvert;
+  $('panneau-actions').classList.toggle('relance-ouverte', ouvert);
+  document.body.classList.toggle('relance-ouverte', ouvert);
+}
+
 function action(a) {
-  $('relance').hidden = true;
+  ouvrirRelance(false);
   agir((s) => jouer(s, maPlace, a));
 }
 
 $('btn-coucher').addEventListener('click', () => action({ type: 'coucher' }));
 $('btn-suivre').addEventListener('click', () => action({ type: 'suivre' }));
 $('btn-ouvrir-relance').addEventListener('click', () => {
-  const panneau = $('relance');
-  panneau.hidden = !panneau.hidden;
-  if (!panneau.hidden) { relanceCible = bornesRelance().min; rendreRelance(); }
+  relanceCible = bornesRelance().min;
+  ouvrirRelance(true);
+  rendreRelance();
+  // mes cartes restent visibles juste au-dessus du panneau de relance
+  requestAnimationFrame(() => {
+    const cartes = $('moi').getBoundingClientRect();
+    const haut = window.innerHeight - $('relance').offsetHeight; // position finale (le panneau est encore en train de monter)
+    if (cartes.bottom > haut - 8) window.scrollBy({ top: cartes.bottom - haut + 12, behavior: 'smooth' });
+  });
 });
+$('btn-annuler-relance').addEventListener('click', () => ouvrirRelance(false));
 $('btn-relancer').addEventListener('click', () => {
   const { max } = bornesRelance();
   action(relanceCible >= max ? { type: 'tapis' } : { type: 'relancer', cible: relanceCible });
@@ -614,7 +629,7 @@ function rendreCommandes() {
   const tour = monTour();
   $('panneau-actions').hidden = !tour;
   $('panneau-fin').hidden = etat.status !== 'fin';
-  if (!tour) { $('relance').hidden = true; return; }
+  if (!tour) { ouvrirRelance(false); return; }
   const p = etat.players[maPlace];
   const aSuivre = etat.miseMax - p.mise;
   const suivre = $('btn-suivre');
@@ -625,7 +640,7 @@ function rendreCommandes() {
   const ouvrir = $('btn-ouvrir-relance');
   ouvrir.disabled = !peutRelancer;
   ouvrir.textContent = etat.miseMax === 0 ? 'Miser' : 'Relancer';
-  if (!peutRelancer) $('relance').hidden = true;
+  if (!peutRelancer) ouvrirRelance(false);
   if (!$('relance').hidden) rendreRelance();
 }
 

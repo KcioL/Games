@@ -131,7 +131,7 @@
         <button class="btn btn-principal" id="btn-suivre">Parole</button>
         <button class="btn btn-secondaire" id="btn-ouvrir-relance">Relancer</button>
       </div>
-      <div class="relance" id="relance" hidden>
+      <div class="relance" id="relance" role="dialog" aria-label="Relancer" hidden>
         <div class="relance-montant">
           <button class="btn pas" id="btn-moins" aria-label="Diminuer">−</button>
           <div><small>Relancer à</small><span class="jetons" id="relance-valeur"></span></div>
@@ -144,7 +144,10 @@
           <button class="btn raccourci" data-rel="pot">Pot</button>
           <button class="btn raccourci" data-rel="tapis">Tapis</button>
         </div>
-        <button class="btn btn-principal" id="btn-relancer">Relancer</button>
+        <div class="rangee deux">
+          <button class="btn" id="btn-annuler-relance">Annuler</button>
+          <button class="btn btn-principal" id="btn-relancer">Relancer</button>
+        </div>
       </div>
     </div>
 

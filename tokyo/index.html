@@ -151,10 +151,6 @@
         <h2>Joueurs <span class="tour" id="tour"></span></h2>
         <ul class="joueurs" id="joueurs"></ul>
       </section>
-      <section class="bloc">
-        <h2>Journal</h2>
-        <ol class="journal" id="journal"></ol>
-      </section>
     </aside>
 
     <!-- Fiche d'une case -->
@@ -219,6 +215,23 @@
         <button class="btn btn-principal" id="offre-accepter">Accepter</button>
       </div>
     </section>
+
+    <!-- Fin de tour : résumé du tour, puis joueur suivant -->
+    <div class="annonce-tour" id="annonce-tour" hidden>
+      <div class="fenetre-tour" id="fenetre-tour" role="dialog" aria-live="polite">
+        <div id="fenetre-tour-contenu"></div>
+        <span class="grande-carte-temps"><span id="fenetre-tour-barre"></span></span>
+        <span class="grande-carte-aide">Touche pour continuer</span>
+      </div>
+    </div>
+
+    <!-- Biens d'un joueur -->
+    <dialog class="regles biens-joueur" id="biens-joueur">
+      <h2 id="biens-joueur-titre"></h2>
+      <p class="biens-joueur-argent" id="biens-joueur-argent"></p>
+      <div class="mes-biens" id="biens-joueur-liste"></div>
+      <button class="btn fermer-fiche" id="biens-joueur-fermer">Fermer</button>
+    </dialog>
 
     <!-- Carte tirée, affichée en grand pour tout le monde -->
     <div class="annonce-carte" id="annonce-carte" hidden>
