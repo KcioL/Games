@@ -1,5 +1,5 @@
 import { $, el, toast, initSalon, initRegles, de } from '../commun/salon.js';
-import { CASES, GROUPES } from './plateau.js';
+import { CASES, GROUPES, TRANSPORTS, COMPAGNIES } from './plateau.js';
 import * as M from './moteur.js';
 
 const { yens } = M;
@@ -484,19 +484,38 @@ function rendreFiche() {
       ? `Propriétaire : ${etat.players[e.p].name}${e.m ? ' (hypothéqué)' : ''}`
       : `À vendre : ${yens(c.prix)}`;
     zone.appendChild(infos);
+    // Ce qui s'applique en ce moment : groupe complet, nombre de transports ou de compagnies possédés
+    const proprio = e.p;
+    const complet = c.type === 'propriete' && proprio >= 0 && M.possedeGroupe(etat, proprio, c.groupe);
+    const nbTransports = proprio >= 0 ? TRANSPORTS.filter((t) => etat.cases[t].p === proprio).length : 0;
+    const nbCompagnies = proprio >= 0 ? COMPAGNIES.filter((t) => etat.cases[t].p === proprio).length : 0;
+    if (proprio >= 0) {
+      const actuel = el('p', 'loyer-actuel');
+      if (e.m) actuel.textContent = 'Hypothéqué : aucun loyer pour l\'instant.';
+      else if (c.type === 'propriete') {
+        const raison = e.b === 5 ? 'hôtel' : e.b > 0 ? `${e.b} maison${e.b > 1 ? 's' : ''}` : complet ? 'groupe complet, loyer doublé' : 'terrain nu';
+        actuel.textContent = `Loyer actuel : ${yens(M.loyer(etat, i))} (${raison})`;
+      } else if (c.type === 'transport') {
+        actuel.textContent = `Loyer actuel : ${yens(2500 * 2 ** (nbTransports - 1))} (${nbTransports} transport${nbTransports > 1 ? 's' : ''})`;
+      } else {
+        actuel.textContent = `Loyer actuel : ${nbCompagnies === 2 ? 10 : 4} × les dés × 100 ¥`;
+      }
+      zone.appendChild(actuel);
+    }
     const table = el('table', 'loyers');
     const tb = el('tbody');
+    const possede = proprio >= 0 && !e.m;
     if (c.type === 'propriete') {
-      ligne(tb, 'Terrain nu', yens(c.loyers[0]), e.b === 0);
-      ligne(tb, 'Groupe complet', yens(c.loyers[0] * 2), false);
-      for (let k = 1; k <= 4; k++) ligne(tb, `${k} maison${k > 1 ? 's' : ''}`, yens(c.loyers[k]), e.b === k);
-      ligne(tb, 'Hôtel', yens(c.loyers[5]), e.b === 5);
+      ligne(tb, 'Terrain nu', yens(c.loyers[0]), possede && e.b === 0 && !complet);
+      ligne(tb, 'Groupe complet', yens(c.loyers[0] * 2), possede && e.b === 0 && complet);
+      for (let k = 1; k <= 4; k++) ligne(tb, `${k} maison${k > 1 ? 's' : ''}`, yens(c.loyers[k]), possede && e.b === k);
+      ligne(tb, 'Hôtel', yens(c.loyers[5]), possede && e.b === 5);
       ligne(tb, 'Prix d\'une maison', yens(GROUPES[c.groupe].maison), false);
     } else if (c.type === 'transport') {
-      [1, 2, 3, 4].forEach((n) => ligne(tb, `${n} transport${n > 1 ? 's' : ''}`, yens(2500 * 2 ** (n - 1)), false));
+      [1, 2, 3, 4].forEach((n) => ligne(tb, `${n} transport${n > 1 ? 's' : ''}`, yens(2500 * 2 ** (n - 1)), possede && n === nbTransports));
     } else {
-      ligne(tb, '1 compagnie', '4 × les dés × 100 ¥', false);
-      ligne(tb, '2 compagnies', '10 × les dés × 100 ¥', false);
+      ligne(tb, '1 compagnie', '4 × les dés × 100 ¥', possede && nbCompagnies === 1);
+      ligne(tb, '2 compagnies', '10 × les dés × 100 ¥', possede && nbCompagnies === 2);
     }
     ligne(tb, 'Hypothèque', yens(c.prix / 2), false);
     table.appendChild(tb);
@@ -679,6 +698,11 @@ function remplirBiens(zone, joueur) {
     b.type = 'button';
     b.style.setProperty('--couleur', def.groupe ? GROUPES[def.groupe].couleur : '#6B6B6B');
     b.append(def.icone && !def.groupe ? `${def.icone} ` : '', def.court);
+    if (def.groupe && M.possedeGroupe(etat, joueur, def.groupe)) {
+      const etoile = el('span', 'groupe-complet', '★');
+      etoile.title = 'Groupe complet';
+      b.appendChild(etoile);
+    }
     if (e.b) b.appendChild(el('span', 'nb-bat', e.b === 5 ? '🏨' : `${e.b}■`));
     b.addEventListener('click', () => (compo ? basculerCase(c) : ouvrirFiche(c)));
     zone.appendChild(b);
