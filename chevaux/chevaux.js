@@ -264,6 +264,7 @@ const salon = initSalon({
   afficher: (s, place) => {
     etat = normaliser(s);
     maPlace = place;
+    noterChangement();
     rendre();
     planifierBot();
   },
@@ -300,12 +301,39 @@ function planifierBot() {
       if (s.status !== 'jeu' || s.coup !== coup) return false;
       const b = s.players[s.active];
       if (!b || !b.bot) return false;
-      if (s.phase === 'lancer') return lancer(s, s.active);
-      const h = choixBot(s, s.active);
-      return h >= 0 ? deplacer(s, s.active, h) : false;
+      try {
+        if (s.phase === 'lancer') return lancer(s, s.active);
+        const h = choixBot(s, s.active);
+        if (h >= 0 && deplacer(s, s.active, h)) return true;
+      } catch (err) {
+        console.error('Bot : erreur dans sa décision', err);
+      }
+      // secours : n'importe quel coup permis
+      if (s.phase === 'choisir') return coupsPossibles(s, s.active, s.de).some((c) => deplacer(s, s.active, c.h));
+      return false;
     });
   }, delai);
 }
+
+const botDoitJouer = () => { const a = etat.players[etat.active]; return !!a && !!a.bot; };
+
+// Surveillant : si un bot doit jouer et que rien n'a bougé depuis un moment (coup perdu, mise en veille,
+// coupure réseau…), on reprogramme son coup. Un coup en double est sans risque : le compteur `coup` l'empêche.
+let dernierChangement = Date.now();
+let dernierCoupConnu = null;
+function noterChangement() {
+  const cle = `${etat && etat.mainNo}-${etat && etat.coup}-${etat && etat.status}`;
+  if (cle !== dernierCoupConnu) { dernierCoupConnu = cle; dernierChangement = Date.now(); }
+}
+setInterval(() => {
+  if (!etat || etat.status !== 'jeu' || !botDoitJouer()) return;
+  const occupe = !!animationDe;
+  if (occupe || Date.now() - dernierChangement < 3500) return;
+  dernierChangement = Date.now();
+  botPrevu = '';
+  planifierBot();
+}, 1500);
+
 
 // ---------- Actions du joueur ----------
 const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && !etat.players[maPlace].bot;

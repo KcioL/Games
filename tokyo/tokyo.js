@@ -130,6 +130,7 @@ const salon = initSalon({
   afficher: (s, place) => {
     etat = M.normaliser(s);
     maPlace = place;
+    noterChangement();
     rendre();
     planifierBot();
   },
@@ -171,10 +172,42 @@ function planifierBot() {
       if (s.status !== 'jeu' || s.coup !== coup) return false;
       const b = M.acteur(s);
       if (b < 0 || !s.players[b].bot) return false;
-      return M.jouerAction(s, b, M.decisionBot(s, b));
+      try {
+        if (M.jouerAction(s, b, M.decisionBot(s, b))) return true;
+      } catch (err) {
+        console.error('Bot : erreur dans sa décision', err);
+      }
+      return actionDeSecours(s, b);
     });
   }, delai);
 }
+
+// Si la décision d'un bot est refusée, il se rabat sur une action sûre pour ne jamais bloquer la partie
+function actionDeSecours(s, b) {
+  if (s.offre && s.offre.a === b) return M.jouerAction(s, b, { type: 'repondre', accepte: false });
+  const essais = { lancer: ['lancer'], avancer: ['avancer'], acheter: ['encheres', 'refuser'], enchere: ['passer'], dette: ['regler'], 'fin-tour': ['fin'] };
+  return (essais[s.phase] || []).some((type) => M.jouerAction(s, b, { type }));
+}
+
+const botDoitJouer = () => { const a = M.acteur(etat); return a >= 0 && etat.players[a].bot; };
+
+// Surveillant : si un bot doit jouer et que rien n'a bougé depuis un moment (coup perdu, mise en veille,
+// coupure réseau…), on reprogramme son coup. Un coup en double est sans risque : le compteur `coup` l'empêche.
+let dernierChangement = Date.now();
+let dernierCoupConnu = null;
+function noterChangement() {
+  const cle = `${etat && etat.mainNo}-${etat && etat.coup}-${etat && etat.status}`;
+  if (cle !== dernierCoupConnu) { dernierCoupConnu = cle; dernierChangement = Date.now(); }
+}
+setInterval(() => {
+  if (!etat || etat.status !== 'jeu' || !botDoitJouer()) return;
+  const occupe = resumeAffiche || enAnimation || desQuiRoulent || Date.now() < finAnimation;
+  if (occupe || Date.now() - dernierChangement < 4500) return;
+  dernierChangement = Date.now();
+  botPrevu = '';
+  planifierBot();
+}, 1500);
+
 
 // =====================================================================
 // Plateau
