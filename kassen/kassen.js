@@ -1,0 +1,406 @@
+import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
+import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES } from './cartes.js';
+import * as M from './moteur.js';
+
+// =====================================================================
+// Salon
+// =====================================================================
+let etat = null;
+let maPlace = 0;
+let selection = null; // uid de la carte choisie dans la main
+
+const salon = initSalon({
+  jeu: 'kassen',
+  etatInitial: (nom, nb, { local }) => ({
+    players: [
+      { name: nom, joined: true, bot: false },
+      local && nb === 1 ? { name: 'Bot', joined: true, bot: true } : { name: 'En attente', joined: false, bot: false },
+    ],
+  }),
+  demarrer: (s) => { M.normaliser(s); M.nouvellePartie(s); },
+  afficher: (s, place) => {
+    if (place !== maPlace) selection = null;
+    etat = M.normaliser(s);
+    maPlace = place;
+    noterChangement();
+    rendre();
+    planifierBot();
+  },
+  // Sur un seul téléphone : la main de chacun est secrète, on cache l'écran entre deux joueurs
+  quiDoitJouer: (s) => {
+    const joueurs = s.players || [];
+    if (joueurs.filter((p) => !p.bot).length <= 1) return -1;
+    const a = M.acteur(M.normaliser(s));
+    return a >= 0 && !joueurs[a].bot ? a : -1;
+  },
+  secret: true,
+});
+initRegles();
+remplirRegles();
+
+function agir(fn) { return salon.agir((s) => fn(M.normaliser(s))); }
+// « Tu as gagné » a un sens en ligne ou contre le bot ; à deux sur un téléphone, on nomme le gagnant
+const pointDeVueJoueur = () => !salon.estLocal() || etat.players.some((p) => p.bot);
+const action = (a) => { selection = null; return agir((s) => M.jouerAction(s, maPlace, a)); };
+
+// =====================================================================
+// Bot (et surveillant anti-blocage)
+// =====================================================================
+function botAJouer(s) {
+  if (s.status === 'clans') return s.players.findIndex((p) => p.bot && !p.clan);
+  if (s.status === 'echange') return s.players.findIndex((p) => p.bot && !p.pret);
+  if (s.status === 'jeu' && s.players[s.active] && s.players[s.active].bot) return s.active;
+  return -1;
+}
+let botPrevu = '';
+let annonceAffichee = false;
+let finAnnonce = 0;
+function planifierBot() {
+  if (!etat) return;
+  const b = botAJouer(etat);
+  if (b < 0) return;
+  const moi = etat.players[maPlace];
+  if (!moi || moi.bot) return;
+  const cle = `${etat.coup}-${b}-${etat.status}`;
+  if (botPrevu === cle) return;
+  botPrevu = cle;
+  const coup = etat.coup;
+  const premierHumain = etat.players.findIndex((p) => !p.bot);
+  const reflexion = etat.status === 'jeu' ? 1100 + Math.random() * 600 : 600;
+  const attente = Math.max(0, finAnnonce - Date.now());
+  const delai = attente + ((salon.estLocal() || maPlace === premierHumain) ? reflexion : 4000 + maPlace * 1500);
+  setTimeout(() => {
+    agir((s) => {
+      if (s.coup !== coup) return false;
+      const j = botAJouer(s);
+      if (j < 0) return false;
+      try {
+        if (M.jouerAction(s, j, M.decisionBot(s, j))) return true;
+      } catch (err) {
+        console.error('Bot : erreur dans sa décision', err);
+      }
+      return M.jouerAction(s, j, { type: 'passer' }) || M.jouerAction(s, j, { type: 'pret' });
+    });
+  }, delai);
+}
+let dernierChangement = Date.now();
+let dernierCoupConnu = null;
+function noterChangement() {
+  const cle = `${etat && etat.coup}-${etat && etat.status}`;
+  if (cle !== dernierCoupConnu) { dernierCoupConnu = cle; dernierChangement = Date.now(); }
+}
+setInterval(() => {
+  if (!etat || botAJouer(etat) < 0 || annonceAffichee) return;
+  if (Date.now() - dernierChangement < 4500) return;
+  dernierChangement = Date.now();
+  botPrevu = '';
+  planifierBot();
+}, 1500);
+
+// =====================================================================
+// Cartes
+// =====================================================================
+const def = (carte) => CARTES[carte.c];
+
+// Élément d'une carte ; `force` = force actuelle sur le plateau (sinon force imprimée)
+function carteEl(carte, { force, taille = '' } = {}) {
+  const d = def(carte);
+  const e = el('div', `carte ${taille} type-${d.type}`);
+  const clan = d.clan ? CLANS[d.clan] : null;
+  e.style.setProperty('--clan', clan ? clan.couleur : '#2E2A26');
+  if (d.legende) e.classList.add('legende');
+  if (d.type === 'unite') {
+    const f = force === undefined ? d.force : force;
+    const pastille = el('span', 'force', String(f));
+    if (force !== undefined && !d.legende) {
+      if (f > d.force) pastille.classList.add('hausse');
+      if (f < d.force) pastille.classList.add('baisse');
+    }
+    e.appendChild(pastille);
+    e.appendChild(el('span', 'rangee-icone', d.rangees.map((r) => KANJI_RANGEES[r]).join('')));
+    if (d.capacite) e.appendChild(el('span', 'capacite', CAPACITES[d.capacite].kanji));
+    if (d.legende) e.appendChild(el('span', 'capacite legende-icone', CAPACITES.legende.kanji));
+  } else {
+    e.appendChild(el('span', 'kanji-special', d.kanji));
+  }
+  if (taille !== 'mini') e.appendChild(el('span', 'nom', d.nom));
+  e.title = d.nom;
+  return e;
+}
+
+function description(carte) {
+  const d = def(carte);
+  if (d.type !== 'unite') return `${d.nom} : ${d.texte}`;
+  const morceaux = [`${d.nom}, force ${d.force}, ${d.rangees.map((r) => NOMS_RANGEES[r].toLowerCase()).join(' ou ')}.`];
+  if (d.legende) morceaux.push(`${CAPACITES.legende.nom} : ${CAPACITES.legende.texte}`);
+  if (d.capacite && d.capacite !== 'agile') morceaux.push(`${CAPACITES[d.capacite].nom} : ${CAPACITES[d.capacite].texte}`);
+  return morceaux.join(' ');
+}
+
+// =====================================================================
+// Écrans
+// =====================================================================
+function montrer(ecran) {
+  ['choix-clan', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
+}
+
+function rendreClans() {
+  const moi = etat.players[maPlace];
+  const autre = etat.players[1 - maPlace];
+  const zone = $('clans');
+  zone.innerHTML = '';
+  if (moi.clan) {
+    zone.hidden = true;
+    $('attente-clan').textContent = `Tu as choisi : ${CLANS[moi.clan].nom}. En attente ${de(autre.name)}…`;
+    return;
+  }
+  zone.hidden = false;
+  $('attente-clan').textContent = salon.estLocal() && !autre.bot ? `${moi.name}, choisis ton clan.` : '';
+  Object.entries(CLANS).forEach(([cle, c]) => {
+    const b = el('button', 'clan');
+    b.type = 'button';
+    b.style.setProperty('--clan', c.couleur);
+    b.append(el('span', 'clan-kanji', c.kanji), el('strong', '', c.nom), el('span', 'clan-atout', c.atout), el('span', 'clan-chef', `Chef : ${c.chef}. ${c.chefTexte}`));
+    b.addEventListener('click', () => action({ type: 'clan', clan: cle }));
+    zone.appendChild(b);
+  });
+}
+
+function rendreEchange() {
+  const moi = etat.players[maPlace];
+  const autre = etat.players[1 - maPlace];
+  const reste = M.ECHANGES_MAX - moi.echanges;
+  $('echange-texte').textContent = moi.pret
+    ? 'Ta main est prête.'
+    : (reste > 0 ? `Touche une carte pour l'échanger contre une carte de ta pioche (encore ${reste}).` : 'Échanges terminés.');
+  const zone = $('main-echange');
+  zone.innerHTML = '';
+  moi.main.forEach((carte) => {
+    const e = carteEl(carte, { taille: 'grande' });
+    if (!moi.pret && reste > 0) {
+      e.classList.add('jouable');
+      e.addEventListener('click', () => action({ type: 'echanger', u: carte.u }));
+    }
+    zone.appendChild(e);
+  });
+  $('btn-pret').hidden = moi.pret;
+  $('attente-echange').textContent = moi.pret ? `En attente ${de(autre.name)}…` : '';
+}
+
+// ---------- Plateau ----------
+function infoCamp(zone, j) {
+  const p = etat.players[j];
+  zone.innerHTML = '';
+  const clan = CLANS[p.clan] || {};
+  const nom = el('span', 'camp-nom');
+  const embleme = el('span', 'embleme', clan.kanji || '');
+  embleme.style.setProperty('--clan', clan.couleur || '#555');
+  nom.append(embleme, el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')));
+  zone.appendChild(nom);
+  const vies = el('span', 'vies');
+  for (let k = 0; k < 2; k++) vies.appendChild(el('span', k < p.vies ? 'vie' : 'vie perdue'));
+  zone.appendChild(vies);
+  zone.appendChild(el('span', 'nb-main', `${p.main.length} carte${p.main.length > 1 ? 's' : ''}`));
+  if (p.passe) zone.appendChild(el('span', 'badge-passe', 'a passé'));
+  zone.appendChild(el('span', 'score-total', String(M.total(etat, j))));
+  zone.classList.toggle('actif', etat.status === 'jeu' && etat.active === j);
+}
+
+function rendreCamp(zone, j, ordre) {
+  zone.innerHTML = '';
+  const cibles = ciblesSelection();
+  ordre.forEach((r) => {
+    const ligne = el('div', `rangee r-${r}`);
+    ligne.dataset.rangee = r;
+    if (etat.meteo[r]) ligne.classList.add('meteo');
+    const tete = el('div', 'rangee-tete');
+    tete.append(el('span', 'rangee-kanji', KANJI_RANGEES[r]), el('span', 'rangee-total', String(M.totalRangee(etat, j, r))));
+    if (etat.players[j].cors[r]) tete.appendChild(el('span', 'cor', '鼓'));
+    ligne.appendChild(tete);
+    const cartes = el('div', 'rangee-cartes');
+    etat.players[j].rangees[r].forEach((carte) => {
+      const e = carteEl(carte, { force: M.forceCarte(etat, j, r, carte), taille: 'mini' });
+      // Kagemusha : on touche l'unité à reprendre
+      if (j === maPlace && cibles.some((c) => c.cible === carte.u)) {
+        e.classList.add('cible');
+        e.addEventListener('click', (ev) => { ev.stopPropagation(); jouerSelection({ rangee: r, cible: carte.u }); });
+      }
+      cartes.appendChild(e);
+    });
+    ligne.appendChild(cartes);
+    // rangée ciblée (unité, rōnin, taiko)
+    const carteChoisie = selectionCarte();
+    const cibleRangee = cibles.some((c) => c.rangee === r && !c.cible);
+    const camp = carteChoisie && def(carteChoisie).capacite === 'espion' ? 1 - maPlace : maPlace;
+    if (cibleRangee && j === camp) {
+      ligne.classList.add('cible');
+      ligne.addEventListener('click', () => jouerSelection({ rangee: r }));
+    }
+    zone.appendChild(ligne);
+  });
+}
+
+function rendreCiel() {
+  const zone = $('ciel');
+  zone.innerHTML = '';
+  const actives = RANGEES.filter((r) => etat.meteo[r]);
+  const noms = { cac: ['雪', 'Neige'], dist: ['霧', 'Brume'], siege: ['嵐', 'Typhon'] };
+  if (!actives.length) zone.appendChild(el('span', 'ciel-calme', 'Ciel dégagé'));
+  actives.forEach((r) => zone.appendChild(el('span', 'meteo-active', `${noms[r][0]} ${noms[r][1]}`)));
+  zone.appendChild(el('span', 'manche', `Manche ${etat.manche}`));
+}
+
+const monTour = () => etat.status === 'jeu' && etat.active === maPlace && !etat.players[maPlace].passe;
+const selectionCarte = () => (selection === null ? null : etat.players[maPlace].main.find((c) => c.u === selection));
+function ciblesSelection() {
+  if (!monTour() || !selectionCarte()) return [];
+  return M.ciblesPossibles(etat, maPlace, selection);
+}
+
+function jouerSelection(choix) {
+  const u = selection;
+  if (u === null) return;
+  action({ type: 'jouer', u, choix });
+}
+
+function rendreMain() {
+  const zone = $('main');
+  zone.innerHTML = '';
+  const moi = etat.players[maPlace];
+  if (selection !== null && !selectionCarte()) selection = null;
+  moi.main.forEach((carte) => {
+    const e = carteEl(carte, { taille: 'grande' });
+    if (carte.u === selection) e.classList.add('choisie');
+    e.addEventListener('click', () => {
+      selection = selection === carte.u ? null : carte.u;
+      rendre();
+    });
+    zone.appendChild(e);
+  });
+  if (!moi.main.length) zone.appendChild(el('p', 'vide', 'Plus de cartes en main.'));
+}
+
+function rendreCommandes() {
+  const moi = etat.players[maPlace];
+  const tour = monTour();
+  const clan = CLANS[moi.clan] || {};
+  const chef = $('btn-chef');
+  chef.textContent = moi.chefUtilise ? `Chef utilisé (${clan.chef})` : `Chef : ${clan.chef || ''}`;
+  chef.title = clan.chefTexte || '';
+  chef.disabled = !tour || !M.chefUtilisable(etat, maPlace);
+  $('btn-passer').disabled = !tour;
+  // « Jouer cette carte » quand la carte n'a pas besoin qu'on choisisse sa place
+  const carte = selectionCarte();
+  const cibles = ciblesSelection();
+  const implicite = carte && tour && cibles.length === 1 && !cibles[0].cible
+    && !(def(carte).type === 'cor') && (def(carte).type !== 'unite' || def(carte).rangees.length === 1);
+  $('btn-jouer').hidden = !implicite;
+
+  const detail = $('detail');
+  if (carte) {
+    let aide = '';
+    if (tour && def(carte).type === 'leurre') aide = cibles.length ? ' Touche l\'unité à reprendre.' : ' Aucune unité à reprendre.';
+    else if (tour && (def(carte).type === 'cor' || (def(carte).type === 'unite' && def(carte).rangees.length > 1))) aide = ' Touche la rangée où la jouer.';
+    detail.textContent = description(carte) + aide;
+  } else {
+    detail.textContent = tour ? 'Touche une carte de ta main pour la voir et la jouer.' : '';
+  }
+}
+
+function rendreStatut() {
+  const st = $('statut');
+  const actif = etat.players[etat.active];
+  const moi = etat.players[maPlace];
+  if (etat.status !== 'jeu') { st.textContent = ''; return; }
+  if (monTour()) {
+    const autre = etat.players[1 - maPlace];
+    const nom = salon.estLocal() && !autre.bot ? `${moi.name}, ` : '';
+    st.textContent = autre.passe ? `${nom}l'adversaire a passé : joue ou passe à ton tour.` : `${nom}à toi de jouer.`;
+  } else if (moi.passe) {
+    st.textContent = `Tu as passé. ${actif.bot ? `${actif.name} réfléchit…` : `Au tour ${de(actif.name)}.`}`;
+  } else {
+    st.textContent = actif.bot ? `${actif.name} réfléchit…` : `Au tour ${de(actif.name)}`;
+  }
+  st.classList.toggle('a-toi', monTour());
+}
+
+// ---------- Fin de manche et fin de partie ----------
+let derniereManche = null;
+function verifierAnnonce() {
+  const f = etat.finManche;
+  const ts = f ? f.ts : 0;
+  if (derniereManche === null) { derniereManche = ts; return; }
+  if (!f || ts === derniereManche) return;
+  derniereManche = ts;
+  const zone = $('annonce-contenu');
+  zone.innerHTML = '';
+  const gagne = f.gagnant === maPlace && pointDeVueJoueur();
+  zone.appendChild(el('span', 'annonce-sur-titre', `Fin de la manche ${f.manche}`));
+  zone.appendChild(el('h2', '', f.gagnant < 0 ? 'Égalité' : gagne ? 'Manche gagnée !' : (pointDeVueJoueur() ? 'Manche perdue' : `${etat.players[f.gagnant].name} gagne la manche`)));
+  zone.appendChild(el('p', 'annonce-scores', `${etat.players[0].name} ${f.scores[0]} à ${f.scores[1]} ${etat.players[1].name}`));
+  $('annonce').hidden = false;
+  annonceAffichee = true;
+  finAnnonce = Date.now() + 3500;
+  const fermer = () => {
+    $('annonce').hidden = true;
+    annonceAffichee = false;
+    finAnnonce = Date.now();
+    botPrevu = '';
+    rendre(); // affiche la fin de partie si c'était la dernière manche
+    planifierBot();
+  };
+  const minuteur = setTimeout(fermer, 3500);
+  $('annonce').onclick = () => { clearTimeout(minuteur); fermer(); };
+}
+
+function rendreFin() {
+  const voile = $('fin');
+  voile.hidden = etat.status !== 'fin' || annonceAffichee;
+  if (etat.status !== 'fin') return;
+  const g = etat.gagnant;
+  $('fin-titre').textContent = g < 0 ? 'Match nul !'
+    : (pointDeVueJoueur() ? (g === maPlace ? 'Victoire !' : 'Défaite…') : `Victoire ${de(etat.players[g].name)} !`);
+  const ol = $('fin-manches');
+  ol.innerHTML = '';
+  (etat.resultats || []).forEach((r, k) => {
+    const qui = r.gagnant < 0 ? 'égalité' : etat.players[r.gagnant].name;
+    ol.appendChild(el('li', '', `Manche ${k + 1} : ${qui} (${r.scores[0]} à ${r.scores[1]})`));
+  });
+}
+$('btn-revanche').addEventListener('click', () => agir((s) => { if (s.status !== 'fin') return false; M.nouvellePartie(s); }));
+
+// ---------- Boutons ----------
+$('btn-pret').addEventListener('click', () => action({ type: 'pret' }));
+$('btn-passer').addEventListener('click', () => action({ type: 'passer' }));
+$('btn-chef').addEventListener('click', () => action({ type: 'chef' }));
+$('btn-jouer').addEventListener('click', () => jouerSelection({}));
+
+// ---------- Règles ----------
+function remplirRegles() {
+  const cap = $('regles-capacites');
+  Object.values(CAPACITES).forEach((c) => cap.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.texte}`)));
+  const spe = $('regles-speciales');
+  ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin'].forEach((k) => spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)));
+  const clans = $('regles-clans');
+  Object.values(CLANS).forEach((c) => clans.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.atout} Chef « ${c.chef} » : ${c.chefTexte}`)));
+}
+
+// =====================================================================
+function rendre() {
+  if (!etat) return;
+  if (etat.status === 'clans') { montrer('choix-clan'); rendreClans(); }
+  else if (etat.status === 'echange') { montrer('echange-cartes'); rendreEchange(); }
+  else {
+    montrer('bataille');
+    infoCamp($('info-adverse'), 1 - maPlace);
+    rendreCamp($('camp-adverse'), 1 - maPlace, ['siege', 'dist', 'cac']);
+    rendreCiel();
+    rendreCamp($('camp-moi'), maPlace, ['cac', 'dist', 'siege']);
+    infoCamp($('info-moi'), maPlace);
+    rendreStatut();
+    rendreMain();
+    rendreCommandes();
+    verifierAnnonce();
+  }
+  rendreFin();
+}

@@ -140,6 +140,13 @@ h1 {
   font-weight: 800;
 }
 
+.kassen .pastille {
+  background: radial-gradient(circle, #241312 0 60%, #C9A24A 61% 68%, #241312 69%);
+  color: #E8C877;
+  font-family: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  font-weight: 800;
+}
+
 /* ---------- Deux façons de jouer ---------- */
 .modes-liste { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .mode { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--nuit-3); display: grid; gap: 4px; }
