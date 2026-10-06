@@ -106,114 +106,142 @@ let statutPrecedent = null;
 
 const salon = initSalon({
   jeu: 'skyjo',
-  etatInitial: (nom, nb) => ({
-    players: Array.from({ length: nb }, (_, i) => ({
-      name: i === 0 ? nom : 'En attente', joined: i === 0, total: 0,
-    })),
-  }),
+  etatInitial: (nom, nb, { local }) => {
+    const joueurs = Array.from({ length: nb }, (_, i) => ({ name: i === 0 ? nom : 'En attente', joined: i === 0, total: 0, bot: false }));
+    const bots = parseInt($(local ? 'local-bots' : 'nb-bots').value, 10) || 0;
+    for (let k = 1; k <= bots; k++) joueurs.push({ name: `Bot ${k}`, joined: true, total: 0, bot: true });
+    return { players: joueurs };
+  },
+  validerLocal: () => {
+    const total = parseInt($('local-nb').value, 10) + parseInt($('local-bots').value, 10);
+    if (total < 2) return 'Il faut au moins 2 joueurs : ajoute un bot ou un joueur.';
+    if (total > 6) return '6 places maximum autour de la table.';
+    return '';
+  },
+  validerEnLigne: () => (parseInt($('nb-joueurs').value, 10) + parseInt($('nb-bots').value, 10) > 6
+    ? '6 places maximum : enlève un bot ou un joueur.' : ''),
   demarrer: (s) => {
     s.round = 1;
     s.players.forEach((p) => { p.total = 0; });
     nouvelleManche(s);
   },
-  afficher: (s, place) => { etat = normaliser(s); maPlace = place; rendre(); },
-  // Mode un seul téléphone : personne ne connaît ses cartes cachées, inutile de cacher l'écran
+  afficher: (s, place) => {
+    etat = normaliser(s);
+    maPlace = place;
+    noterChangement();
+    rendre();
+    planifierBot();
+  },
+  // Mode un seul téléphone : personne ne connaît ses cartes cachées, inutile de cacher l'écran.
+  // L'écran suit le joueur humain qui doit agir (les bots jouent tout seuls).
   quiDoitJouer: (s) => {
-    if (s.status === 'flip') return (s.players || []).findIndex((p) => (p.grid || []).filter((c) => c.up).length < 2);
-    if (s.status === 'playing') return s.active;
+    const joueurs = s.players || [];
+    if (joueurs.filter((p) => !p.bot).length <= 1) return -1;
+    if (s.status === 'flip') return joueurs.findIndex((p) => !p.bot && (p.grid || []).filter((c) => c.up).length < 2);
+    if (s.status === 'playing' && joueurs[s.active] && !joueurs[s.active].bot) return s.active;
     return -1;
   },
   secret: false,
 });
 initRegles();
 
-// ---------- Actions ----------
-const monTour = (s) => s.status === 'playing' && s.active === maPlace;
+// ---------- Actions (pour le joueur i, humain ou bot) ----------
+const tourDe = (s, i) => s.status === 'playing' && s.active === i;
+const monTour = (s) => tourDe(s, maPlace);
+const compter = (s) => { s.coup = (s.coup || 0) + 1; };
 
 function agir(fn) {
   return salon.agir((s) => fn(normaliser(s)));
 }
 
-function piocher() {
-  agir((s) => {
-    if (!monTour(s) || s.phase !== 'choose') return false;
-    remplirPioche(s);
-    if (!s.deck.length) return false;
-    s.held = { v: s.deck.pop(), from: 'deck' };
-    s.phase = 'holding';
-    s.action = `${s.players[maPlace].name} a pioché un ${s.held.v}`;
-  });
+function actPiocher(s, i) {
+  if (!tourDe(s, i) || s.phase !== 'choose') return false;
+  remplirPioche(s);
+  if (!s.deck.length) return false;
+  s.held = { v: s.deck.pop(), from: 'deck' };
+  s.phase = 'holding';
+  s.action = `${s.players[i].name} a pioché un ${s.held.v}`;
+  compter(s);
+  return true;
 }
 
-function prendreDefausse() {
-  agir((s) => {
-    if (!monTour(s) || s.phase !== 'choose' || !s.discard.length) return false;
-    s.held = { v: s.discard.pop(), from: 'discard' };
-    s.phase = 'holding';
-    s.action = `${s.players[maPlace].name} a pris le ${s.held.v} de la défausse`;
-  });
+function actPrendreDefausse(s, i) {
+  if (!tourDe(s, i) || s.phase !== 'choose' || !s.discard.length) return false;
+  s.held = { v: s.discard.pop(), from: 'discard' };
+  s.phase = 'holding';
+  s.action = `${s.players[i].name} a pris le ${s.held.v} de la défausse`;
+  compter(s);
+  return true;
 }
 
-function defausserTenue() {
-  agir((s) => {
-    if (!monTour(s) || s.phase !== 'holding' || !s.held || s.held.from !== 'deck') return false;
-    const v = s.held.v;
-    s.discard.push(v);
-    s.held = null;
-    s.action = `${s.players[maPlace].name} a défaussé le ${v}`;
-    const g = s.players[maPlace].grid;
-    if (g.some((c) => !c.up && !c.gone)) s.phase = 'mustFlip';
-    else finDeTour(s, []);
-  });
+function actDefausser(s, i) {
+  if (!tourDe(s, i) || s.phase !== 'holding' || !s.held || s.held.from !== 'deck') return false;
+  const v = s.held.v;
+  s.discard.push(v);
+  s.held = null;
+  s.action = `${s.players[i].name} a défaussé le ${v}`;
+  compter(s);
+  const g = s.players[i].grid;
+  if (g.some((c) => !c.up && !c.gone)) s.phase = 'mustFlip';
+  else finDeTour(s, []);
+  return true;
 }
 
-function cliquerCarte(i) {
-  agir((s) => {
-    const g = s.players[maPlace].grid;
-    const carte = g[i];
-    if (!carte || carte.gone) return false;
+// Toucher la carte k de son jeu : la retourner (début de manche, ou après avoir défaussé), ou y poser la carte tenue
+function actCarte(s, i, k) {
+  const g = s.players[i].grid;
+  const carte = g[k];
+  if (!carte || carte.gone) return false;
 
-    // Début de manche : chacun retourne 2 cartes
-    if (s.status === 'flip') {
-      if (carte.up || g.filter((c) => c.up).length >= 2) return false;
-      carte.up = true;
-      if (s.players.every((p) => p.grid.filter((c) => c.up).length >= 2)) {
-        // À chaque manche, le plus gros total des 2 cartes retournées commence.
-        // Égalité (non prévue par la règle) : tirage au sort entre les ex-aequo.
-        const totaux = s.players.map((p) => sommeVisible(p.grid));
-        const max = Math.max(...totaux);
-        const exAequo = totaux.map((t, k) => (t === max ? k : -1)).filter((k) => k >= 0);
-        const premier = exAequo[Math.floor(Math.random() * exAequo.length)];
-        s.active = premier;
-        s.status = 'playing';
-        s.action = '';
-        const pourquoi = exAequo.length > 1 ? `égalité à ${max}, tirage au sort` : `plus gros total : ${max}`;
-        s.lastEvent = { ts: Date.now(), textes: [`${s.players[premier].name} commence (${pourquoi}) !`] };
-      }
-      return;
+  // Début de manche : chacun retourne 2 cartes
+  if (s.status === 'flip') {
+    if (carte.up || g.filter((c) => c.up).length >= 2) return false;
+    carte.up = true;
+    compter(s);
+    if (s.players.every((p) => p.grid.filter((c) => c.up).length >= 2)) {
+      // À chaque manche, le plus gros total des 2 cartes retournées commence.
+      // Égalité (non prévue par la règle) : tirage au sort entre les ex-aequo.
+      const totaux = s.players.map((p) => sommeVisible(p.grid));
+      const max = Math.max(...totaux);
+      const exAequo = totaux.map((t, n) => (t === max ? n : -1)).filter((n) => n >= 0);
+      const premier = exAequo[Math.floor(Math.random() * exAequo.length)];
+      s.active = premier;
+      s.status = 'playing';
+      s.action = '';
+      const pourquoi = exAequo.length > 1 ? `égalité à ${max}, tirage au sort` : `plus gros total : ${max}`;
+      s.lastEvent = { ts: Date.now(), textes: [`${s.players[premier].name} commence (${pourquoi}) !`] };
     }
+    return true;
+  }
 
-    if (!monTour(s)) return false;
+  if (!tourDe(s, i)) return false;
 
-    if (s.phase === 'holding' && s.held) {
-      const ancienne = carte.v;
-      s.discard.push(ancienne);
-      g[i] = { v: s.held.v, up: true, gone: false };
-      s.action = `${s.players[maPlace].name} a posé un ${s.held.v} et défaussé un ${ancienne}`;
-      finDeTour(s, []);
-      return;
-    }
+  if (s.phase === 'holding' && s.held) {
+    const ancienne = carte.v;
+    s.discard.push(ancienne);
+    g[k] = { v: s.held.v, up: true, gone: false };
+    s.action = `${s.players[i].name} a posé un ${s.held.v} et défaussé un ${ancienne}`;
+    compter(s);
+    finDeTour(s, []);
+    return true;
+  }
 
-    if (s.phase === 'mustFlip') {
-      if (carte.up) return false;
-      carte.up = true;
-      s.action = `${s.players[maPlace].name} a défaussé puis retourné un ${carte.v}`;
-      finDeTour(s, []);
-      return;
-    }
-    return false;
-  });
+  if (s.phase === 'mustFlip') {
+    if (carte.up) return false;
+    carte.up = true;
+    s.action = `${s.players[i].name} a défaussé puis retourné un ${carte.v}`;
+    compter(s);
+    finDeTour(s, []);
+    return true;
+  }
+  return false;
 }
+
+// Boutons et cartes de l'écran : actions de « mon » joueur
+const piocher = () => agir((s) => actPiocher(s, maPlace));
+const prendreDefausse = () => agir((s) => actPrendreDefausse(s, maPlace));
+const defausserTenue = () => agir((s) => actDefausser(s, maPlace));
+const cliquerCarte = (k) => agir((s) => actCarte(s, maPlace, k));
 
 function suite() {
   agir((s) => {
@@ -222,13 +250,157 @@ function suite() {
       nouvelleManche(s);
     } else if (s.status === 'finished') {
       s.round = 1;
-        s.players.forEach((p) => { p.total = 0; });
+      s.players.forEach((p) => { p.total = 0; });
       nouvelleManche(s);
     } else {
       return false;
     }
+    compter(s);
   });
 }
+
+// =====================================================================
+// Bots
+// =====================================================================
+const VALEUR_CACHEE = 5; // valeur moyenne d'une carte encore cachée
+
+// Points gagnés en posant la valeur v à la place k (colonne de trois identiques comprise)
+function gainPlacement(g, k, v) {
+  const c = g[k];
+  if (!c || c.gone) return -Infinity;
+  const avant = c.up ? c.v : VALEUR_CACHEE;
+  const autres = colonne(k % 4).filter((x) => x !== k).map((x) => g[x]);
+  if (autres.every((o) => o.up && !o.gone && o.v === v)) {
+    return autres.reduce((t, o) => t + o.v, 0) + avant; // la colonne disparaît
+  }
+  let gain = avant - v;
+  // une paire dans la colonne : on se rapproche d'une colonne éliminée
+  if (v >= 3 && autres.some((o) => o.up && !o.gone && o.v === v)) gain += 1.5;
+  return gain;
+}
+
+// Finir la manche serait-il risqué (points doublés si on n'a pas le plus petit score) ?
+function finirEstRisque(s, i, gApres) {
+  if (s.finisher >= 0) return false;
+  const estime = (g) => g.reduce((t, c) => t + (c.gone ? 0 : c.up ? c.v : VALEUR_CACHEE), 0);
+  const moi = estime(gApres);
+  return moi > 0 && s.players.some((p, n) => n !== i && estime(p.grid) <= moi);
+}
+
+function meilleurePlace(s, i, v, { eviterFin = true } = {}) {
+  const g = s.players[i].grid;
+  const cachees = g.filter((c) => !c.up && !c.gone).length;
+  let meilleure = -1;
+  let meilleurGain = -Infinity;
+  g.forEach((c, k) => {
+    if (c.gone) return;
+    // poser sur la dernière carte cachée finirait la manche : seulement si ce n'est pas risqué
+    if (eviterFin && !c.up && cachees === 1) {
+      const apres = g.map((x, n) => (n === k ? { v, up: true, gone: false } : x));
+      if (finirEstRisque(s, i, apres)) return;
+    }
+    const gain = gainPlacement(g, k, v);
+    if (gain > meilleurGain) { meilleurGain = gain; meilleure = k; }
+  });
+  return { k: meilleure, gain: meilleurGain };
+}
+
+function jouerBot(s, i) {
+  const g = s.players[i].grid;
+  if (s.status === 'flip') {
+    // retourner 2 cartes dans des colonnes différentes
+    const dejaCol = g.map((c, k) => (c.up ? k % 4 : -1)).filter((x) => x >= 0);
+    const choix = g.map((c, k) => k).filter((k) => !g[k].up && !dejaCol.includes(k % 4));
+    const k = choix[Math.floor(Math.random() * choix.length)];
+    return actCarte(s, i, k);
+  }
+  if (s.phase === 'choose') {
+    const dessus = s.discard[s.discard.length - 1];
+    if (dessus !== undefined && meilleurePlace(s, i, dessus).gain >= 3) return actPrendreDefausse(s, i);
+    return actPiocher(s, i);
+  }
+  if (s.phase === 'holding' && s.held) {
+    const v = s.held.v;
+    const place = meilleurePlace(s, i, v);
+    const cachees = g.filter((c) => !c.up && !c.gone).length;
+    // jeter la carte obligerait à retourner la dernière cachée : risqué en fin de manche
+    const jeterRisque = cachees === 1 && finirEstRisque(s, i, g.map((c) => (!c.up && !c.gone ? { ...c, up: true } : c)));
+    if (s.held.from === 'discard' || place.gain > 0.5 || (jeterRisque && place.k >= 0)) {
+      return actCarte(s, i, place.k >= 0 ? place.k : meilleurePlace(s, i, v, { eviterFin: false }).k);
+    }
+    return actDefausser(s, i);
+  }
+  if (s.phase === 'mustFlip') {
+    const cachees = g.map((c, k) => k).filter((k) => !g[k].up && !g[k].gone);
+    return actCarte(s, i, cachees[Math.floor(Math.random() * cachees.length)]);
+  }
+  return false;
+}
+
+// Si la décision d'un bot est refusée, une action sûre pour ne jamais bloquer la partie
+function secoursBot(s, i) {
+  const g = s.players[i].grid;
+  const premiereCachee = g.findIndex((c) => !c.up && !c.gone);
+  if (s.status === 'flip' || s.phase === 'mustFlip') return actCarte(s, i, premiereCachee);
+  if (s.phase === 'choose') return actPiocher(s, i);
+  if (s.phase === 'holding') return actDefausser(s, i) || actCarte(s, i, g.findIndex((c) => !c.gone));
+  return false;
+}
+
+// Quel bot doit agir maintenant ?
+function botAJouer(s) {
+  if (s.status === 'flip') return s.players.findIndex((p) => p.bot && (p.grid || []).filter((c) => c.up).length < 2);
+  if (s.status === 'playing' && s.players[s.active] && s.players[s.active].bot) return s.active;
+  return -1;
+}
+const botDoitJouer = () => botAJouer(etat) >= 0;
+
+// Les bots sont joués par l'appareil du premier joueur humain ; les autres prennent le relais
+// après un délai s'il est déconnecté. Le compteur `coup` évite tout double coup.
+let botPrevu = '';
+function planifierBot() {
+  if (!etat || !['flip', 'playing'].includes(etat.status)) return;
+  const b = botAJouer(etat);
+  if (b < 0) return;
+  const moi = etat.players[maPlace];
+  if (!moi || moi.bot) return;
+  const cle = `${etat.round}-${etat.coup || 0}-${b}-${etat.status}-${etat.phase}`;
+  if (botPrevu === cle) return;
+  botPrevu = cle;
+  const coup = etat.coup || 0;
+  const premierHumain = etat.players.findIndex((p) => !p.bot);
+  // le bot laisse le temps de voir la carte qu'il tient avant de la poser
+  const reflexion = etat.phase === 'holding' ? 1400 : 800 + Math.random() * 400;
+  const delai = (salon.estLocal() || maPlace === premierHumain) ? reflexion : 4000 + maPlace * 1500;
+  setTimeout(() => {
+    agir((s) => {
+      if ((s.coup || 0) !== coup) return false;
+      const j = botAJouer(s);
+      if (j < 0) return false;
+      try {
+        if (jouerBot(s, j)) return true;
+      } catch (err) {
+        console.error('Bot : erreur dans sa décision', err);
+      }
+      return secoursBot(s, j);
+    });
+  }, delai);
+}
+
+// Surveillant : si un bot doit jouer et que rien n'a bougé depuis un moment, on reprogramme son coup
+let dernierChangement = Date.now();
+let dernierCoupConnu = null;
+function noterChangement() {
+  const cle = `${etat && etat.round}-${etat && etat.coup}-${etat && etat.status}`;
+  if (cle !== dernierCoupConnu) { dernierCoupConnu = cle; dernierChangement = Date.now(); }
+}
+setInterval(() => {
+  if (!etat || !['flip', 'playing'].includes(etat.status) || !botDoitJouer()) return;
+  if (Date.now() - dernierChangement < 3500) return;
+  dernierChangement = Date.now();
+  botPrevu = '';
+  planifierBot();
+}, 1500);
 
 $('pioche').addEventListener('click', piocher);
 $('defausse').addEventListener('click', prendreDefausse);
@@ -363,7 +535,7 @@ function rendreStatut() {
     if (etat.phase === 'mustFlip') texte = 'Retourne une de tes cartes cachées';
     st.appendChild(el('span', 'a-toi', texte));
   } else {
-    st.append(`Au tour ${de(actif.name)}`);
+    st.append(actif.bot ? `${actif.name} joue…` : `Au tour ${de(actif.name)}`);
   }
   const details = [];
   if (dernierTour) details.push('Dernier tour !');

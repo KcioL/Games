@@ -36,37 +36,62 @@
         <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
       </div>
       <div class="volet" id="volet-ligne">
-            <p>Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
-      <label>Ton pseudo
-        <input id="pseudo" maxlength="16" autocomplete="nickname">
-      </label>
-      <label>Nombre de joueurs
-        <select id="nb-joueurs">
-          <option value="2">2 joueurs</option>
-          <option value="3">3 joueurs</option>
-          <option value="4">4 joueurs</option>
-          <option value="5">5 joueurs</option>
-          <option value="6">6 joueurs</option>
-        </select>
-      </label>
-      <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
-      <div class="separateur">ou</div>
-      <div class="ligne">
-        <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
-        <button class="btn" id="btn-rejoindre">Rejoindre</button>
-      </div>
+        <p>Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter la table.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="nb-bots">
+              <option value="0">Aucun</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+        </div>
+        <p class="astuce">Seul contre des bots ? <button type="button" class="lien" data-aller-volet="volet-local">Joue sur ce téléphone</button> (même sans internet).</p>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
       </div>
       <div class="volet" id="volet-local" hidden>
-        <p>Un seul téléphone, que vous vous passez à chaque tour. Pas besoin d'internet.</p>
-        <label>Nombre de joueurs
-          <select id="local-nb">
-            <option value="2">2 joueurs</option>
-            <option value="3">3 joueurs</option>
-            <option value="4">4 joueurs</option>
-            <option value="5">5 joueurs</option>
-            <option value="6">6 joueurs</option>
-          </select>
-        </label>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (6 places au total). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option>
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+        </div>
         <div class="local-noms" id="local-noms"></div>
         <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
       </div>
