@@ -197,6 +197,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
         const etat = etatInitial(nom, nb, { local: false });
         etat.status = 'waiting';
         etat.createdAt = Date.now();
+        etat.majAt = Date.now(); // dernière activité (les salons inactifs plus de 24 h sont supprimés)
         const res = await api.runTransaction(api.ref(api.db, `${jeu}/${c}`), (actuel) => (actuel === null ? etat : undefined));
         if (res.committed) { entrer(c, 0); return; }
       }
@@ -228,6 +229,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
           joueurs[libre].joined = true;
           joueurs[libre].name = nomFinal;
           maPlace = libre;
+          s.majAt = Date.now();
           return s;
         }
         // Partie déjà lancée : on retrouve sa place grâce au pseudo
@@ -361,7 +363,9 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     return api.runTransaction(api.ref(api.db, `${jeu}/${code}`), (s) => {
       if (!s) return s;
       s.players = s.players || [];
-      return fn(s) === false ? undefined : s;
+      if (fn(s) === false) return undefined;
+      s.majAt = Date.now(); // dernière activité
+      return s;
     }).catch((err) => toast(messageErreur(err), true));
   }
 

@@ -257,6 +257,7 @@ btnUno.addEventListener('click', (e) => {
     // Quelqu'un m'a contré entre-temps : on abandonne, sa version fait foi.
     if (state.unoVulnerablePlayer !== myPlayerId) return;
     state.unoVulnerablePlayer = null;
+    state.majAt = Date.now();
     const me = state.players && state.players[myPlayerId];
     const myName = me ? me.name : 'Un joueur';
     state.lastEvent = { ts: Date.now(), type: 'uno', by: myPlayerId, byName: myName, text: `${myName} a annoncé UNO !` };
@@ -357,7 +358,8 @@ btnCreateRoom.addEventListener('click', () => {
     winner: null,
     unoVulnerablePlayer: null,
     drawPenalty: 0,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    majAt: Date.now() // dernière activité (les salons inactifs plus de 24 h sont supprimés)
   };
 
   const { ref, set } = window.firebaseRefs;
@@ -395,7 +397,7 @@ btnJoinRoom.addEventListener('click', () => {
       data.players[myPlayerId].joined = true;
       data.players[myPlayerId].name = myName;
 
-      update(ref(window.db, 'uno/' + roomCode), { players: data.players });
+      update(ref(window.db, 'uno/' + roomCode), { players: data.players, majAt: Date.now() });
 
       lobbyControls.classList.add('hidden');
       roomInfo.classList.remove('hidden');
@@ -437,6 +439,7 @@ function updateFirebaseState() {
 
   const { ref, update } = window.firebaseRefs;
   update(ref(window.db, 'uno/' + roomCode), {
+    majAt: Date.now(),
     status: gameStatus,
     activePlayerIndex: activePlayerIndex,
     playDirection: playDirection,

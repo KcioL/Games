@@ -1,12 +1,12 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v32';
+const VERSION = 'jeux-vol-v33';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'manifest.webmanifest',
   'icones/favicon.ico', 'icones/favicon-32.png', 'icones/apple-touch-icon.png',
   'icones/icone-192.png', 'icones/icone-512.png', 'icones/icone-adaptative-512.png',
-  'commun/commun.css', 'commun/salon.js', 'commun/local-db.js', 'commun/relais.js', 'commun/relais.css', 'commun/perso.js', 'commun/cartes.js', 'commun/cartes.css', 'commun/service-worker.js',
+  'commun/commun.css', 'commun/salon.js', 'commun/local-db.js', 'commun/relais.js', 'commun/relais.css', 'commun/perso.js', 'commun/cartes.js', 'commun/cartes.css', 'commun/service-worker.js', 'commun/nettoyage.js',
   'uno/', 'uno/index.html', 'uno/script.js', 'uno/style.css', 'uno/uno-logo.png', 'uno/local.js',
   'bataille/', 'bataille/index.html', 'bataille/bataille.js', 'bataille/bataille.css',
   'skyjo/', 'skyjo/index.html', 'skyjo/skyjo.js', 'skyjo/skyjo.css',
