@@ -102,21 +102,9 @@
         <button type="button" class="filtre" data-filtre="dist">弓 Distance</button>
         <button type="button" class="filtre" data-filtre="siege">砲 Siège</button>
         <button type="button" class="filtre" data-filtre="special">Spéciales</button>
+        <button type="button" class="filtre" data-filtre="deck">Dans mon deck</button>
       </div>
-      <div class="atelier-onglets" role="tablist">
-        <button role="tab" aria-selected="true" data-panneau="atelier-collection">Collection</button>
-        <button role="tab" aria-selected="false" data-panneau="atelier-deck">Mon deck</button>
-      </div>
-      <div class="atelier-panneaux">
-        <div class="panneau-cartes" id="atelier-collection">
-          <h3>Collection <small>touche une carte pour l'ajouter</small></h3>
-          <div class="grille-cartes" id="grille-collection"></div>
-        </div>
-        <div class="panneau-cartes" id="atelier-deck">
-          <h3>Mon deck <small>touche une carte pour la retirer</small></h3>
-          <div class="grille-cartes" id="grille-deck"></div>
-        </div>
-      </div>
+      <div class="atelier-sections" id="atelier-sections"></div>
       <p class="detail" id="atelier-detail"></p>
       <div class="atelier-boutons">
         <button class="btn" id="atelier-defaut">Deck par défaut</button>

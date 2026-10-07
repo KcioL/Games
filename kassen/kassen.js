@@ -246,7 +246,7 @@ function ouvrirAtelier(clan) {
   $('atelier').hidden = false;
   $('choix-clan').hidden = true;
   document.querySelectorAll('.filtre').forEach((f) => f.classList.toggle('actif', f.dataset.filtre === 'tout'));
-  $('atelier-detail').textContent = 'Touche une carte pour la voir et l\'ajouter à ton deck (ou l\'en retirer).';
+  $('atelier-detail').textContent = 'Touche une carte (ou +) pour l\'ajouter à ton deck, et − pour la retirer.';
   rendreAtelier();
   window.scrollTo(0, 0);
 }
@@ -256,9 +256,10 @@ function fermerAtelier() {
   rendre();
 }
 
-const passeFiltre = (id) => {
+const passeFiltre = (id, dansDeck = {}) => {
   const d = CARTES[id];
   if (!atelier || atelier.filtre === 'tout') return true;
+  if (atelier.filtre === 'deck') return (dansDeck[id] || 0) > 0;
   if (atelier.filtre === 'special') return d.type !== 'unite';
   return d.type === 'unite' && d.rangees.includes(atelier.filtre);
 };
@@ -285,25 +286,70 @@ function rendreAtelier() {
 
   const dansDeck = {};
   deck.forEach((c) => { dansDeck[c] = (dansDeck[c] || 0) + 1; });
-  const remplir = (zone, entrees, ajout) => {
-    zone.innerHTML = '';
-    entrees.filter(([id]) => passeFiltre(id)).sort(([a], [b]) => ordre(a, b)).forEach(([id, n]) => {
-      if (n <= 0) return;
-      const e = carteEl({ c: id }, { taille: 'grande' });
-      e.appendChild(el('span', 'exemplaires', `×${n}`));
-      e.addEventListener('click', () => {
-        if (ajout) atelier.deck.push(id);
-        else atelier.deck.splice(atelier.deck.indexOf(id), 1);
-        $('atelier-detail').textContent = description({ c: id });
-        rendreAtelier();
-      });
-      zone.appendChild(e);
-    });
-    if (!zone.children.length) zone.appendChild(el('p', 'vide', 'Aucune carte ici.'));
-  };
-  // collection : exemplaires restants (non mis dans le deck)
-  remplir($('grille-collection'), COLLECTIONS[clan].map(([id, n]) => [id, n - (dansDeck[id] || 0)]), true);
-  remplir($('grille-deck'), Object.entries(dansDeck), false);
+  const dispo = Object.fromEntries(COLLECTIONS[clan]);
+
+  // Toutes les cartes disponibles pour ce clan, en trois sections
+  const ids = COLLECTIONS[clan].map(([id]) => id);
+  const sections = [
+    ['Cartes du clan', ids.filter((id) => CARTES[id].type === 'unite' && CARTES[id].clan === clan)],
+    ['Cartes neutres', ids.filter((id) => CARTES[id].type === 'unite' && !CARTES[id].clan)],
+    ['Cartes spéciales', ids.filter((id) => CARTES[id].type !== 'unite')],
+  ];
+  const zone = $('atelier-sections');
+  zone.innerHTML = '';
+  sections.forEach(([titre, liste]) => {
+    const visibles = liste.filter((id) => passeFiltre(id, dansDeck)).sort(ordre);
+    if (!visibles.length) return;
+    const pris = liste.reduce((t, id) => t + (dansDeck[id] || 0), 0);
+    const section = el('section', 'section-atelier');
+    const h3 = el('h3', '', `${titre} `);
+    h3.appendChild(el('small', '', `${pris} dans le deck`));
+    section.appendChild(h3);
+    const grille = el('div', 'grille-atelier');
+    visibles.forEach((id) => grille.appendChild(carteAtelier(id, dansDeck[id] || 0, dispo[id] || 0)));
+    section.appendChild(grille);
+    zone.appendChild(section);
+  });
+  if (!zone.children.length) zone.appendChild(el('p', 'vide', atelier.filtre === 'deck' ? 'Ton deck est vide.' : 'Aucune carte ici.'));
+}
+
+// Une carte de l'atelier : la carte en grand, et dessous le compteur « dans le deck / disponibles » avec − et +
+function carteAtelier(id, n, max) {
+  const bloc = el('div', 'carte-atelier' + (n > 0 ? ' dans-deck' : '') + (n >= max ? ' complet' : ''));
+  const carte = carteEl({ c: id }, { taille: 'atelier' });
+  carte.addEventListener('click', () => changerDeck(id, +1));
+  bloc.appendChild(carte);
+  const barre = el('div', 'compteur');
+  const moins = el('button', 'btn pas', '−');
+  moins.type = 'button';
+  moins.disabled = n === 0;
+  moins.setAttribute('aria-label', `Retirer un exemplaire de ${CARTES[id].nom}`);
+  moins.addEventListener('click', () => changerDeck(id, -1));
+  const plus = el('button', 'btn pas', '+');
+  plus.type = 'button';
+  plus.disabled = n >= max;
+  plus.setAttribute('aria-label', `Ajouter un exemplaire de ${CARTES[id].nom}`);
+  plus.addEventListener('click', () => changerDeck(id, +1));
+  barre.append(moins, el('span', 'nombre', `${n} / ${max}`), plus);
+  bloc.appendChild(barre);
+  return bloc;
+}
+
+function changerDeck(id, sens) {
+  const dispo = Object.fromEntries(COLLECTIONS[atelier.clan]);
+  const n = atelier.deck.filter((c) => c === id).length;
+  if (sens > 0) {
+    if (n >= (dispo[id] || 0)) { $('atelier-detail').textContent = `Tous les exemplaires de « ${CARTES[id].nom} » sont déjà dans ton deck.`; return; }
+    atelier.deck.push(id);
+  } else {
+    if (!n) return;
+    atelier.deck.splice(atelier.deck.indexOf(id), 1);
+  }
+  $('atelier-detail').textContent = description({ c: id });
+  // la grille est redessinée sans faire sauter la page
+  const y = window.scrollY;
+  rendreAtelier();
+  window.scrollTo(0, y);
 }
 
 document.querySelectorAll('.filtre').forEach((f) => f.addEventListener('click', () => {
@@ -312,12 +358,6 @@ document.querySelectorAll('.filtre').forEach((f) => f.addEventListener('click', 
   document.querySelectorAll('.filtre').forEach((x) => x.classList.toggle('actif', x === f));
   rendreAtelier();
 }));
-// Sur téléphone : onglets « Collection » / « Mon deck »
-document.querySelectorAll('.atelier-onglets button').forEach((o) => o.addEventListener('click', () => {
-  document.querySelectorAll('.atelier-onglets button').forEach((x) => x.setAttribute('aria-selected', String(x === o)));
-  $('atelier').dataset.panneau = o.dataset.panneau;
-}));
-$('atelier').dataset.panneau = 'atelier-collection';
 $('atelier-defaut').addEventListener('click', () => { atelier.deck = aPlat(DECKS_DEFAUT[atelier.clan]); rendreAtelier(); });
 $('atelier-annuler').addEventListener('click', fermerAtelier);
 $('atelier-enregistrer').addEventListener('click', () => {

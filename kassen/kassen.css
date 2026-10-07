@@ -115,8 +115,8 @@ body.kassen {
   font-size: calc(var(--l) * .135); line-height: 1.1; text-align: center;
   padding: 2px 2px 3px; background: rgba(0, 0, 0, .55); color: var(--washi);
 }
-.carte.grande .capacite { bottom: 26%; }
-.carte.grande .legende-icone { bottom: 26%; }
+.carte.grande .capacite, .carte.atelier .capacite { bottom: 26%; }
+.carte.grande .legende-icone, .carte.atelier .legende-icone { bottom: 26%; }
 .carte.type-meteo, .carte.type-eclaircie { background: linear-gradient(165deg, #3E5C7A, #120A09 85%); }
 .carte.type-cor, .carte.type-leurre, .carte.type-brasier { background: linear-gradient(165deg, #6A4A1A, #120A09 85%); }
 .carte.jouable { box-shadow: 0 0 0 2px var(--kin); }
@@ -133,24 +133,25 @@ body.kassen {
 .atelier-filtres { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .filtre { flex: none; border: 1px solid var(--lisere); background: var(--urushi-2); color: var(--washi); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .82rem; }
 .filtre.actif { background: var(--kin); color: var(--urushi); font-weight: 700; }
-.atelier-onglets { display: grid; grid-template-columns: 1fr 1fr; background: var(--urushi-2); border-radius: 10px; padding: 3px; }
-.atelier-onglets button { border: none; background: none; color: var(--brume); font: inherit; font-weight: 700; padding: 8px; border-radius: 8px; }
-.atelier-onglets button[aria-selected="true"] { background: var(--urushi-3); color: var(--washi); box-shadow: inset 0 -2px 0 var(--kin); }
-.atelier-panneaux { display: grid; gap: 12px; }
-.panneau-cartes { background: rgba(243, 233, 210, .04); border: 1px solid rgba(243, 233, 210, .08); border-radius: 10px; padding: 10px; }
-.panneau-cartes h3 { font-size: 1rem; color: var(--kin); margin-bottom: 8px; }
-.panneau-cartes h3 small { font-family: var(--police); font-size: .72rem; color: var(--brume); font-weight: 400; margin-left: 6px; }
-.grille-cartes { display: flex; flex-wrap: wrap; gap: 8px; }
-.exemplaires { position: absolute; top: 3%; right: 4%; background: var(--kin); color: var(--urushi); font-weight: 700; font-size: .75rem; border-radius: 999px; padding: 0 6px; z-index: 2; }
-.atelier .grande .rangee-icone { display: none; }
+.atelier-sections { display: grid; gap: 16px; }
+.section-atelier h3 { font-size: 1.05rem; color: var(--kin); margin: 0 0 8px; }
+.section-atelier h3 small { font-family: var(--police); font-size: .75rem; color: var(--brume); font-weight: 400; }
+.grille-atelier { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 12px 8px; }
+.carte-atelier { display: grid; gap: 5px; justify-items: center; }
+.carte.atelier { --l: 104px; width: 100%; max-width: 170px; border-radius: 8px; cursor: pointer; transition: transform .12s; }
+.carte.atelier:active { transform: scale(.97); }
+.carte-atelier.dans-deck .carte { box-shadow: 0 0 0 3px var(--kin), 0 6px 14px rgba(0, 0, 0, .45); }
+.carte-atelier:not(.dans-deck) .carte { opacity: .85; }
+.compteur { display: grid; grid-template-columns: 30px auto 30px; align-items: center; gap: 6px; }
+.compteur .btn.pas { padding: 0; height: 30px; font-size: 1.1rem; background: var(--urushi-3); }
+.compteur .btn.pas:disabled { opacity: .35; }
+.compteur .nombre { font-weight: 700; font-size: .9rem; min-width: 3.2em; text-align: center; }
+.carte-atelier.dans-deck .nombre { color: var(--kin-clair); }
 .atelier-boutons {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px;
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--urushi-2); border-top: 1px solid var(--kin);
 }
-/* téléphone : un seul panneau à la fois */
-.atelier[data-panneau="atelier-collection"] #atelier-deck,
-.atelier[data-panneau="atelier-deck"] #atelier-collection { display: none; }
 
 /* ---------- Échange de départ ---------- */
 .main-echange { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
@@ -287,10 +288,9 @@ body.kassen {
   .emplacement-cor { width: 28px; height: 42px; }
   .camp.adverse { align-content: end; }
 
-  /* atelier : collection et deck côte à côte */
-  .atelier-onglets { display: none; }
-  .atelier-panneaux { grid-template-columns: 1fr 1fr; align-items: start; }
-  .atelier[data-panneau] #atelier-deck, .atelier[data-panneau] #atelier-collection { display: block; }
+  /* atelier : grandes cartes */
+  .grille-atelier { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px 12px; }
+  .carte.atelier { --l: 150px; }
   .atelier-boutons { left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 100%); border-radius: 12px 12px 0 0; border: 1px solid var(--kin); }
 }
 
