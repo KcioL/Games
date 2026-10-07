@@ -1,5 +1,6 @@
 import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
-import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES } from './cartes.js';
+import { EDITIONS, ERREURS_JEU_PERSO, JEU_PERSO_DEMANDE } from './editions.js'; // à importer en premier : ajoute le jeu personnalisé
+import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES, COLLECTIONS, DECKS_DEFAUT, DECK_MIN_UNITES, DECK_MAX_SPECIALES, aPlat, erreurDeck } from './cartes.js';
 import * as M from './moteur.js';
 
 // =====================================================================
@@ -12,6 +13,7 @@ let selection = null; // uid de la carte choisie dans la main
 const salon = initSalon({
   jeu: 'kassen',
   etatInitial: (nom, nb, { local }) => ({
+    edition: EDITIONS[$(local ? 'local-edition' : 'nb-edition').value] ? $(local ? 'local-edition' : 'nb-edition').value : 'japon',
     players: [
       { name: nom, joined: true, bot: false },
       local && nb === 1 ? { name: 'Bot', joined: true, bot: true } : { name: 'En attente', joined: false, bot: false },
@@ -37,6 +39,26 @@ const salon = initSalon({
 });
 initRegles();
 remplirRegles();
+
+// Choix de l'édition (visible seulement si le jeu personnalisé est prêt)
+document.querySelectorAll('.select-edition').forEach((sel) => {
+  Object.entries(EDITIONS).forEach(([cle, e]) => {
+    const o = el('option', '', e.nom);
+    o.value = cle;
+    sel.appendChild(o);
+  });
+});
+document.querySelectorAll('.choix-edition').forEach((l) => { l.hidden = Object.keys(EDITIONS).length < 2; });
+// Jeu personnalisé activé mais incomplet : on dit précisément quoi corriger
+if (JEU_PERSO_DEMANDE && ERREURS_JEU_PERSO.length) {
+  const zone = $('erreur-perso');
+  zone.hidden = false;
+  zone.appendChild(el('strong', '', 'Ton jeu personnalisé (jeu-perso.js) n\'est pas encore jouable :'));
+  const ul = el('ul');
+  ERREURS_JEU_PERSO.slice(0, 8).forEach((t) => ul.appendChild(el('li', '', t)));
+  if (ERREURS_JEU_PERSO.length > 8) ul.appendChild(el('li', '', `… et ${ERREURS_JEU_PERSO.length - 8} autre(s) problème(s).`));
+  zone.appendChild(ul);
+}
 
 function agir(fn) { return salon.agir((s) => fn(M.normaliser(s))); }
 // « Tu as gagné » a un sens en ligne ou contre le bot ; à deux sur un téléphone, on nomme le gagnant
@@ -102,10 +124,32 @@ setInterval(() => {
 // =====================================================================
 const def = (carte) => CARTES[carte.c];
 
+// Images des cartes : cartes/<identifiant>.jpg (voir cartes/LISTE-DES-CARTES.md).
+// Une image est une carte complète (force, icônes, nom déjà dessinés) : elle remplace le dessin par défaut.
+// Une image absente est simplement ignorée et la carte garde son dessin par défaut.
+const imagesAbsentes = new Set();
+const imagesChargees = new Set(); // déjà affichées une fois : on les montre tout de suite (pas de clignotement)
+const cheminImage = (id) => (CARTES[id] && CARTES[id].image) || `cartes/${id}.jpg`;
+function ajouterImage(e, id) {
+  if (imagesAbsentes.has(id)) return;
+  const img = document.createElement('img');
+  img.className = 'image-carte';
+  img.alt = CARTES[id] ? CARTES[id].nom : '';
+  img.decoding = 'async';
+  img.src = cheminImage(id);
+  img.addEventListener('error', () => { imagesAbsentes.add(id); img.remove(); });
+  img.addEventListener('load', () => { imagesChargees.add(id); e.classList.add('image-pleine'); });
+  if (imagesChargees.has(id)) e.classList.add('image-pleine');
+  e.prepend(img);
+}
+
 // Élément d'une carte ; `force` = force actuelle sur le plateau (sinon force imprimée)
 function carteEl(carte, { force, taille = '' } = {}) {
   const d = def(carte);
   const e = el('div', `carte ${taille} type-${d.type}`);
+  // sur le plateau, la force actuelle reste affichée par-dessus l'image (elle change avec les effets)
+  if (force !== undefined) e.classList.add('sur-plateau');
+  ajouterImage(e, carte.c);
   const clan = d.clan ? CLANS[d.clan] : null;
   e.style.setProperty('--clan', clan ? clan.couleur : '#2E2A26');
   if (d.legende) e.classList.add('legende');
@@ -141,30 +185,146 @@ function description(carte) {
 // Écrans
 // =====================================================================
 function montrer(ecran) {
-  ['choix-clan', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
+  if (atelier) ecran = 'atelier';
+  ['choix-clan', 'atelier', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
 }
 
 function rendreClans() {
   const moi = etat.players[maPlace];
   const autre = etat.players[1 - maPlace];
   const zone = $('clans');
-  zone.innerHTML = '';
   if (moi.clan) {
+    zone.innerHTML = '';
+    zone.dataset.cle = '';
     zone.hidden = true;
     $('attente-clan').textContent = `Tu as choisi : ${CLANS[moi.clan].nom}. En attente ${de(autre.name)}…`;
     return;
   }
   zone.hidden = false;
-  $('attente-clan').textContent = salon.estLocal() && !autre.bot ? `${moi.name}, choisis ton clan.` : '';
-  Object.entries(CLANS).forEach(([cle, c]) => {
-    const b = el('button', 'clan');
-    b.type = 'button';
+  const edition = EDITIONS[etat.edition || 'japon'];
+  // on ne redessine la liste que si elle change (sinon un toucher pendant le choix du bot serait perdu)
+  const clans = M.clansDeLEdition(etat);
+  const cleListe = `${maPlace}|${etat.edition}|${clans.map((c) => deckEnregistre(c).length).join(',')}|${clans.map(persoDeck).map(Boolean).join(',')}`;
+  if (zone.dataset.cle === cleListe && zone.children.length) return;
+  zone.dataset.cle = cleListe;
+  zone.innerHTML = '';
+  $('attente-clan').textContent = `${edition ? edition.nom : ''}${salon.estLocal() && !autre.bot ? ` · ${moi.name}, choisis ton clan.` : ''}`;
+  M.clansDeLEdition(etat).map((cle) => [cle, CLANS[cle]]).forEach(([cle, c]) => {
+    const b = el('div', 'clan');
     b.style.setProperty('--clan', c.couleur);
-    b.append(el('span', 'clan-kanji', c.kanji), el('strong', '', c.nom), el('span', 'clan-atout', c.atout), el('span', 'clan-chef', `Chef : ${c.chef}. ${c.chefTexte}`));
-    b.addEventListener('click', () => action({ type: 'clan', clan: cle }));
+    const deck = deckEnregistre(cle);
+    const unites = deck.filter((x) => CARTES[x].type === 'unite').length;
+    const choisir = el('button', 'btn btn-principal', 'Jouer ce clan');
+    choisir.type = 'button';
+    choisir.addEventListener('click', () => action({ type: 'clan', clan: cle, deck: deckEnregistre(cle) }));
+    const modifier = el('button', 'btn', 'Modifier le deck');
+    modifier.type = 'button';
+    modifier.addEventListener('click', () => ouvrirAtelier(cle));
+    b.append(el('span', 'clan-kanji', c.kanji), el('strong', '', c.nom), el('span', 'clan-atout', c.atout),
+      el('span', 'clan-chef', `Chef : ${c.chef}. ${c.chefTexte}`),
+      el('span', 'clan-deck', `${persoDeck(cle) ? 'Ton deck' : 'Deck par défaut'} : ${deck.length} cartes, ${unites} unités`),
+      choisir, modifier);
     zone.appendChild(b);
   });
 }
+
+// =====================================================================
+// Atelier de deck (enregistré sur cet appareil, un deck par clan)
+// =====================================================================
+const cleDeck = (clan) => `jeux-vol:gwynt-deck:${clan}`;
+function persoDeck(clan) {
+  try {
+    const d = JSON.parse(localStorage.getItem(cleDeck(clan)));
+    return Array.isArray(d) && !erreurDeck(clan, d) ? d : null;
+  } catch (e) { return null; }
+}
+const deckEnregistre = (clan) => persoDeck(clan) || aPlat(DECKS_DEFAUT[clan]);
+
+let atelier = null; // { clan, deck: [ids], filtre }
+function ouvrirAtelier(clan) {
+  atelier = { clan, deck: [...deckEnregistre(clan)], filtre: 'tout' };
+  $('atelier').hidden = false;
+  $('choix-clan').hidden = true;
+  document.querySelectorAll('.filtre').forEach((f) => f.classList.toggle('actif', f.dataset.filtre === 'tout'));
+  $('atelier-detail').textContent = 'Touche une carte pour la voir et l\'ajouter à ton deck (ou l\'en retirer).';
+  rendreAtelier();
+  window.scrollTo(0, 0);
+}
+function fermerAtelier() {
+  atelier = null;
+  $('atelier').hidden = true;
+  rendre();
+}
+
+const passeFiltre = (id) => {
+  const d = CARTES[id];
+  if (!atelier || atelier.filtre === 'tout') return true;
+  if (atelier.filtre === 'special') return d.type !== 'unite';
+  return d.type === 'unite' && d.rangees.includes(atelier.filtre);
+};
+// ordre d'affichage : unités par rangée puis force, puis spéciales
+const ordre = (a, b) => {
+  const da = CARTES[a]; const db = CARTES[b];
+  const ra = da.type === 'unite' ? RANGEES.indexOf(da.rangees[0]) : 9;
+  const rb = db.type === 'unite' ? RANGEES.indexOf(db.rangees[0]) : 9;
+  return ra - rb || (db.force || 0) - (da.force || 0) || da.nom.localeCompare(db.nom);
+};
+
+function rendreAtelier() {
+  if (!atelier) return;
+  const { clan, deck } = atelier;
+  $('atelier-titre').textContent = `Deck : ${CLANS[clan].nom}`;
+  const unites = deck.filter((c) => CARTES[c].type === 'unite');
+  const speciales = deck.length - unites.length;
+  const force = unites.reduce((t, c) => t + CARTES[c].force, 0);
+  const legendes = unites.filter((c) => CARTES[c].legende).length;
+  $('atelier-stats').textContent = `Unités : ${unites.length} (min. ${DECK_MIN_UNITES}) · Spéciales : ${speciales}/${DECK_MAX_SPECIALES} · Force totale : ${force} · Légendes : ${legendes} · ${deck.length} cartes`;
+  const erreur = erreurDeck(clan, deck);
+  $('atelier-erreur').textContent = erreur;
+  $('atelier-enregistrer').disabled = !!erreur;
+
+  const dansDeck = {};
+  deck.forEach((c) => { dansDeck[c] = (dansDeck[c] || 0) + 1; });
+  const remplir = (zone, entrees, ajout) => {
+    zone.innerHTML = '';
+    entrees.filter(([id]) => passeFiltre(id)).sort(([a], [b]) => ordre(a, b)).forEach(([id, n]) => {
+      if (n <= 0) return;
+      const e = carteEl({ c: id }, { taille: 'grande' });
+      e.appendChild(el('span', 'exemplaires', `×${n}`));
+      e.addEventListener('click', () => {
+        if (ajout) atelier.deck.push(id);
+        else atelier.deck.splice(atelier.deck.indexOf(id), 1);
+        $('atelier-detail').textContent = description({ c: id });
+        rendreAtelier();
+      });
+      zone.appendChild(e);
+    });
+    if (!zone.children.length) zone.appendChild(el('p', 'vide', 'Aucune carte ici.'));
+  };
+  // collection : exemplaires restants (non mis dans le deck)
+  remplir($('grille-collection'), COLLECTIONS[clan].map(([id, n]) => [id, n - (dansDeck[id] || 0)]), true);
+  remplir($('grille-deck'), Object.entries(dansDeck), false);
+}
+
+document.querySelectorAll('.filtre').forEach((f) => f.addEventListener('click', () => {
+  if (!atelier) return;
+  atelier.filtre = f.dataset.filtre;
+  document.querySelectorAll('.filtre').forEach((x) => x.classList.toggle('actif', x === f));
+  rendreAtelier();
+}));
+// Sur téléphone : onglets « Collection » / « Mon deck »
+document.querySelectorAll('.atelier-onglets button').forEach((o) => o.addEventListener('click', () => {
+  document.querySelectorAll('.atelier-onglets button').forEach((x) => x.setAttribute('aria-selected', String(x === o)));
+  $('atelier').dataset.panneau = o.dataset.panneau;
+}));
+$('atelier').dataset.panneau = 'atelier-collection';
+$('atelier-defaut').addEventListener('click', () => { atelier.deck = aPlat(DECKS_DEFAUT[atelier.clan]); rendreAtelier(); });
+$('atelier-annuler').addEventListener('click', fermerAtelier);
+$('atelier-enregistrer').addEventListener('click', () => {
+  if (erreurDeck(atelier.clan, atelier.deck)) return;
+  try { localStorage.setItem(cleDeck(atelier.clan), JSON.stringify(atelier.deck)); } catch (e) { /* stockage plein */ }
+  fermerAtelier();
+});
 
 function rendreEchange() {
   const moi = etat.players[maPlace];
@@ -195,8 +355,13 @@ function infoCamp(zone, j) {
   const nom = el('span', 'camp-nom');
   const embleme = el('span', 'embleme', clan.kanji || '');
   embleme.style.setProperty('--clan', clan.couleur || '#555');
-  nom.append(embleme, el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')));
+  const ident = el('span', 'camp-ident');
+  ident.append(el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')), el('span', 'camp-clan', clan.nom || ''));
+  nom.append(embleme, ident);
   zone.appendChild(nom);
+  const chef = el('span', 'camp-chef' + (p.chefUtilise ? ' utilise' : ''), clan.chef ? `Chef : ${clan.chef}` : '');
+  chef.title = clan.chefTexte || '';
+  zone.appendChild(chef);
   const vies = el('span', 'vies');
   for (let k = 0; k < 2; k++) vies.appendChild(el('span', k < p.vies ? 'vie' : 'vie perdue'));
   zone.appendChild(vies);
@@ -204,6 +369,17 @@ function infoCamp(zone, j) {
   if (p.passe) zone.appendChild(el('span', 'badge-passe', 'a passé'));
   zone.appendChild(el('span', 'score-total', String(M.total(etat, j))));
   zone.classList.toggle('actif', etat.status === 'jeu' && etat.active === j);
+}
+
+function rendrePiles(zone, j) {
+  const p = etat.players[j];
+  zone.innerHTML = '';
+  const pile = (titre, n, classe) => {
+    const b = el('div', `pile ${classe}`);
+    b.append(el('span', 'pile-nombre', String(n)), el('span', 'pile-titre', titre));
+    return b;
+  };
+  zone.append(pile('Pioche', p.pioche.length, 'pioche'), pile('Défausse', p.defausse.length, 'defausse'));
 }
 
 function rendreCamp(zone, j, ordre) {
@@ -214,9 +390,12 @@ function rendreCamp(zone, j, ordre) {
     ligne.dataset.rangee = r;
     if (etat.meteo[r]) ligne.classList.add('meteo');
     const tete = el('div', 'rangee-tete');
-    tete.append(el('span', 'rangee-kanji', KANJI_RANGEES[r]), el('span', 'rangee-total', String(M.totalRangee(etat, j, r))));
-    if (etat.players[j].cors[r]) tete.appendChild(el('span', 'cor', '鼓'));
+    tete.append(el('span', 'rangee-total', String(M.totalRangee(etat, j, r))), el('span', 'rangee-kanji', KANJI_RANGEES[r]));
     ligne.appendChild(tete);
+    // emplacement du cor (taiko), comme dans The Witcher 3
+    const cor = el('div', 'emplacement-cor' + (etat.players[j].cors[r] ? ' plein' : ''), etat.players[j].cors[r] ? '鼓' : '');
+    cor.title = etat.players[j].cors[r] ? 'Taiko de guerre : force doublée' : 'Emplacement du taiko';
+    ligne.appendChild(cor);
     const cartes = el('div', 'rangee-cartes');
     etat.players[j].rangees[r].forEach((carte) => {
       const e = carteEl(carte, { force: M.forceCarte(etat, j, r, carte), taille: 'mini' });
@@ -397,6 +576,8 @@ function rendre() {
     rendreCiel();
     rendreCamp($('camp-moi'), maPlace, ['cac', 'dist', 'siege']);
     infoCamp($('info-moi'), maPlace);
+    rendrePiles($('piles-adverse'), 1 - maPlace);
+    rendrePiles($('piles-moi'), maPlace);
     rendreStatut();
     rendreMain();
     rendreCommandes();

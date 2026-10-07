@@ -1,4 +1,4 @@
-/* Kassen : laque noire et rouge, liserés d'or, papier washi */
+/* Gwynt, édition Japon : laque noire et rouge, liserés d'or, papier washi */
 body.kassen {
   --urushi: #140B0A;
   --urushi-2: #241312;
@@ -25,6 +25,10 @@ body.kassen {
 
 #jeu { max-width: 760px; margin: 0 auto; padding: 8px 8px 20px; }
 
+/* ---------- Édition et jeu personnalisé ---------- */
+.erreur-perso { font-size: .85rem; color: #F2C2B8; background: rgba(181, 48, 29, .18); border: 1px solid rgba(181, 48, 29, .5); border-radius: 8px; padding: 10px 12px; }
+.erreur-perso ul { margin: 6px 0 0 18px; display: grid; gap: 3px; }
+
 /* ---------- Choix du clan ---------- */
 .choix-clan, .echange-cartes { display: grid; gap: 12px; padding: 8px 4px; text-align: center; }
 .choix-clan h2, .echange-cartes h2 { color: var(--kin); font-size: 1.4rem; }
@@ -42,7 +46,9 @@ body.kassen {
   color: var(--washi);
   transition: transform .15s, border-color .15s;
 }
-.clan:hover { transform: translateY(-3px); border-color: var(--kin); }
+.clan:hover { border-color: var(--kin); }
+.clan .btn { width: 100%; padding: 9px; font-size: .9rem; }
+.clan-deck { font-size: .8rem; font-weight: 700; color: var(--kin-clair); }
 .clan-kanji { font-family: var(--titre); font-size: 2.6rem; color: var(--kin-clair); line-height: 1; }
 .clan strong { font-family: var(--titre); font-size: 1.15rem; }
 .clan-atout { font-size: .85rem; }
@@ -51,11 +57,11 @@ body.kassen {
 
 /* ---------- Cartes ---------- */
 .carte {
-  --l: 34px;
+  --l: 38px;
   position: relative;
   flex: none;
   width: var(--l);
-  aspect-ratio: 5 / 7;
+  aspect-ratio: 3 / 4; /* format des images de cartes (765 × 1024) */
   border-radius: 5px;
   border: 1px solid rgba(232, 200, 119, .45);
   background: linear-gradient(165deg, var(--clan), #120A09 85%);
@@ -63,6 +69,19 @@ body.kassen {
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+}
+/* Carte avec son image : l'image est la carte entière, rien n'est dessiné par-dessus… */
+.carte .image-carte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.carte.image-pleine { background: #120A09; border-color: transparent; }
+.carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
+.carte.image-pleine > :not(.image-carte):not(.exemplaires) { display: none; }
+/* …sauf sur le plateau : la force actuelle recouvre le chiffre imprimé */
+.carte.image-pleine.sur-plateau > .force {
+  display: grid;
+  top: 1.5%; left: 2.5%;
+  min-width: 0; width: 25%;
+  font-size: calc(var(--l) * .17);
+  border: 1px solid #8A5A2A;
 }
 .carte.grande { --l: 72px; border-radius: 7px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .carte.legende { border: 2px solid var(--kin); box-shadow: 0 0 8px rgba(201, 162, 74, .45); }
@@ -105,6 +124,34 @@ body.kassen {
 .carte.cible { box-shadow: 0 0 0 2px var(--kin-clair); cursor: pointer; animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.08); } }
 
+/* ---------- Atelier de deck ---------- */
+.atelier { display: grid; gap: 10px; padding: 6px 2px 80px; }
+.atelier-tete { text-align: center; display: grid; gap: 4px; }
+.atelier-tete h2 { color: var(--kin); font-size: 1.3rem; }
+.atelier-stats { font-size: .85rem; color: var(--washi); }
+.atelier-erreur { font-size: .85rem; color: #F2A79A; min-height: 1.2em; }
+.atelier-filtres { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.filtre { flex: none; border: 1px solid var(--lisere); background: var(--urushi-2); color: var(--washi); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .82rem; }
+.filtre.actif { background: var(--kin); color: var(--urushi); font-weight: 700; }
+.atelier-onglets { display: grid; grid-template-columns: 1fr 1fr; background: var(--urushi-2); border-radius: 10px; padding: 3px; }
+.atelier-onglets button { border: none; background: none; color: var(--brume); font: inherit; font-weight: 700; padding: 8px; border-radius: 8px; }
+.atelier-onglets button[aria-selected="true"] { background: var(--urushi-3); color: var(--washi); box-shadow: inset 0 -2px 0 var(--kin); }
+.atelier-panneaux { display: grid; gap: 12px; }
+.panneau-cartes { background: rgba(243, 233, 210, .04); border: 1px solid rgba(243, 233, 210, .08); border-radius: 10px; padding: 10px; }
+.panneau-cartes h3 { font-size: 1rem; color: var(--kin); margin-bottom: 8px; }
+.panneau-cartes h3 small { font-family: var(--police); font-size: .72rem; color: var(--brume); font-weight: 400; margin-left: 6px; }
+.grille-cartes { display: flex; flex-wrap: wrap; gap: 8px; }
+.exemplaires { position: absolute; top: 3%; right: 4%; background: var(--kin); color: var(--urushi); font-weight: 700; font-size: .75rem; border-radius: 999px; padding: 0 6px; z-index: 2; }
+.atelier .grande .rangee-icone { display: none; }
+.atelier-boutons {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; grid-template-columns: 1fr 1fr 1.3fr; gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--urushi-2); border-top: 1px solid var(--kin);
+}
+/* téléphone : un seul panneau à la fois */
+.atelier[data-panneau="atelier-collection"] #atelier-deck,
+.atelier[data-panneau="atelier-deck"] #atelier-collection { display: none; }
+
 /* ---------- Échange de départ ---------- */
 .main-echange { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .echange-cartes .btn { justify-self: center; min-width: 200px; }
@@ -116,8 +163,24 @@ body.kassen {
   padding: 6px 10px; border-radius: 8px; background: var(--urushi-2); border: 1px solid transparent;
 }
 .camp-info.actif { border-color: var(--kin); }
-.camp-nom { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
-.camp-nom strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-nom { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 140px; }
+.camp-ident { display: grid; min-width: 0; line-height: 1.15; }
+.camp-ident strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.camp-clan { font-size: .72rem; color: var(--brume); }
+.camp-chef { font-size: .72rem; color: var(--kin-clair); border: 1px solid var(--lisere); border-radius: 4px; padding: 1px 6px; }
+.camp-chef.utilise { opacity: .4; text-decoration: line-through; }
+
+/* Pioche et défausse */
+.piles { display: none; }
+.pile { display: grid; justify-items: center; gap: 2px; }
+.pile-nombre {
+  width: 46px; aspect-ratio: 5 / 7; border-radius: 5px; display: grid; place-items: center;
+  font-family: var(--titre); font-weight: 800; font-size: 1.1rem; color: var(--kin-clair);
+  border: 1px solid rgba(232, 200, 119, .45);
+  background: repeating-linear-gradient(45deg, #3A1D1A 0 5px, #2A1412 5px 10px);
+}
+.pile.defausse .pile-nombre { background: var(--urushi-2); }
+.pile-titre { font-size: .7rem; color: var(--brume); }
 .embleme { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--clan); color: var(--kin-clair); font-family: var(--titre); font-weight: 800; flex: none; border: 1px solid var(--kin); }
 .vies { display: flex; gap: 4px; }
 .vie { width: 12px; height: 12px; border-radius: 50%; background: var(--shu); box-shadow: 0 0 6px rgba(181, 48, 29, .8); }
@@ -128,14 +191,22 @@ body.kassen {
 
 .camp { display: grid; gap: 3px; }
 .rangee {
-  display: grid; grid-template-columns: 46px minmax(0, 1fr); align-items: center;
-  min-height: 52px; border-radius: 6px; background: rgba(243, 233, 210, .05); border: 1px solid rgba(243, 233, 210, .08);
+  display: grid; grid-template-columns: 46px 30px minmax(0, 1fr); align-items: center;
+  min-height: 58px; border-radius: 6px; background: rgba(243, 233, 210, .05); border: 1px solid rgba(243, 233, 210, .08);
 }
 .rangee.meteo { background: rgba(120, 160, 210, .18); border-color: rgba(150, 190, 240, .4); }
 .rangee.cible { border-color: var(--kin-clair); background: rgba(201, 162, 74, .14); cursor: pointer; }
 .rangee-tete { display: grid; justify-items: center; gap: 1px; padding: 2px; border-right: 1px solid rgba(243, 233, 210, .1); position: relative; }
 .rangee-kanji { font-family: var(--titre); color: var(--kin); font-size: .95rem; line-height: 1; }
-.rangee-total { font-weight: 700; font-size: 1rem; }
+.rangee-total {
+  font-weight: 700; font-size: .95rem; min-width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--washi); color: var(--urushi); border: 2px solid var(--kin);
+}
+.emplacement-cor {
+  width: 24px; height: 34px; border-radius: 4px; border: 1px dashed rgba(201, 162, 74, .35);
+  display: grid; place-items: center; font-family: var(--titre); color: var(--urushi); font-size: .9rem;
+}
+.emplacement-cor.plein { background: var(--kin); border-style: solid; border-color: var(--kin-clair); }
 .cor { font-family: var(--titre); font-size: .8rem; color: var(--urushi); background: var(--kin); border-radius: 4px; padding: 0 3px; }
 .rangee-cartes { display: flex; gap: 3px; padding: 4px 6px; overflow-x: auto; min-height: 50px; align-items: center; }
 .ciel { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .85rem; padding: 2px 0; color: var(--brume); }
@@ -170,31 +241,57 @@ body.kassen {
   .carte.grande { --l: 86px; }
   .rangee { min-height: 60px; grid-template-columns: 56px minmax(0, 1fr); }
 }
-/* Grand écran : plateau à gauche, main et commandes à droite (tout tient sans défiler) */
+/* Grand écran : disposition à la The Witcher 3
+   (joueurs et météo à gauche, plateau au centre, pioches et défausses à droite, main en bas) */
 @media (min-width: 900px) and (min-height: 600px) {
-  #jeu { max-width: 1180px; }
+  #jeu { max-width: 1400px; }
   .bataille {
-    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-columns: 240px minmax(0, 1fr) 120px;
     grid-template-areas:
-      "info-adv statut"
-      "camp-adv detail"
-      "ciel main"
-      "camp-moi main"
-      "info-moi commandes";
-    grid-template-rows: auto auto auto 1fr auto;
-    column-gap: 18px;
-    align-items: start;
+      "info-adv camp-adv piles-adv"
+      "ciel     statut   statut"
+      "info-moi camp-moi piles-moi"
+      "detail   main     commandes";
+    column-gap: 14px;
+    row-gap: 6px;
+    align-items: stretch;
   }
   .camp-info.adverse { grid-area: info-adv; }
   .camp.adverse { grid-area: camp-adv; }
-  .ciel { grid-area: ciel; }
-  .camp.moi { grid-area: camp-moi; }
+  .piles.adverse { grid-area: piles-adv; }
+  .ciel { grid-area: ciel; flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; background: var(--urushi-2); border-radius: 8px; padding: 6px; }
   .camp-info.moi { grid-area: info-moi; }
-  .bataille .statut { grid-area: statut; }
-  .detail { grid-area: detail; text-align: left; }
-  .main { grid-area: main; flex-wrap: wrap; overflow: visible; align-content: flex-start; padding-top: 12px; }
-  .commandes { grid-area: commandes; align-self: end; }
-  .rangee { min-height: 56px; }
+  .camp.moi { grid-area: camp-moi; }
+  .piles.moi { grid-area: piles-moi; }
+  .bataille .statut { grid-area: statut; align-self: center; }
+  .bataille .detail { grid-area: detail; text-align: left; align-self: center; font-size: .82rem; }
+  .bataille .main { grid-area: main; justify-content: center; padding-top: 14px; min-height: 140px; }
+  .commandes { grid-area: commandes; grid-template-columns: 1fr !important; align-content: center; }
+  .commandes #btn-jouer { grid-column: auto; }
+
+  /* panneaux des joueurs : verticaux, score en grand */
+  .camp-info { flex-direction: column; align-items: stretch; justify-content: center; gap: 4px; padding: 8px 10px; }
+  .camp-info .score-total { font-size: 2rem; line-height: 1; text-align: center; order: -1; }
+  .camp-info.adverse .score-total { order: 9; }
+  .camp-info .vies { justify-content: center; }
+  .camp-info .vie { width: 16px; height: 16px; }
+  .camp-chef { text-align: center; }
+  .nb-main, .badge-passe { text-align: center; align-self: center; }
+
+  .piles { display: grid; align-content: center; justify-items: center; gap: 10px; }
+  .carte { --l: 46px; }
+  .carte.grande { --l: 86px; }
+  .rangee { min-height: 64px; grid-template-columns: 58px 34px minmax(0, 1fr); }
+  .camp-info .camp-nom { flex: none; }
+  .rangee-total { min-width: 34px; height: 34px; font-size: 1.05rem; }
+  .emplacement-cor { width: 28px; height: 42px; }
+  .camp.adverse { align-content: end; }
+
+  /* atelier : collection et deck côte à côte */
+  .atelier-onglets { display: none; }
+  .atelier-panneaux { grid-template-columns: 1fr 1fr; align-items: start; }
+  .atelier[data-panneau] #atelier-deck, .atelier[data-panneau] #atelier-collection { display: block; }
+  .atelier-boutons { left: 50%; right: auto; transform: translateX(-50%); width: min(640px, 100%); border-radius: 12px 12px 0 0; border: 1px solid var(--kin); }
 }
 
 @media (prefers-reduced-motion: reduce) { .carte.cible { animation: none; } }

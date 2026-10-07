@@ -1,0 +1,7 @@
+Images de ton jeu personnalisé du Gwynt (fichier kassen/jeu-perso.js).
+
+- Une image par carte (la carte complète : cadre, force, icônes, nom), au format portrait 3 x 4
+  (par exemple 765 x 1024 pixels), en JPG.
+- Le nom du fichier doit être exactement celui indiqué dans le champ « image » de la carte
+  (par exemple : image: 'roi.jpg'  ->  ce dossier doit contenir roi.jpg).
+- Une carte sans image garde le dessin par défaut.

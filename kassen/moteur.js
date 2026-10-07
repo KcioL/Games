@@ -1,6 +1,6 @@
-// Moteur de règles de « Kassen » (sans affichage). Règles inspirées du Gwynt.
+// Moteur de règles du Gwynt, édition Japon (sans affichage).
 // Toutes les actions modifient l'état `s` et renvoient false si elles sont interdites.
-import { CARTES, CLANS, PAQUETS, RANGEES } from './cartes.js';
+import { CARTES, CLANS, DECKS_DEFAUT, RANGEES, aPlat, erreurDeck } from './cartes.js';
 
 export const TAILLE_MAIN = 10;
 export const ECHANGES_MAX = 2;
@@ -46,7 +46,8 @@ export function forceCarte(s, j, r, carte) {
   const rangee = s.players[j].rangees[r];
   if (d.capacite === 'lien') f *= rangee.filter((x) => def(x).capacite === 'lien' && def(x).groupe === d.groupe).length;
   f += rangee.filter((x) => x.u !== carte.u && def(x).capacite === 'moral').length;
-  if (s.players[j].cors[r]) f *= 2;
+  // cor : carte Taiko sur la rangée, ou une autre unité « Cor » dans la rangée (ne se cumulent pas)
+  if (s.players[j].cors[r] || rangee.some((x) => x.u !== carte.u && def(x).capacite === 'cor')) f *= 2;
   return f;
 }
 
@@ -73,18 +74,24 @@ export function nouvellePartie(s) {
   s.finManche = null;
 }
 
-function construirePaquet(clan) {
-  const cartes = [];
-  PAQUETS[clan].forEach(([c, n]) => { for (let k = 0; k < n; k++) cartes.push({ c }); });
+// Deck à plat (['samourai', ...]) : celui du joueur s'il est valable, sinon le deck par défaut du clan
+function construirePaquet(clan, liste) {
+  const cartes = (liste && !erreurDeck(clan, liste) ? liste : aPlat(DECKS_DEFAUT[clan])).map((c) => ({ c }));
   return melanger(cartes);
 }
 
-export function choisirClan(s, i, clan) {
+const effetAtout = (p) => (CLANS[p.clan] || {}).effetAtout;
+const effetChef = (p) => (CLANS[p.clan] || {}).effetChef;
+export const clansDeLEdition = (s) => Object.keys(CLANS).filter((c) => CLANS[c].edition === (s.edition || 'japon'));
+
+export function choisirClan(s, i, clan, deck) {
   const p = s.players[i];
-  if (s.status !== 'clans' || p.clan || !CLANS[clan]) return false;
+  if (s.status !== 'clans' || p.clan || !CLANS[clan] || !clansDeLEdition(s).includes(clan)) return false;
+  if (deck && erreurDeck(clan, deck)) return false;
   p.clan = clan;
+  p.tailleDeck = (deck || aPlat(DECKS_DEFAUT[clan])).length;
   // chaque carte reçoit un identifiant unique dans la partie (utile pour le kagemusha)
-  const paquet = construirePaquet(clan).map((c, k) => ({ c: c.c, u: 1000 * (i + 1) + k }));
+  const paquet = construirePaquet(clan, deck).map((c, k) => ({ c: c.c, u: 1000 * (i + 1) + k }));
   p.main = paquet.slice(0, TAILLE_MAIN);
   p.pioche = paquet.slice(TAILLE_MAIN);
   s.coup = (s.coup || 0) + 1;
@@ -112,9 +119,9 @@ export function pret(s, i) {
   s.coup = (s.coup || 0) + 1;
   if (s.players.every((q) => q.pret)) {
     s.status = 'jeu';
-    // Première manche : face aux Sōhei, c'est l'adversaire qui commence ; sinon au hasard
-    const sohei = s.players.map((q, k) => (q.clan === 'sohei' ? k : -1)).filter((k) => k >= 0);
-    s.active = sohei.length === 1 ? adversaire(sohei[0]) : Math.floor(Math.random() * 2);
+    // Première manche : face à un clan « patience » (Sōhei), c'est l'adversaire qui commence ; sinon au hasard
+    const patients = s.players.map((q, k) => (effetAtout(q) === 'patience' ? k : -1)).filter((k) => k >= 0);
+    s.active = patients.length === 1 ? adversaire(patients[0]) : Math.floor(Math.random() * 2);
     s.premier = s.active;
     journal(s, `${s.players[s.active].name} commence la manche 1.`);
     passerSiBloque(s);
@@ -144,6 +151,22 @@ function poserUnite(s, i, carte, r, { effets = true } = {}) {
     copies.forEach((x) => s.players[i].rangees[def(x).rangees[0]].push(x));
   }
   if (d.capacite === 'medecin') ressusciter(s, i);
+  // Brûlure : détruit l'unité la plus forte de la même rangée adverse, si cette rangée vaut 10 ou plus
+  if (d.capacite === 'brasier_rangee') bruler(s, adversaire(camp), r);
+}
+
+function bruler(s, j, r) {
+  if (totalRangee(s, j, r) < 10) return 0;
+  const cibles = s.players[j].rangees[r].filter((c) => estUnite(c) && !def(c).legende);
+  if (!cibles.length) return 0;
+  const max = Math.max(...cibles.map((c) => forceCarte(s, j, r, c)));
+  const garder = [];
+  let n = 0;
+  s.players[j].rangees[r].forEach((c) => {
+    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { s.players[j].defausse.push(c); n++; } else garder.push(c);
+  });
+  s.players[j].rangees[r] = garder;
+  return n;
 }
 
 // Ramène l'unité la plus forte de la défausse (hors légendes et espions)
@@ -255,11 +278,11 @@ export function chefUtilisable(s, i) {
   const p = s.players[i];
   if (p.chefUtilise || s.status !== 'jeu' || !p.clan) return false;
   const j = adversaire(i);
-  switch (p.clan) {
-    case 'dragon': return !p.cors.cac;
-    case 'shinobi': return totalRangee(s, j, 'dist') >= 10 && s.players[j].rangees.dist.some((c) => estUnite(c) && !def(c).legende);
-    case 'yokai': return p.defausse.some((x) => estUnite(x) && !def(x).legende && def(x).capacite !== 'espion');
-    case 'sohei': return RANGEES.some((r) => s.meteo[r]);
+  switch (effetChef(p)) {
+    case 'cri': return !p.cors.cac;
+    case 'assassinat': return totalRangee(s, j, 'dist') >= 10 && s.players[j].rangees.dist.some((c) => estUnite(c) && !def(c).legende);
+    case 'resurrection': return p.defausse.some((x) => estUnite(x) && !def(x).legende && def(x).capacite !== 'espion');
+    case 'eclaircie': return RANGEES.some((r) => s.meteo[r]);
     default: return false;
   }
 }
@@ -268,18 +291,11 @@ export function utiliserChef(s, i) {
   if (s.status !== 'jeu' || s.active !== i || s.players[i].passe || !chefUtilisable(s, i)) return false;
   const p = s.players[i];
   const j = adversaire(i);
-  switch (p.clan) {
-    case 'dragon': p.cors.cac = true; break;
-    case 'shinobi': {
-      const rangee = s.players[j].rangees.dist;
-      const max = Math.max(...rangee.filter((c) => estUnite(c) && !def(c).legende).map((c) => forceCarte(s, j, 'dist', c)));
-      const garder = [];
-      rangee.forEach((c) => { if (estUnite(c) && !def(c).legende && forceCarte(s, j, 'dist', c) === max) s.players[j].defausse.push(c); else garder.push(c); });
-      s.players[j].rangees.dist = garder;
-      break;
-    }
-    case 'yokai': ressusciter(s, i); break;
-    case 'sohei': RANGEES.forEach((r) => { s.meteo[r] = false; }); break;
+  switch (effetChef(p)) {
+    case 'cri': p.cors.cac = true; break;
+    case 'assassinat': bruler(s, j, 'dist'); break;
+    case 'resurrection': ressusciter(s, i); break;
+    case 'eclaircie': RANGEES.forEach((r) => { s.meteo[r] = false; }); break;
     default: return false;
   }
   p.chefUtilise = true;
@@ -320,20 +336,20 @@ export function passer(s, i) {
 function finManche(s) {
   const scores = [total(s, 0), total(s, 1)];
   let gagnant = scores[0] > scores[1] ? 0 : scores[1] > scores[0] ? 1 : -1;
-  // Atout Shinobi : les égalités leur reviennent
+  // Atout « égalités » (Shinobi) : les égalités leur reviennent
   if (gagnant === -1) {
-    const shinobi = s.players.map((p, k) => (p.clan === 'shinobi' ? k : -1)).filter((k) => k >= 0);
-    if (shinobi.length === 1) gagnant = shinobi[0];
+    const elus = s.players.map((p, k) => (effetAtout(p) === 'egalites' ? k : -1)).filter((k) => k >= 0);
+    if (elus.length === 1) gagnant = elus[0];
   }
   if (gagnant === -1) s.players.forEach((p) => { p.vies -= 1; });
   else s.players[adversaire(gagnant)].vies -= 1;
-  // Atout Dragon : une carte piochée à chaque manche gagnée
-  if (gagnant >= 0 && s.players[gagnant].clan === 'dragon') piocher(s, gagnant, 1);
+  // Atout « pioche » (Dragon) : une carte piochée à chaque manche gagnée
+  if (gagnant >= 0 && effetAtout(s.players[gagnant]) === 'pioche-victoire') piocher(s, gagnant, 1);
 
   // Le plateau est vidé (atout Yōkai : une unité au hasard reste)
   s.players.forEach((p) => {
     let reste = null;
-    if (p.clan === 'yokai') {
+    if (effetAtout(p) === 'hantise') {
       const unites = [];
       RANGEES.forEach((r) => p.rangees[r].forEach((c) => { if (estUnite(c)) unites.push([r, c]); }));
       if (unites.length) reste = unites[Math.floor(Math.random() * unites.length)];
@@ -407,7 +423,7 @@ function evaluerCoups(s, i) {
 
 export function decisionBot(s, i) {
   if (s.status === 'clans') {
-    const clans = Object.keys(CLANS);
+    const clans = clansDeLEdition(s);
     return { type: 'clan', clan: clans[Math.floor(Math.random() * clans.length)] };
   }
   if (s.status === 'echange') return { type: 'pret' };
@@ -448,7 +464,7 @@ export function decisionBot(s, i) {
 export function jouerAction(s, i, a) {
   if (!a) return false;
   switch (a.type) {
-    case 'clan': return choisirClan(s, i, a.clan);
+    case 'clan': return choisirClan(s, i, a.clan, a.deck);
     case 'echanger': return echangerCarte(s, i, a.u);
     case 'pret': return pret(s, i);
     case 'jouer': return jouerCarte(s, i, a.u, a.choix || {});
