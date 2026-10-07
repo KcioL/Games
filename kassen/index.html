@@ -117,9 +117,16 @@
     <section class="echange-cartes" id="echange-cartes" hidden>
       <h2>Ta main de départ</h2>
       <p id="echange-texte"></p>
-      <div class="main main-echange" id="main-echange"></div>
-      <button class="btn btn-principal" id="btn-pret">C'est parti !</button>
+      <div class="grille-atelier main-echange" id="main-echange"></div>
       <p class="attente" id="attente-echange"></p>
+      <!-- barre fixe : description de la carte choisie, échange, départ -->
+      <div class="echange-actions">
+        <p class="detail" id="echange-detail"></p>
+        <div class="echange-boutons">
+          <button class="btn" id="btn-echanger" disabled>Échanger cette carte</button>
+          <button class="btn btn-principal" id="btn-pret">C'est parti !</button>
+        </div>
+      </div>
     </section>
 
     <!-- Plateau de bataille -->

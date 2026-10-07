@@ -153,9 +153,23 @@ body.kassen {
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: var(--urushi-2); border-top: 1px solid var(--kin);
 }
 
-/* ---------- Échange de départ ---------- */
-.main-echange { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.echange-cartes .btn { justify-self: center; min-width: 200px; }
+/* ---------- Main de départ ---------- */
+.echange-cartes { padding-bottom: 170px; }
+.main-echange { justify-items: center; }
+.carte.choisie-echange { box-shadow: 0 0 0 3px var(--kin-clair), 0 8px 18px rgba(0, 0, 0, .5); transform: translateY(-4px); }
+.echange-actions {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: grid; gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: var(--urushi-2); border-top: 1px solid var(--kin);
+}
+.echange-actions .detail { min-height: 3.6em; margin: 0; text-align: left; }
+.echange-boutons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.echange-boutons .btn { padding: 12px 8px; }
+.echange-boutons .btn[hidden] + .btn, .echange-boutons .btn:only-child { grid-column: 1 / -1; }
+@media (min-width: 900px) {
+  .echange-actions { left: 50%; right: auto; transform: translateX(-50%); width: min(720px, 100%); border-radius: 12px 12px 0 0; border: 1px solid var(--kin); }
+}
 
 /* ---------- Plateau ---------- */
 .bataille { display: grid; gap: 5px; }

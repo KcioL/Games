@@ -168,7 +168,7 @@ function carteEl(carte, { force, taille = '' } = {}) {
     e.appendChild(el('span', 'kanji-special', d.kanji));
   }
   if (taille !== 'mini') e.appendChild(el('span', 'nom', d.nom));
-  e.title = d.nom;
+  e.title = description(carte); // au survol de la souris : ce que fait la carte
   return e;
 }
 
@@ -318,6 +318,7 @@ function carteAtelier(id, n, max) {
   const bloc = el('div', 'carte-atelier' + (n > 0 ? ' dans-deck' : '') + (n >= max ? ' complet' : ''));
   const carte = carteEl({ c: id }, { taille: 'atelier' });
   carte.addEventListener('click', () => changerDeck(id, +1));
+  carte.addEventListener('mouseenter', () => { $('atelier-detail').textContent = description({ c: id }); });
   bloc.appendChild(carte);
   const barre = el('div', 'compteur');
   const moins = el('button', 'btn pas', '−');
@@ -366,26 +367,43 @@ $('atelier-enregistrer').addEventListener('click', () => {
   fermerAtelier();
 });
 
+// Main de départ : toucher une carte la sélectionne et affiche ce qu'elle fait ;
+// « Échanger cette carte » la remplace par une carte de la pioche (2 fois au plus)
+let choixEchange = null;
 function rendreEchange() {
   const moi = etat.players[maPlace];
   const autre = etat.players[1 - maPlace];
   const reste = M.ECHANGES_MAX - moi.echanges;
   $('echange-texte').textContent = moi.pret
     ? 'Ta main est prête.'
-    : (reste > 0 ? `Touche une carte pour l'échanger contre une carte de ta pioche (encore ${reste}).` : 'Échanges terminés.');
+    : (reste > 0 ? `Touche une carte pour voir ce qu'elle fait, puis échange-la si tu veux (encore ${reste} échange${reste > 1 ? 's' : ''}).` : 'Échanges terminés : tu peux lancer la partie.');
+  if (choixEchange !== null && !moi.main.some((c) => c.u === choixEchange)) choixEchange = null;
   const zone = $('main-echange');
   zone.innerHTML = '';
   moi.main.forEach((carte) => {
-    const e = carteEl(carte, { taille: 'grande' });
-    if (!moi.pret && reste > 0) {
-      e.classList.add('jouable');
-      e.addEventListener('click', () => action({ type: 'echanger', u: carte.u }));
-    }
+    const e = carteEl(carte, { taille: 'atelier' });
+    if (carte.u === choixEchange) e.classList.add('choisie-echange');
+    e.addEventListener('click', () => {
+      choixEchange = choixEchange === carte.u ? null : carte.u;
+      rendreEchange();
+    });
+    e.addEventListener('mouseenter', () => { $('echange-detail').textContent = description(carte); });
     zone.appendChild(e);
   });
+  const choisie = moi.main.find((c) => c.u === choixEchange);
+  $('echange-detail').textContent = choisie ? description(choisie) : (moi.pret ? '' : 'Touche une carte pour voir ce qu\'elle fait.');
+  $('btn-echanger').disabled = !choisie || moi.pret || reste <= 0;
+  $('btn-echanger').textContent = reste > 0 ? `Échanger cette carte (${reste})` : 'Plus d\'échange possible';
+  $('btn-echanger').hidden = moi.pret;
   $('btn-pret').hidden = moi.pret;
   $('attente-echange').textContent = moi.pret ? `En attente ${de(autre.name)}…` : '';
 }
+$('btn-echanger').addEventListener('click', () => {
+  if (choixEchange === null) return;
+  const u = choixEchange;
+  choixEchange = null;
+  action({ type: 'echanger', u });
+});
 
 // ---------- Plateau ----------
 function infoCamp(zone, j) {
@@ -490,6 +508,8 @@ function rendreMain() {
   moi.main.forEach((carte) => {
     const e = carteEl(carte, { taille: 'grande' });
     if (carte.u === selection) e.classList.add('choisie');
+    e.addEventListener('mouseenter', () => { if (selection === null) $('detail').textContent = description(carte); });
+    e.addEventListener('mouseleave', () => { if (selection === null) rendreCommandes(); });
     e.addEventListener('click', () => {
       selection = selection === carte.u ? null : carte.u;
       rendre();
