@@ -1,6 +1,6 @@
 # Gwynt, édition Japon : liste des cartes
 
-Il y a **82 cartes différentes** et **12 chefs** à illustrer : une image par carte, quel que soit son nombre d'exemplaires.
+Les **82 cartes** sont illustrées (images de ce dossier). Il reste les **12 chefs** à illustrer, si tu le souhaites : une image par chef, nommée avec l'id du chef (par exemple `chef_dragon_cri.jpg`).
 
 ## Comment ajouter une carte
 
