@@ -412,3 +412,135 @@ body.kassen {
   background: var(--kin); color: #1E1B18; font-family: var(--titre); font-weight: 700;
 }
 .bulle-texte b { color: var(--kin-clair); }
+
+/* ---------- Bataille en plein écran (grand écran) ----------
+   Le plateau occupe toute la fenêtre ; la taille des cartes suit la hauteur de l'écran. */
+@media (min-width: 900px) and (min-height: 600px) {
+  body.en-bataille { overflow: hidden; }
+  body.en-bataille #jeu {
+    max-width: none; height: calc(100dvh - var(--h-barre, 52px)); padding: 8px 14px 10px;
+    --h-main: clamp(130px, 22vh, 320px);
+    /* hauteur d'une rangée : ce qui reste, partagé entre les 6 rangées */
+    --h-rangee: calc((100dvh - var(--h-barre, 52px) - var(--h-main) - 92px) / 6);
+  }
+  body.en-bataille .bataille {
+    height: 100%;
+    grid-template-columns: clamp(220px, 15vw, 320px) minmax(0, 1fr) clamp(110px, 8vw, 170px);
+    grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) var(--h-main);
+  }
+  body.en-bataille .camp { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  body.en-bataille .rangee { min-height: 0; height: auto; grid-template-columns: clamp(58px, 4.5vw, 84px) clamp(34px, 2.6vw, 52px) minmax(0, 1fr); }
+  /* la taille des cartes suit la hauteur réelle de leur rangée / de la main (requêtes de conteneur) */
+  body.en-bataille .rangee-cartes { min-height: 0; height: 100%; padding: 4px 8px; gap: 5px; justify-content: safe center; container-type: size; }
+  body.en-bataille .rangee-cartes .carte { --l: calc((100cqh - 8px) * .75); }
+  body.en-bataille .rangee-total { min-width: clamp(34px, 2.6vw, 50px); height: clamp(34px, 2.6vw, 50px); font-size: clamp(1.05rem, 1.3vw, 1.6rem); }
+  body.en-bataille .rangee-kanji { font-size: clamp(.95rem, 1.2vw, 1.5rem); }
+  body.en-bataille .emplacement-cor { width: calc(var(--h-rangee) * .45); height: calc(var(--h-rangee) * .62); max-width: 46px; font-size: 1.2rem; }
+  /* main : grandes cartes */
+  body.en-bataille .bataille .main { min-height: 0; height: var(--h-main); padding: 14px 6px 6px; align-items: center; container-type: size; }
+  body.en-bataille .main .carte.grande { --l: calc((100cqh - 22px) * .75); }
+  /* panneaux et piles à l'échelle */
+  body.en-bataille .chef-panneau { --l: clamp(46px, calc(var(--h-rangee) * .58), 100px); flex: none; }
+  body.en-bataille .camp-info { flex-wrap: nowrap; overflow: hidden; min-height: 0; justify-content: safe center; gap: 3px; }
+  body.en-bataille .ciel { min-height: 0; }
+  body.en-bataille .camp-info .score-total { font-size: clamp(2rem, 2.6vw, 3.2rem); }
+  body.en-bataille .camp-info { font-size: clamp(.9rem, .9vw, 1.1rem); }
+  body.en-bataille .pile-nombre { width: clamp(46px, 4.5vw, 84px); font-size: clamp(1.1rem, 1.4vw, 1.8rem); }
+  body.en-bataille .bataille .statut { font-size: clamp(1rem, 1.1vw, 1.35rem); padding: 2px 8px; }
+  body.en-bataille .bataille .detail { font-size: clamp(.82rem, .85vw, 1rem); }
+  body.en-bataille .commandes .btn { font-size: clamp(.9rem, .95vw, 1.15rem); padding: 14px 10px; }
+}
+
+/* ---------- Animations des cartes jouées ---------- */
+.carte.vol {
+  position: fixed; z-index: 60; pointer-events: none;
+  border-radius: 10px; box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 0 2px rgba(232, 200, 119, .6);
+  will-change: transform, opacity;
+}
+.carte.vol .force { font-size: calc(var(--l) * .28); }
+/* légende : halo doré qui palpite au centre de l'écran */
+.carte.vol.vol-legende { animation: halo-legende .9s ease-in-out infinite alternate; }
+@keyframes halo-legende {
+  from { box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 18px 4px rgba(255, 200, 90, .55); }
+  to { box-shadow: 0 24px 60px rgba(0, 0, 0, .7), 0 0 46px 14px rgba(255, 170, 40, .85); }
+}
+/* petit rebond de la carte qui se pose */
+.carte.vient-de-poser { animation: se-pose .45s ease-out; }
+@keyframes se-pose { 0% { transform: scale(1.18); } 60% { transform: scale(.96); } 100% { transform: scale(1); } }
+
+/* contour enflammé (légende qui se pose) */
+.flammes {
+  position: fixed; z-index: 61; pointer-events: none; border-radius: 8px;
+  animation: flammes 1.5s ease-out forwards;
+}
+@keyframes flammes {
+  0% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0), inset 0 0 0 0 rgba(255, 160, 40, 0); }
+  12% { box-shadow: 0 0 6px 3px #FFE08A, 0 0 16px 8px #FF8A1F, 0 0 34px 16px rgba(200, 30, 0, .85), inset 0 0 10px 3px rgba(255, 170, 40, .9); }
+  30% { box-shadow: 0 0 8px 4px #FFD36A, 0 0 22px 10px #FF6A00, 0 0 44px 20px rgba(180, 20, 0, .8), inset 0 0 14px 4px rgba(255, 140, 20, .8); }
+  48% { box-shadow: 0 0 5px 2px #FFE08A, 0 0 18px 9px #FF8A1F, 0 0 38px 18px rgba(200, 30, 0, .75), inset 0 0 8px 2px rgba(255, 170, 40, .7); }
+  66% { box-shadow: 0 0 7px 3px #FFD36A, 0 0 20px 10px #FF6A00, 0 0 40px 18px rgba(180, 20, 0, .6), inset 0 0 10px 3px rgba(255, 140, 20, .5); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 210, 120, 0), 0 0 0 0 rgba(255, 106, 0, 0), 0 0 0 0 rgba(180, 20, 0, 0), inset 0 0 0 0 rgba(255, 140, 20, 0); }
+}
+.braise {
+  position: absolute; bottom: 0; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle, #FFF2B0, #FF8A1F 55%, transparent 70%);
+  opacity: 0; animation: braise 1s ease-out forwards;
+}
+@keyframes braise {
+  0% { opacity: 0; transform: translate(0, 0) scale(1); }
+  15% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--x), -90px) scale(.4); }
+}
+
+/* effets sur tout l'écran (le temps que la carte se pose) */
+.effet-ecran {
+  position: fixed; inset: 0; z-index: 58; pointer-events: none; overflow: hidden;
+  animation: effet-ecran var(--duree, 2s) ease-in-out forwards;
+}
+@keyframes effet-ecran { 0% { opacity: 0; } 15% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+.effet-ecran .particule { position: absolute; top: -10%; }
+/* pluie */
+.effet-pluie { background: linear-gradient(180deg, rgba(30, 45, 70, .45), rgba(20, 30, 50, .25)); }
+.effet-pluie .particule {
+  width: 2px; height: 70px; border-radius: 2px;
+  background: linear-gradient(180deg, rgba(200, 220, 255, 0), rgba(200, 225, 255, .75));
+  transform: rotate(12deg);
+  animation: pluie calc(var(--t) * .55s) linear infinite;
+}
+@keyframes pluie { to { transform: translate(-30px, 115vh) rotate(12deg); } }
+/* neige */
+.effet-neige { background: radial-gradient(ellipse at top, rgba(200, 225, 255, .28), rgba(40, 60, 90, .3)); }
+.effet-neige .particule {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 30%, rgba(255, 255, 255, 0) 70%);
+  animation: neige calc(var(--t) * 3s) linear infinite;
+}
+@keyframes neige { to { transform: translate(var(--x), 115vh); } }
+/* brouillard */
+.effet-brouillard { background: rgba(180, 190, 200, .22); backdrop-filter: blur(1.5px); }
+.effet-brouillard .particule {
+  width: 70vw; height: 40vh; left: -40vw !important; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(225, 230, 235, .55), rgba(225, 230, 235, 0) 70%);
+  filter: blur(18px);
+  animation: brouillard calc(var(--t) * 6s) linear infinite;
+}
+@keyframes brouillard { from { transform: translateX(0); } to { transform: translateX(150vw); } }
+/* éclaircie : rayons de soleil qui s'estompent depuis le centre */
+.effet-soleil { background: radial-gradient(circle at 50% 28%, rgba(255, 244, 200, .6), rgba(255, 220, 130, .22) 30%, rgba(255, 210, 120, 0) 65%); }
+.effet-soleil::before {
+  content: ''; position: absolute; inset: -50%;
+  background: repeating-conic-gradient(from 0deg at 50% 39%, rgba(255, 238, 180, .22) 0 5deg, rgba(255, 238, 180, 0) 5deg 15deg);
+  -webkit-mask-image: radial-gradient(circle at 50% 39%, #000 0, rgba(0, 0, 0, .6) 18%, transparent 45%);
+  mask-image: radial-gradient(circle at 50% 39%, #000 0, rgba(0, 0, 0, .6) 18%, transparent 45%);
+  animation: soleil-tourne var(--duree, 2s) linear forwards;
+}
+@keyframes soleil-tourne { from { transform: rotate(0deg); } to { transform: rotate(12deg); } }
+/* Terre brûlée / Colère de Raijin : flash de feu */
+.effet-feu { background: radial-gradient(ellipse at 50% 60%, rgba(255, 120, 20, .5), rgba(120, 10, 0, .45) 60%, rgba(30, 0, 0, .3)); }
+.effet-feu .particule {
+  top: auto; bottom: -10px; width: 10px; height: 10px; border-radius: 50%;
+  background: radial-gradient(circle, #FFF2B0, #FF7A00 55%, transparent 70%);
+  animation: braise-ecran calc(var(--t) * 1.6s) ease-out infinite;
+}
+@keyframes braise-ecran { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(var(--x), -80vh); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .effet-ecran, .flammes, .carte.vol { display: none; } }

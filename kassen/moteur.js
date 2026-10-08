@@ -360,6 +360,8 @@ export function jouerCarte(s, i, u, choix = {}) {
     }
     default: return false;
   }
+  // dernière carte jouée : chaque écran l'anime (main → centre → plateau)
+  s.dernierCoup = { joueur: i, c: carte.c, u: carte.u, ts: Date.now() + Math.random() };
   // médecin au Gwynt : le joueur choisit d'abord l'unité ramenée
   if (s.attente) { s.coup = (s.coup || 0) + 1; return true; }
   apresAction(s, i);
@@ -469,6 +471,7 @@ export function utiliserChef(s, i, u, defausse) {
       if (def(carte).type === 'eclaircie') RANGEES.forEach((x) => { s.meteo[x] = false; });
       else zonesMeteo(def(carte)).forEach((x) => { s.meteo[x] = true; });
       detail = ` (${def(carte).nom})`;
+      s.dernierCoup = { joueur: i, c: carte.c, u: carte.u, ts: Date.now() + Math.random(), chef: true };
       break;
     }
     case 'eclaircie': RANGEES.forEach((x) => { s.meteo[x] = false; }); break;

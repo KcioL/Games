@@ -22,10 +22,13 @@ const salon = initSalon({
   demarrer: (s) => { M.normaliser(s); M.nouvellePartie(s); },
   afficher: (s, place) => {
     if (place !== maPlace) selection = null;
+    // nouvelle carte jouée ? on note d'où elle part avant de redessiner (sa place dans la main)
+    const coup = preparerAnimation(s, place);
     etat = M.normaliser(s);
     maPlace = place;
     noterChangement();
     rendre();
+    if (coup) animerCoup(coup);
     planifierBot();
   },
   // Sur un seul téléphone : la main de chacun est secrète, on cache l'écran entre deux joueurs
@@ -109,6 +112,119 @@ setInterval(() => {
 }, 1500);
 
 // =====================================================================
+// Animations : chaque carte jouée sort de la main, passe au centre de l'écran puis se pose.
+// Légende : plus grande, et son contour s'enflamme quand elle se pose.
+// Météo, éclaircie, Terre brûlée : un effet sur tout l'écran, le temps que la carte arrive.
+// =====================================================================
+const sansAnimation = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let dernierCoupVu; // undefined : premier affichage (on n'anime pas une partie qu'on rejoint)
+function preparerAnimation(s, place) {
+  const dc = s.dernierCoup;
+  const ts = dc ? dc.ts : null;
+  if (dernierCoupVu === undefined || ts === dernierCoupVu || !dc || !CARTES[dc.c] || sansAnimation || document.hidden) {
+    dernierCoupVu = ts;
+    return null;
+  }
+  dernierCoupVu = ts;
+  // point de départ : la carte dans ma main, sinon le panneau du joueur
+  const dansMain = dc.joueur === place && document.querySelector(`#main .carte[data-u="${dc.u}"]`);
+  const panneau = dc.joueur === place ? $('info-moi') : $('info-adverse');
+  const depart = (dansMain || (dc.joueur === place ? $('main') : panneau)).getBoundingClientRect();
+  return { ...dc, depart };
+}
+
+// Effet plein écran : 'pluie', 'neige', 'brouillard', 'soleil' ou 'feu'
+function effetEcran(type, duree) {
+  const voile = el('div', `effet-ecran effet-${type}`);
+  const n = { pluie: 110, neige: 80, brouillard: 7, soleil: 0, feu: 40 }[type] || 0;
+  for (let k = 0; k < n; k++) {
+    const p = el('span', 'particule');
+    p.style.left = `${Math.random() * 100}%`;
+    p.style.animationDelay = `${(-Math.random() * (type === 'neige' ? 3 : 1)).toFixed(2)}s`;
+    p.style.setProperty('--x', `${(Math.random() * 2 - 1) * 60}px`);
+    p.style.setProperty('--t', (0.7 + Math.random() * 0.6).toFixed(2));
+    if (type === 'brouillard') { p.style.top = `${10 + Math.random() * 70}%`; p.style.animationDelay = `${(-Math.random() * 6).toFixed(2)}s`; }
+    voile.appendChild(p);
+  }
+  voile.style.setProperty('--duree', `${duree}ms`);
+  document.body.appendChild(voile);
+  setTimeout(() => voile.remove(), duree + 50);
+}
+
+// Contour qui s'enflamme autour d'une carte qui se pose (légende)
+function enflammer(cible) {
+  const r = cible.getBoundingClientRect();
+  const f = el('div', 'flammes');
+  Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+  for (let k = 0; k < 16; k++) {
+    const b = el('span', 'braise');
+    b.style.left = `${Math.random() * 100}%`;
+    b.style.animationDelay = `${(Math.random() * 0.5).toFixed(2)}s`;
+    b.style.setProperty('--x', `${(Math.random() * 2 - 1) * 18}px`);
+    f.appendChild(b);
+  }
+  document.body.appendChild(f);
+  setTimeout(() => f.remove(), 1600);
+}
+
+function rectCentre(r) { return [r.left + r.width / 2, r.top + r.height / 2]; }
+
+function animerCoup(dc) {
+  const d = CARTES[dc.c];
+  const legende = d.type === 'unite' && d.legende;
+  // carte arrivée sur le plateau (unité, y compris un espion chez l'adversaire)
+  const arrivee = d.type === 'unite' ? document.querySelector(`.rangee-cartes .carte[data-u="${dc.u}"]`) : null;
+  if (arrivee) arrivee.style.visibility = 'hidden';
+  // la carte en grand, posée au centre de l'écran
+  const vol = carteEl({ c: dc.c, u: dc.u }, { taille: 'vol' });
+  const hauteur = Math.min(window.innerHeight * (legende ? 0.55 : 0.38), legende ? 560 : 400);
+  vol.style.setProperty('--l', `${hauteur * 0.75}px`);
+  vol.classList.toggle('vol-legende', legende);
+  document.body.appendChild(vol);
+  const taille = vol.getBoundingClientRect();
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight * 0.46;
+  Object.assign(vol.style, { left: `${cx - taille.width / 2}px`, top: `${cy - taille.height / 2}px` });
+  const vers = (r) => {
+    const [x, y] = rectCentre(r);
+    return `translate(${x - cx}px, ${y - cy}px) scale(${Math.max(0.05, r.width / taille.width)})`;
+  };
+  const depart = vers(dc.depart);
+  // météo et sorts : effet plein écran pendant le passage au centre
+  let effet = null;
+  if (d.type === 'meteo') effet = { cac: 'neige', dist: 'brouillard', siege: 'pluie' }[String(d.meteo).split('+')[0]];
+  if (d.type === 'eclaircie') effet = 'soleil';
+  if (d.type === 'brasier') effet = 'feu';
+  const tenue = legende ? 900 : effet ? 1500 : 380;
+  const allerAuCentre = legende ? 650 : 420;
+  const seposer = 420;
+  const duree = allerAuCentre + tenue + seposer;
+  finAnnonce = Math.max(finAnnonce, Date.now() + duree + 300); // les bots attendent la fin de l'animation
+  if (effet) setTimeout(() => effetEcran(effet, tenue + seposer + 200), allerAuCentre * 0.6);
+  const fin = arrivee ? vers(arrivee.getBoundingClientRect()) : `translate(0, -20px) scale(.85)`;
+  const t1 = allerAuCentre / duree;
+  const t2 = (allerAuCentre + tenue) / duree;
+  const anim = vol.animate([
+    { transform: depart, opacity: 0.6, offset: 0 },
+    { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: t1, easing: 'ease-in-out' },
+    { transform: 'translate(0, 0) scale(1.03)', opacity: 1, offset: t2, easing: 'cubic-bezier(.5, 0, .75, 0)' },
+    { transform: fin, opacity: arrivee ? 1 : 0, offset: 1 },
+  ], { duration: duree, easing: 'cubic-bezier(.2, .8, .3, 1)', fill: 'forwards' });
+  anim.onfinish = () => {
+    vol.remove();
+    // la carte a pu être redessinée entre-temps : on reprend celle du plateau
+    const posee = d.type === 'unite' ? document.querySelector(`.rangee-cartes .carte[data-u="${dc.u}"]`) : null;
+    if (arrivee) arrivee.style.visibility = '';
+    if (posee) {
+      posee.style.visibility = '';
+      posee.classList.add('vient-de-poser');
+      setTimeout(() => posee.classList.remove('vient-de-poser'), 500);
+      if (legende) enflammer(posee);
+    }
+  };
+}
+
+// =====================================================================
 // Cartes
 // =====================================================================
 const def = (carte) => CARTES[carte.c];
@@ -169,6 +285,7 @@ function carteChefEl(chef, couleur, taille = 'atelier') {
 function carteEl(carte, { force, taille = '' } = {}) {
   const d = def(carte);
   const e = el('div', `carte ${taille} type-${d.type}`);
+  if (carte.u !== undefined) e.dataset.u = carte.u;
   // sur le plateau, la force actuelle reste affichée par-dessus l'image (elle change avec les effets)
   if (force !== undefined) e.classList.add('sur-plateau');
   appliquerFormat(e, d);
@@ -283,7 +400,19 @@ function brancherBulle(e, infos) {
 function montrer(ecran) {
   if (atelier) ecran = 'atelier';
   ['choix-clan', 'atelier', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
+  // pendant la bataille, le plateau occupe toute la fenêtre
+  document.body.classList.toggle('en-bataille', ecran === 'bataille');
+  $('btn-plein-ecran').hidden = ecran !== 'bataille' || !document.fullscreenEnabled;
 }
+// hauteur réelle de la barre du haut (le plateau prend le reste de la fenêtre)
+function mesurerBarre() { document.documentElement.style.setProperty('--h-barre', `${document.querySelector('.barre').offsetHeight}px`); }
+window.addEventListener('resize', mesurerBarre);
+mesurerBarre();
+// Bouton « plein écran » (cache aussi la barre du navigateur)
+$('btn-plein-ecran').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen().catch(() => {});
+});
 
 // Interrupteur Gwynt / Kassen (sur l'écran des clans)
 function rendreInterrupteur() {
