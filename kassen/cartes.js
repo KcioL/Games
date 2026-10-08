@@ -9,7 +9,7 @@ export const KANJI_RANGEES = { cac: '刀', dist: '弓', siege: '砲' };
 export const CAPACITES = {
   legende: { kanji: '雄', nom: 'Légende', texte: 'Insensible aux météos, au taiko, aux porte-étendards et à la Colère de Raijin.' },
   espion: { kanji: '密', nom: 'Espion', texte: 'Se pose dans le camp adverse (sa force compte pour l\'adversaire) et te fait piocher 2 cartes.' },
-  medecin: { kanji: '医', nom: 'Médecin', texte: 'Ramène en jeu une unité de ta défausse (hors légendes). Au Gwynt, tu la choisis et sa capacité s\'applique ; à Kassen, c\'est la plus forte (hors espions).' },
+  medecin: { kanji: '医', nom: 'Médecin', texte: 'Ramène en jeu l\'unité la plus forte de ta défausse (hors légendes et espions).' },
   lien: { kanji: '絆', nom: 'Lien', texte: 'Force multipliée par le nombre de cartes identiques dans la même rangée.' },
   moral: { kanji: '旗', nom: 'Porte-étendard', texte: '+1 de force à toutes les autres unités de sa rangée.' },
   rassemblement: { kanji: '群', nom: 'Rassemblement', texte: 'Quand tu la joues, toutes ses copies restées dans ta pioche arrivent aussi.' },

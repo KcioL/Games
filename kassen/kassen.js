@@ -158,7 +158,8 @@ function carteChefEl(chef, couleur, taille = 'atelier') {
   const e = el('div', `carte carte-chef ${taille}`);
   e.style.setProperty('--clan', couleur || '#3A3A3A');
   e.append(el('span', 'kanji-special', '将'), el('span', 'nom', chef.nom));
-  e.title = `${chef.nom} : ${chef.texte}`;
+  if (survolPossible) brancherBulle(e, { chef });
+  else e.title = `${chef.nom} : ${chef.texte}`;
   appliquerFormat(e, chef);
   ajouterImage(e, chef.id, chef.image);
   return e;
@@ -190,18 +191,91 @@ function carteEl(carte, { force, taille = '' } = {}) {
     e.appendChild(el('span', 'kanji-special', d.kanji));
   }
   if (taille !== 'mini') e.appendChild(el('span', 'nom', d.nom));
-  e.title = description(carte); // au survol de la souris : ce que fait la carte
+  if (survolPossible) brancherBulle(e, { d }); // au survol de la souris : la bulle d'information
+  else e.title = description(carte);
   return e;
+}
+
+// Les textes des capacités parlent de Kassen (taiko, Raijin…) : au Gwynt, on dit cor, Terre brûlée…
+const MOTS_GWYNT = [[/la Colère de Raijin/g, 'la Terre brûlée'], [/au taiko/g, 'au cor'], [/le taiko/g, 'le cor'], [/kagemusha/g, 'leurre']];
+const texteJeu = (d, texte) => (d.edition === 'gwynt' ? MOTS_GWYNT.reduce((t, [a, b]) => t.replace(a, b), texte) : texte);
+// symboles proches des icônes de The Witcher 3 (Kassen garde ses kanji)
+const SYMBOLES_GWYNT = { legende: '★', espion: '👁', medecin: '✚', lien: '🤝', moral: '+1', rassemblement: '⇶', agile: '⇄', cor: '📯', brasier_rangee: '☠' };
+// règles du Gwynt différentes de Kassen
+const TEXTES_GWYNT = { medecin: 'Choisis une unité de ta défausse (hors légendes) : elle revient en jeu et sa capacité s\'applique.' };
+const nomCapacite = (d, cle) => (d.edition === 'gwynt' && cle === 'agile' ? 'Agile' : CAPACITES[cle].nom);
+
+// Capacités d'une carte : [{ kanji, nom, texte }]
+function capacitesDe(d) {
+  const liste = [];
+  if (d.legende) liste.push({ cle: 'legende', ...CAPACITES.legende });
+  if (d.capacite && CAPACITES[d.capacite]) liste.push({ cle: d.capacite, ...CAPACITES[d.capacite] });
+  return liste.map((c) => ({ kanji: (d.edition === 'gwynt' && SYMBOLES_GWYNT[c.cle]) || c.kanji, nom: nomCapacite(d, c.cle), texte: (d.edition === 'gwynt' && TEXTES_GWYNT[c.cle]) || texteJeu(d, c.texte) }));
 }
 
 function description(carte) {
   const d = def(carte);
-  if (d.type !== 'unite') return `${d.nom} : ${d.texte}`;
+  if (d.type !== 'unite') return `${d.nom} : ${texteJeu(d, d.texte)}`;
   const morceaux = [`${d.nom}, force ${d.force}, ${d.rangees.map((r) => NOMS_RANGEES[r].toLowerCase()).join(' ou ')}.`];
-  if (d.legende) morceaux.push(`${CAPACITES.legende.nom} : ${CAPACITES.legende.texte}`);
-  if (d.capacite && d.capacite !== 'agile') morceaux.push(`${CAPACITES[d.capacite].nom} : ${CAPACITES[d.capacite].texte}`);
+  capacitesDe(d).forEach((c) => morceaux.push(`${c.nom} : ${c.texte}`));
   return morceaux.join(' ');
 }
+
+// ---------- Bulle d'information au survol (souris) : nom, force, rangée et capacités ----------
+const survolPossible = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+function remplirBulle(bulle, { d, chef }) {
+  bulle.innerHTML = '';
+  if (chef) {
+    bulle.append(el('strong', 'bulle-nom', chef.nom), el('span', 'bulle-type', 'Chef'));
+    const bloc = el('div', 'bulle-capacite');
+    bloc.append(el('span', 'bulle-kanji', String(chef.id).startsWith('g_') ? '♛' : '将'), el('span', 'bulle-texte', chef.texte));
+    bulle.appendChild(bloc);
+    return;
+  }
+  bulle.appendChild(el('strong', 'bulle-nom', d.nom));
+  if (d.type === 'unite') {
+    bulle.appendChild(el('span', 'bulle-type', `Force ${d.force} · ${d.rangees.map((r) => NOMS_RANGEES[r]).join(' ou ')}`));
+    const caps = capacitesDe(d);
+    if (!caps.length) bulle.appendChild(el('span', 'bulle-vide', 'Aucune capacité'));
+    caps.forEach((c) => {
+      const bloc = el('div', 'bulle-capacite');
+      const corps = el('span', 'bulle-texte');
+      corps.append(el('b', '', c.nom), document.createTextNode(` : ${c.texte}`));
+      bloc.append(el('span', 'bulle-kanji', c.kanji), corps);
+      bulle.appendChild(bloc);
+    });
+  } else {
+    bulle.appendChild(el('span', 'bulle-type', 'Carte spéciale'));
+    const bloc = el('div', 'bulle-capacite');
+    bloc.append(el('span', 'bulle-kanji', d.kanji || '✦'), el('span', 'bulle-texte', texteJeu(d, d.texte)));
+    bulle.appendChild(bloc);
+  }
+}
+function placerBulle(cible) {
+  const bulle = $('bulle');
+  const r = cible.getBoundingClientRect();
+  const b = bulle.getBoundingClientRect();
+  const marge = 10;
+  let x = r.right + marge;
+  if (x + b.width > window.innerWidth - 8) x = r.left - marge - b.width; // pas de place à droite : à gauche
+  x = Math.max(8, Math.min(x, window.innerWidth - b.width - 8));
+  let y = r.top + r.height / 2 - b.height / 2;
+  y = Math.max(8, Math.min(y, window.innerHeight - b.height - 8));
+  bulle.style.left = `${x}px`;
+  bulle.style.top = `${y}px`;
+}
+function brancherBulle(e, infos) {
+  if (!survolPossible) return;
+  e.addEventListener('mouseenter', () => {
+    const bulle = $('bulle');
+    remplirBulle(bulle, infos);
+    bulle.hidden = false;
+    placerBulle(e);
+  });
+  e.addEventListener('mouseleave', () => { $('bulle').hidden = true; });
+}
+// la bulle disparaît dès qu'on clique ou fait défiler (la carte peut avoir été redessinée)
+['click', 'scroll', 'keydown'].forEach((ev) => window.addEventListener(ev, () => { $('bulle').hidden = true; }, true));
 
 // =====================================================================
 // Écrans
@@ -348,7 +422,18 @@ function rendreAtelier() {
   const speciales = deck.length - unites.length;
   const force = unites.reduce((t, c) => t + CARTES[c].force, 0);
   const legendes = unites.filter((c) => CARTES[c].legende).length;
-  $('atelier-stats').textContent = `Unités : ${unites.length} (min. ${DECK_MIN_UNITES}) · Spéciales : ${speciales}/${DECK_MAX_SPECIALES} · Force totale : ${force} · Légendes : ${legendes} · ${deck.length} cartes`;
+  const stats = $('atelier-stats');
+  stats.innerHTML = '';
+  const tuile = (valeur, titre, etat = '') => {
+    const t = el('div', `stat ${etat}`);
+    t.append(el('span', 'stat-valeur', valeur), el('span', 'stat-titre', titre));
+    stats.appendChild(t);
+  };
+  tuile(`${unites.length}`, `Unités (min. ${DECK_MIN_UNITES})`, unites.length < DECK_MIN_UNITES ? 'manque' : 'ok');
+  tuile(`${speciales}/${DECK_MAX_SPECIALES}`, 'Spéciales', speciales > DECK_MAX_SPECIALES ? 'manque' : '');
+  tuile(String(force), 'Force totale');
+  tuile(String(legendes), 'Légendes');
+  tuile(String(deck.length), 'Cartes');
   const erreur = erreurDeck(clan, deck);
   $('atelier-erreur').textContent = erreur;
   $('atelier-enregistrer').disabled = !!erreur;
@@ -411,6 +496,8 @@ function rendreAtelier() {
 function carteAtelier(id, n, max) {
   const bloc = el('div', 'carte-atelier' + (n > 0 ? ' dans-deck' : '') + (n >= max ? ' complet' : ''));
   const carte = carteEl({ c: id }, { taille: 'atelier' });
+  // nombre d'exemplaires dans le deck / disponibles, affiché sur la carte
+  carte.appendChild(el('span', 'exemplaires' + (n > 0 ? ' pris' : ''), `${n}/${max}`));
   carte.addEventListener('click', () => changerDeck(id, +1));
   carte.addEventListener('mouseenter', () => { $('atelier-detail').textContent = description({ c: id }); });
   bloc.appendChild(carte);
@@ -425,7 +512,7 @@ function carteAtelier(id, n, max) {
   plus.disabled = n >= max;
   plus.setAttribute('aria-label', `Ajouter un exemplaire de ${CARTES[id].nom}`);
   plus.addEventListener('click', () => changerDeck(id, +1));
-  barre.append(moins, el('span', 'nombre', `${n} / ${max}`), plus);
+  barre.append(moins, plus);
   bloc.appendChild(barre);
   return bloc;
 }
@@ -835,6 +922,7 @@ function remplirRegles() {
 // =====================================================================
 function rendre() {
   if (!etat) return;
+  $('bulle').hidden = true; // la carte survolée a pu être redessinée
   if (etat.status === 'clans') { montrer('choix-clan'); rendreClans(); }
   else if (etat.status === 'echange') { montrer('echange-cartes'); rendreEchange(); }
   else {
