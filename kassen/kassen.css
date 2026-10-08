@@ -111,13 +111,19 @@ body.kassen {
 .carte.image-pleine { background: #120A09; border-color: transparent; }
 .carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
 .carte.image-pleine > :not(.image-carte):not(.exemplaires) { display: none; }
-/* …sauf sur le plateau : la force actuelle recouvre le chiffre imprimé */
-.carte.image-pleine.sur-plateau > .force {
+/* …sauf sur le plateau quand la force a changé : un rond blanc recouvre le rond imprimé
+   (centré sur lui : 13,7 % de la largeur, 9,8 % de la hauteur d'une carte 765 × 1024),
+   avec la force actuelle en vert (en hausse) ou en rouge (en baisse) */
+.carte.image-pleine.sur-plateau > .force.hausse,
+.carte.image-pleine.sur-plateau > .force.baisse {
   display: grid;
-  top: 1.5%; left: 2.5%;
-  min-width: 0; width: 25%;
-  font-size: calc(var(--l) * .17);
-  border: 1px solid #8A5A2A;
+  left: 13.7%; top: 9.8%;
+  transform: translate(-50%, -50%);
+  min-width: 0; width: 24%;
+  font-size: calc(var(--l) * .13);
+  letter-spacing: -.03em;
+  border: 1px solid rgba(0, 0, 0, .35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .5);
 }
 .carte.grande { --l: 72px; border-radius: 7px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .carte.legende { border: 2px solid var(--kin); box-shadow: 0 0 8px rgba(201, 162, 74, .45); }
@@ -136,8 +142,8 @@ body.kassen {
   line-height: 1;
 }
 .carte.legende .force { background: var(--kin); }
-.carte .force.hausse { background: #BFE3B5; color: #1E5A1E; }
-.carte .force.baisse { background: #F2B8AE; color: #8A1A0E; }
+.carte .force.hausse { background: #FFFFFF; color: #1F8A2C; font-weight: 800; }
+.carte .force.baisse { background: #FFFFFF; color: #C4231A; font-weight: 800; }
 .carte .rangee-icone { position: absolute; top: 4%; right: 6%; font-size: calc(var(--l) * .2); color: var(--kin-clair); font-family: var(--titre); }
 .carte .capacite {
   position: absolute; bottom: 4%; right: 5%;
