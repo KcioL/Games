@@ -84,7 +84,7 @@ export const JEU = {
         { id: 'chef2_b', nom: 'Emhyr var Emreis : Empereur du Nilfgaard', effet: 'espionner' },
         { id: 'chef2_c', nom: 'Emhyr var Emreis : La Flamme Blanche', effet: 'annuler-chef' },
         { id: 'chef2_d', nom: "Emhyr var Emreis : L'Implacable", effet: 'voler-defausse' },
-        { id: 'chef2_e', nom: '	Emhyr var Emreis : Envahisseur du Nord', effet: 'medecins-hasard' },
+        { id: 'chef2_e', nom: 'Emhyr var Emreis : Envahisseur du Nord', effet: 'medecins-hasard' },
       ] },
     faction3: { nom: "scoia'tael", couleur: '#2A810A', symbole: 'S', atout: 'patience',
       chefs: [
