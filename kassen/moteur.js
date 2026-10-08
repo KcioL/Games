@@ -211,7 +211,10 @@ function ressusciter(s, i) {
   const p = s.players[i];
   const candidates = p.defausse.filter((x) => estUnite(x) && !def(x).legende && def(x).capacite !== 'espion');
   if (!candidates.length) return false;
-  const meilleure = candidates.reduce((a, b) => (def(b).force > def(a).force ? b : a));
+  // chef « medecins-hasard » (pour les deux joueurs) : l'unité ramenée est tirée au hasard
+  const auHasard = s.players.some((x, k) => effetActif(s, k, 'medecins-hasard'));
+  const meilleure = auHasard ? candidates[Math.floor(Math.random() * candidates.length)]
+    : candidates.reduce((a, b) => (def(b).force > def(a).force ? b : a));
   p.defausse = p.defausse.filter((x) => x.u !== meilleure.u);
   poserUnite(s, i, meilleure, def(meilleure).rangees[0], { effets: false });
   journal(s, `${p.name} ramène ${def(meilleure).nom} en jeu.`);
@@ -384,7 +387,8 @@ function placerAgiles(s, i) {
 }
 
 // u : carte choisie (effets à choix) ; sans choix, la meilleure est prise automatiquement
-export function utiliserChef(s, i, u) {
+// defausse : pour « echanger », les 2 cartes de la main à défausser (sinon les 2 plus faibles)
+export function utiliserChef(s, i, u, defausse) {
   if (s.status !== 'jeu' || s.active !== i || s.players[i].passe || !chefUtilisable(s, i)) return false;
   const p = s.players[i];
   const j = adversaire(i);
@@ -431,7 +435,11 @@ export function utiliserChef(s, i, u) {
       detail = ` (il reprend ${def(choisie).nom})`;
       break;
     case 'echanger': {
-      const faibles = p.main.slice().sort((a, b) => valeurCarte(a) - valeurCarte(b)).slice(0, 2);
+      let faibles = p.main.slice().sort((a, b) => valeurCarte(a) - valeurCarte(b)).slice(0, 2);
+      if (Array.isArray(defausse) && defausse.length) {
+        faibles = p.main.filter((c) => defausse.includes(c.u));
+        if (faibles.length !== 2 || defausse.length !== 2) return false;
+      }
       p.main = p.main.filter((c) => !faibles.includes(c));
       p.defausse.push(...faibles);
       p.pioche = retirer(p.pioche, choisie);
@@ -629,7 +637,7 @@ export function jouerAction(s, i, a) {
     case 'echanger': return echangerCarte(s, i, a.u);
     case 'pret': return pret(s, i);
     case 'jouer': return jouerCarte(s, i, a.u, a.choix || {});
-    case 'chef': return utiliserChef(s, i, a.u);
+    case 'chef': return utiliserChef(s, i, a.u, a.defausse);
     case 'passer': return passer(s, i);
     default: return false;
   }

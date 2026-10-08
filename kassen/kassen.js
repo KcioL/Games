@@ -698,7 +698,21 @@ $('btn-chef').addEventListener('click', () => {
   const options = M.choixChef(etat, maPlace);
   if (!options.length) { action({ type: 'chef' }); return; }
   const chefMoi = M.chefDe(etat.players[maPlace]);
-  ouvrirFenetreChef(chefMoi.nom, `${chefMoi.texte} Touche la carte que tu veux.`, options, (carte) => action({ type: 'chef', u: carte.u }));
+  if (chefMoi.effet !== 'echanger') {
+    ouvrirFenetreChef(chefMoi.nom, `${chefMoi.texte} Touche la carte que tu veux.`, options, (carte) => action({ type: 'chef', u: carte.u }));
+    return;
+  }
+  // « echanger » : d'abord les 2 cartes de la main à défausser, puis la carte de la pioche
+  const aDefausser = [];
+  const choisirPioche = () => ouvrirFenetreChef(chefMoi.nom, 'Maintenant, touche la carte de ta pioche que tu veux prendre.', options,
+    (carte) => action({ type: 'chef', u: carte.u, defausse: aDefausser }));
+  ouvrirFenetreChef(chefMoi.nom, 'Touche les 2 cartes de ta main à défausser.', etat.players[maPlace].main, (carte, e) => {
+    const k = aDefausser.indexOf(carte.u);
+    if (k >= 0) aDefausser.splice(k, 1); else aDefausser.push(carte.u);
+    e.classList.toggle('choisie-echange', k < 0);
+    if (aDefausser.length === 2) setTimeout(choisirPioche, 250);
+    return true; // garder la fenêtre ouverte
+  });
 });
 
 // « (passif) » ou « (annulé) » à côté du nom du chef
@@ -720,8 +734,8 @@ function ouvrirFenetreChef(titre, texte, cartes, siChoix) {
     e.addEventListener('mouseenter', () => { $('chef-detail').textContent = description(carte); });
     e.addEventListener('click', () => {
       if (!siChoix) { $('chef-detail').textContent = description(carte); return; }
+      if (siChoix(carte, e) === true) return; // choix en plusieurs fois : la fenêtre reste ouverte
       fermerFenetreChef();
-      siChoix(carte);
     });
     zone.appendChild(e);
   });

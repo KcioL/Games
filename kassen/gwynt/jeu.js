@@ -54,13 +54,15 @@ export const JEU = {
   //                'recuperer'           : choisit une carte de sa défausse et la reprend en main
   //                'voler-defausse'      : choisit une carte de la défausse adverse et la prend en main
   //                'pioche'              : pioche une carte
-  //                'echanger'            : défausse ses 2 cartes les plus faibles, puis choisit une carte de sa pioche
+  //                'echanger'            : défausse 2 cartes de sa main, puis choisit une carte de sa pioche
   //                'espionner'           : regarde 3 cartes au hasard de la main adverse
   //                'agiles'              : déplace ses unités agiles vers la rangée où elles comptent le plus
   //                'melanger-defausses'  : remélange les défausses des deux joueurs dans leurs pioches
   //              Effets passifs (agissent tout seuls pendant toute la partie) :
   //                'annuler-chef'        : le chef adverse n'a aucun effet
   //                'garder-unite'        : à chaque fin de manche, chaque joueur garde une unité au hasard
+  //                'medecins-hasard'     : les capacités qui ramènent une unité de la défausse sur le plateau
+  //                                        (médecin, résurrection) la choisissent au hasard (pour les deux joueurs)
   //                'pioche-depart'       : commence la partie avec une carte de plus
   //                'espions-doubles'     : la force des espions est doublée (pour les deux joueurs)
   //                'meteo-moitie'        : par mauvais temps, ses unités ne perdent que la moitié de leur force
@@ -82,28 +84,28 @@ export const JEU = {
         { id: 'chef2_b', nom: 'Emhyr var Emreis : Empereur du Nilfgaard', effet: 'espionner' },
         { id: 'chef2_c', nom: 'Emhyr var Emreis : La Flamme Blanche', effet: 'annuler-chef' },
         { id: 'chef2_d', nom: "Emhyr var Emreis : L'Implacable", effet: 'voler-defausse' },
-        { id: 'chef2_e', nom: 'Emhyr var Emreis : Envahisseur du Nord', effet: 'recuperer' },
+        { id: 'chef2_e', nom: '	Emhyr var Emreis : Envahisseur du Nord', effet: 'medecins-hasard' },
       ] },
-    faction3: { nom: 'Faction 3', couleur: '#2E5A3A', symbole: '3', atout: 'patience',
+    faction3: { nom: "scoia'tael", couleur: '#2A810A', symbole: 'S', atout: 'patience',
       chefs: [
-        { id: 'chef3_a', nom: 'Chef 3 A', effet: 'cor-cac' },
-        { id: 'chef3_b', nom: 'Chef 3 B', effet: 'meteo-siege' },
-        { id: 'chef3_c', nom: 'Chef 3 C', effet: 'bruler-cac' },
-        { id: 'chef3_d', nom: 'Chef 3 D', effet: 'pioche' },
-        { id: 'chef3_e', nom: 'Chef 3 E', effet: 'recuperer' },
+        { id: 'chef3_a', nom: 'Francesca Findabair : Elfe de sang pur	Elfe de sang pur', effet: 'meteo-cac' },
+        { id: 'chef3_b', nom: 'Francesca Findabair : La Pâquerette des vallées', effet: 'pioche-depart' },
+        { id: 'chef3_c', nom: 'Francesca Findabair : La Belle', effet: 'cor-dist' },
+        { id: 'chef3_d', nom: 'Francesca Findabair : Reine de Dol Blathanna', effet: 'bruler-cac' },
+        { id: 'chef3_e', nom: "Francesca Findabair : L'espoir des Aen Seidhe", effet: 'agiles' },
       ] },
-    faction4: { nom: 'Faction 4', couleur: '#5A2A2A', symbole: '4', atout: 'hantise',
+    faction4: { nom: 'Monstres', couleur: '#b70a0a', symbole: '4', atout: 'hantise',
       chefs: [
-        { id: 'chef4_a', nom: 'Chef 4 A', effet: 'cor-cac' },
-        { id: 'chef4_b', nom: 'Chef 4 B', effet: 'meteo-siege' },
-        { id: 'chef4_c', nom: 'Chef 4 C', effet: 'bruler-cac' },
-        { id: 'chef4_d', nom: 'Chef 4 D', effet: 'pioche' },
-        { id: 'chef4_e', nom: 'Chef 4 E', effet: 'recuperer' },
+        { id: 'chef4_a', nom: 'Eredin : Commandant des Cavaliers pourpres', effet: 'cor-cac' },
+        { id: 'chef4_b', nom: 'Eredin : Roi de la Chasse Sauvage', effet: 'meteo' },
+        { id: 'chef4_c', nom: 'Eredin : Le Mortifère', effet: 'resurrection' },
+        { id: 'chef4_d', nom: 'Eredin : Destructeur de mondes', effet: 'echanger' },
+        { id: 'chef4_e', nom: 'Eredin Bréacc Glas : Le Fourbe', effet: 'espions-doubles' },
       ] },
-    faction5: { nom: 'Faction 5', couleur: '#3A5A7A', symbole: '5', atout: 'pioche-victoire',
+    faction5: { nom: 'Faction 5', couleur: '#543461', symbole: '5', atout: 'pioche-victoire',
       chefs: [
-        { id: 'chef5_a', nom: 'Chef 5 A', effet: 'cor-cac' },
-        { id: 'chef5_b', nom: 'Chef 5 B', effet: 'meteo-siege' },
+        { id: 'chef5_a', nom: 'Crach an Craite', effet: 'melanger-defausses' },
+        { id: 'chef5_b', nom: 'King Bran', effet: 'meteo-moitie' },
       ] },
   },
 

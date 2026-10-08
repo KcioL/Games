@@ -41,17 +41,18 @@ export const EFFETS_CHEF = {
   espionner: 'regarde 3 cartes au hasard dans la main de l\'adversaire.',
   'voler-defausse': 'choisit une carte dans la défausse adverse et la prend dans sa main.',
   recuperer: 'choisit une carte de sa défausse et la reprend dans sa main.',
-  echanger: 'défausse ses 2 cartes les plus faibles, puis choisit une carte de sa pioche et la prend dans sa main.',
+  echanger: 'défausse 2 cartes de sa main, puis choisit une carte de sa pioche et la prend dans sa main.',
   agiles: 'déplace ses unités agiles (deux rangées possibles) vers la rangée où elles comptent le plus.',
   'melanger-defausses': 'remélange la défausse de chaque joueur dans sa pioche.',
   'annuler-chef': '(passif) le chef de l\'adversaire est sans effet.',
   'garder-unite': '(passif) à la fin de chaque manche, chaque joueur garde une unité au hasard sur le plateau.',
+  'medecins-hasard': '(passif) quand une capacité ramène une unité de la défausse sur le plateau (médecin, résurrection), l\'unité est choisie au hasard, pour les deux joueurs.',
   'pioche-depart': '(passif) commence la partie avec une carte de plus.',
   'espions-doubles': '(passif) la force des espions est doublée, pour les deux joueurs.',
   'meteo-moitie': '(passif) par mauvais temps, ses unités ne perdent que la moitié de leur force.',
 };
 // effets permanents : le chef n'a pas de bouton à utiliser
-export const CHEFS_PASSIFS = ['annuler-chef', 'garder-unite', 'pioche-depart', 'espions-doubles', 'meteo-moitie'];
+export const CHEFS_PASSIFS = ['annuler-chef', 'garder-unite', 'medecins-hasard', 'pioche-depart', 'espions-doubles', 'meteo-moitie'];
 // effets où le joueur choisit une carte (le bot prend la meilleure)
 export const CHEFS_A_CHOIX = ['meteo', 'voler-defausse', 'recuperer', 'echanger'];
 // anciens noms d'effets, toujours acceptés
