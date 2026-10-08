@@ -468,21 +468,32 @@ body.kassen {
 .carte.vient-de-poser { animation: se-pose .45s ease-out; }
 @keyframes se-pose { 0% { transform: scale(1.18); } 60% { transform: scale(.96); } 100% { transform: scale(1); } }
 
-/* contour enflammé (légende qui se pose) */
-.flammes {
-  position: fixed; z-index: 61; pointer-events: none; border-radius: 8px;
-  animation: flammes 1.5s ease-out forwards;
+/* contour enflammé (légende qui se pose) : anneau de feu qui tourne autour du bord de la carte + halo */
+@property --angle-feu { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.rangee-cartes.deborde { overflow: visible; }
+.carte.en-flammes { overflow: visible; animation: halo-feu 1.6s ease-out forwards; z-index: 3; }
+.carte.en-flammes::before {
+  content: ''; position: absolute; inset: -5px; z-index: 2; pointer-events: none;
+  border-radius: calc(5px + 4px); padding: 5px;
+  background: conic-gradient(from var(--angle-feu), #FF3D00, #FFB300, #FFF3B0, #FF6A00, #C21D00, #FFB300, #FFF3B0, #FF3D00);
+  /* seul l'anneau (le bord) est visible : l'intérieur de la carte reste dégagé */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  filter: blur(1px) drop-shadow(0 0 4px #FF8A1F);
+  animation: tourne-feu .5s linear infinite, anneau-feu 1.6s ease-out forwards;
 }
-@keyframes flammes {
-  0% { box-shadow: 0 0 0 0 rgba(255, 220, 120, 0), inset 0 0 0 0 rgba(255, 160, 40, 0); }
-  12% { box-shadow: 0 0 6px 3px #FFE08A, 0 0 16px 8px #FF8A1F, 0 0 34px 16px rgba(200, 30, 0, .85), inset 0 0 10px 3px rgba(255, 170, 40, .9); }
-  30% { box-shadow: 0 0 8px 4px #FFD36A, 0 0 22px 10px #FF6A00, 0 0 44px 20px rgba(180, 20, 0, .8), inset 0 0 14px 4px rgba(255, 140, 20, .8); }
-  48% { box-shadow: 0 0 5px 2px #FFE08A, 0 0 18px 9px #FF8A1F, 0 0 38px 18px rgba(200, 30, 0, .75), inset 0 0 8px 2px rgba(255, 170, 40, .7); }
-  66% { box-shadow: 0 0 7px 3px #FFD36A, 0 0 20px 10px #FF6A00, 0 0 40px 18px rgba(180, 20, 0, .6), inset 0 0 10px 3px rgba(255, 140, 20, .5); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 210, 120, 0), 0 0 0 0 rgba(255, 106, 0, 0), 0 0 0 0 rgba(180, 20, 0, 0), inset 0 0 0 0 rgba(255, 140, 20, 0); }
+@keyframes tourne-feu { to { --angle-feu: 360deg; } }
+@keyframes anneau-feu { 0% { opacity: 0; } 10% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes halo-feu {
+  0% { box-shadow: 0 0 0 0 rgba(255, 140, 30, 0); }
+  12% { box-shadow: 0 0 10px 4px rgba(255, 200, 80, .9), 0 0 26px 10px rgba(255, 90, 0, .75), 0 0 46px 18px rgba(170, 20, 0, .55); }
+  35% { box-shadow: 0 0 8px 3px rgba(255, 210, 100, .8), 0 0 22px 8px rgba(255, 110, 0, .7), 0 0 40px 14px rgba(170, 20, 0, .5); }
+  55% { box-shadow: 0 0 11px 4px rgba(255, 190, 70, .85), 0 0 28px 11px rgba(255, 90, 0, .7), 0 0 48px 18px rgba(170, 20, 0, .45); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 140, 30, 0); }
 }
 .braise {
-  position: absolute; bottom: 0; width: 5px; height: 5px; border-radius: 50%;
+  position: absolute; z-index: 3; width: 5px; height: 5px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(circle, #FFF2B0, #FF8A1F 55%, transparent 70%);
   opacity: 0; animation: braise 1s ease-out forwards;
 }
@@ -543,4 +554,4 @@ body.kassen {
   animation: braise-ecran calc(var(--t) * 1.6s) ease-out infinite;
 }
 @keyframes braise-ecran { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(var(--x), -80vh); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .effet-ecran, .flammes, .carte.vol { display: none; } }
+@media (prefers-reduced-motion: reduce) { .effet-ecran, .carte.vol, .braise { display: none; } .carte.en-flammes::before { animation: none; opacity: 0; } }

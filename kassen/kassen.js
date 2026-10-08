@@ -151,20 +151,32 @@ function effetEcran(type, duree) {
   setTimeout(() => voile.remove(), duree + 50);
 }
 
-// Contour qui s'enflamme autour d'une carte qui se pose (légende)
-function enflammer(cible) {
-  const r = cible.getBoundingClientRect();
-  const f = el('div', 'flammes');
-  Object.assign(f.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
-  for (let k = 0; k < 16; k++) {
+// Contour qui s'enflamme autour d'une carte qui se pose (légende) :
+// l'anneau de feu et les braises sont dans la carte elle-même, ils en épousent exactement la forme
+function enflammer(carte) {
+  carte.classList.add('en-flammes');
+  // la rangée défile horizontalement et couperait les flammes : on la laisse déborder le temps de l'effet
+  const rangee = carte.closest('.rangee-cartes');
+  if (rangee) rangee.classList.add('deborde');
+  const braises = [];
+  for (let k = 0; k < 18; k++) {
     const b = el('span', 'braise');
-    b.style.left = `${Math.random() * 100}%`;
-    b.style.animationDelay = `${(Math.random() * 0.5).toFixed(2)}s`;
-    b.style.setProperty('--x', `${(Math.random() * 2 - 1) * 18}px`);
-    f.appendChild(b);
+    // les braises partent de tout le contour (haut, côtés, bas)
+    const bord = k % 4;
+    const pos = `${Math.random() * 100}%`;
+    if (bord === 0) Object.assign(b.style, { left: pos, bottom: '0' });
+    else if (bord === 1) Object.assign(b.style, { left: pos, top: '0' });
+    else Object.assign(b.style, { [bord === 2 ? 'left' : 'right']: '0', top: pos });
+    b.style.animationDelay = `${(Math.random() * 0.6).toFixed(2)}s`;
+    b.style.setProperty('--x', `${(Math.random() * 2 - 1) * 22}px`);
+    carte.appendChild(b);
+    braises.push(b);
   }
-  document.body.appendChild(f);
-  setTimeout(() => f.remove(), 1600);
+  setTimeout(() => {
+    carte.classList.remove('en-flammes');
+    braises.forEach((b) => b.remove());
+    if (rangee) rangee.classList.remove('deborde');
+  }, 1700);
 }
 
 function rectCentre(r) { return [r.left + r.width / 2, r.top + r.height / 2]; }
@@ -199,7 +211,8 @@ function animerCoup(dc) {
   const allerAuCentre = legende ? 650 : 420;
   const seposer = 420;
   const duree = allerAuCentre + tenue + seposer;
-  finAnnonce = Math.max(finAnnonce, Date.now() + duree + 300); // les bots attendent la fin de l'animation
+  // les bots attendent la fin de l'animation (et des flammes d'une légende)
+  finAnnonce = Math.max(finAnnonce, Date.now() + duree + (legende ? 1800 : 300));
   if (effet) setTimeout(() => effetEcran(effet, tenue + seposer + 200), allerAuCentre * 0.6);
   const fin = arrivee ? vers(arrivee.getBoundingClientRect()) : `translate(0, -20px) scale(.85)`;
   const t1 = allerAuCentre / duree;
