@@ -12,7 +12,6 @@ const SPECIAUX = {
   cor: { symbole: '鼓', texte: 'Double la force des unités d\'une de tes rangées (hors légendes).' },
   leurre: { symbole: '影', texte: 'Prend la place d\'une de tes unités (hors légendes), qui revient dans ta main.' },
   brasier: { symbole: '雷', texte: 'Détruit la ou les unités les plus fortes du plateau, dans les deux camps (hors légendes).' },
-  mardroeme: { symbole: '熊', texte: 'Se pose sur une de tes rangées (à la place d\'un cor) : les Berserkers de cette rangée se transforment, même ceux joués après.' },
 };
 const NOMS_METEO = { cac: 'au corps à corps', dist: 'à distance', siege: 'de siège' };
 // Rangées touchées par une météo : 'cac', 'dist', 'siege', ou plusieurs ('dist+siege')
@@ -60,18 +59,16 @@ export function verifierJeu(jeu) {
     vus.add(c.id);
     if (!c.nom) erreurs.push(`${ou} : il manque le nom.`);
     if (c.faction !== 'neutre' && !factions[c.faction]) erreurs.push(`${ou} : faction inconnue (« ${c.faction} »).`);
+    if (c.images !== undefined && !(Number.isInteger(c.images) && c.images >= 1 && c.images <= 9)) erreurs.push(`${ou} : « images » doit être un nombre de 1 à 9.`);
     const ex = Number(c.exemplaires === undefined ? 1 : c.exemplaires);
     if (!Number.isInteger(ex) || ex < 1 || ex > 9) erreurs.push(`${ou} : « exemplaires » doit être un nombre de 1 à 9.`);
     if (c.type === 'unite') {
       if (!Number.isInteger(c.force) || c.force < 0) erreurs.push(`${ou} : « force » doit être un nombre entier.`);
       if (!['cac', 'dist', 'siege', 'cac+dist'].includes(c.rangee)) erreurs.push(`${ou} : rangée inconnue (« ${c.rangee} »).`);
       if (c.capacite && !CAPACITES[c.capacite]) erreurs.push(`${ou} : capacité inconnue (« ${c.capacite} »).`);
-      if (c.capacite === 'kambi' && !c.invoque) erreurs.push(`${ou} : la capacité « kambi » demande « invoque » (id de la carte invoquée).`);
-      if (c.capacite === 'berserker' && !c.transformeEn) erreurs.push(`${ou} : la capacité « berserker » demande « transformeEn » (id de la forme ours).`);
       if (['lien', 'rassemblement'].includes(c.capacite) && !c.groupe) erreurs.push(`${ou} : la capacité « ${c.capacite} » demande un « groupe ».`);
     } else if (SPECIAUX[c.type]) {
       if (c.type === 'meteo' && !zones(c.meteo).every((r) => RANGEES.includes(r))) erreurs.push(`${ou} : précise « meteo » ('cac', 'dist', 'siege', ou plusieurs comme 'dist+siege').`);
-      if (c.type === 'mardroeme' && c.rangee && !RANGEES.includes(c.rangee)) erreurs.push(`${ou} : rangée Mardroeme inconnue.`);
     } else {
       erreurs.push(`${ou} : type inconnu (« ${c.type} »).`);
     }
@@ -89,22 +86,25 @@ export function verifierJeu(jeu) {
 // Ajoute un jeu valable aux catalogues. `prefixe` évite tout mélange entre les deux jeux.
 function charger(edition, jeu, prefixe) {
   const id = (x) => `${prefixe}${x}`;
+  // format des images et position du rond de force imprimé (pour le rond de la force modifiée)
+  const apparence = {};
+  if (Array.isArray(jeu.format) && jeu.format.length === 2) apparence.format = jeu.format;
+  if (jeu.rondForce) apparence.rond = jeu.rondForce;
   jeu.cartes.forEach((c) => {
-    const base = { nom: c.nom, edition, image: `${edition}/cartes/${c.id}.jpg` };
+    // une image par exemplaire possible : <id>.jpg, <id>_2.jpg, <id>_3.jpg…
+    const images = Array.from({ length: c.images || 1 }, (_, k) => `${edition}/cartes/${c.id}${k ? `_${k + 1}` : ''}.jpg`);
+    const base = { nom: c.nom, edition, image: images[0], images, ...apparence };
     if (c.faction !== 'neutre') base.clan = id(c.faction);
     if (c.type === 'unite') {
       Object.assign(base, { type: 'unite', force: c.force, rangees: c.rangee === 'cac+dist' ? ['cac', 'dist'] : [c.rangee], legende: !!c.legende });
       if (c.rangee === 'cac+dist') base.capacite = 'agile';
       if (c.capacite) base.capacite = c.capacite;
       if (c.groupe) base.groupe = id(c.groupe);
-      if (c.invoque) base.invoque = id(c.invoque);
-      if (c.transformeEn) base.transformeEn = id(c.transformeEn);
     } else if (c.type === 'meteo') {
       Object.assign(base, { type: 'meteo', meteo: c.meteo, kanji: c.symbole || SPECIAUX.meteo.symbole[zones(c.meteo)[0]],
         texte: c.texte || `Toutes les unités ${zones(c.meteo).map((r) => NOMS_METEO[r]).join(' et ')} (des deux camps) tombent à 1 de force.` });
     } else {
       Object.assign(base, { type: c.type, kanji: c.symbole || SPECIAUX[c.type].symbole, texte: c.texte || SPECIAUX[c.type].texte });
-      if (c.type === 'mardroeme') base.cibleRangee = true;
       if (c.meteo) base.meteo = c.meteo;
       if (c.rangee) base.rangee = c.rangee;
     }
@@ -119,7 +119,7 @@ function charger(edition, jeu, prefixe) {
       // chefs au choix (image : <jeu>/cartes/<id>.jpg)
       chefs: chefsDe(cle, f).map((c) => {
         const effet = ALIAS_CHEF[c.effet] || c.effet;
-        return { id: id(c.id), nom: c.nom, effet, texte: majuscule(EFFETS_CHEF[effet]), image: `${edition}/cartes/${c.id}.jpg` };
+        return { id: id(c.id), nom: c.nom, effet, texte: majuscule(EFFETS_CHEF[effet]), image: `${edition}/cartes/${c.id}.jpg`, ...apparence };
       }),
     };
     COLLECTIONS[clan] = jeu.cartes.filter((c) => (c.faction === cle || c.faction === 'neutre') && c.collection !== false).map((c) => [id(c.id), Number(c.exemplaires || 1)]);

@@ -15,9 +15,6 @@ export const CAPACITES = {
   rassemblement: { kanji: '群', nom: 'Rassemblement', texte: 'Quand tu la joues, toutes ses copies restées dans ta pioche arrivent aussi.' },
   agile: { kanji: '浪', nom: 'Rōnin', texte: 'Se joue au corps à corps ou à distance, au choix.' },
   cor: { kanji: '鼓', nom: 'Cor', texte: 'Double la force des autres unités de sa rangée (hors légendes).' },
-  berserker: { kanji: '狂', nom: 'Berserker', texte: 'Se transforme en ours quand un Mardroeme touche sa rangée.' },
-  mardroeme: { kanji: '茸', nom: 'Mardroeme', texte: 'Tant qu\'elle est sur le plateau, les Berserkers de sa rangée se transforment (même ceux joués après).' },
-  kambi: { kanji: '角', nom: 'Vengeur', texte: 'Quand elle quitte le plateau (y compris en fin de manche), invoque une unité puissante à sa place.' },
   brasier_rangee: { kanji: '焔', nom: 'Brûlure', texte: 'Quand elle arrive : détruit l\'unité la plus forte de la même rangée adverse, si cette rangée vaut 10 ou plus.' },
 };
 
@@ -26,7 +23,6 @@ export const EFFETS_ATOUT = {
   egalites: 'remporte les manches à égalité.',
   hantise: 'à la fin de chaque manche, une de ses unités (au hasard) reste sur le plateau.',
   patience: 'l\'adversaire commence toujours la première manche.',
-  skellige: 'au début de la troisième manche, 2 unités au hasard de sa défausse sont jouées.',
   'choix-premier': 'choisit qui commence la première manche.',
 };
 export const EFFETS_CHEF = {

@@ -118,14 +118,35 @@ const def = (carte) => CARTES[carte.c];
 // Une image absente est simplement ignorée et la carte garde son dessin par défaut.
 const imagesAbsentes = new Set();
 const imagesChargees = new Set(); // déjà affichées une fois : on les montre tout de suite (pas de clignotement)
-const cheminImage = (id) => (CARTES[id] && CARTES[id].image) || `cartes/${id}.jpg`;
+// Plusieurs illustrations pour une carte : chaque exemplaire de la partie garde toujours la même
+const cheminImage = (id, u) => {
+  const d = CARTES[id];
+  if (!d) return `cartes/${id}.jpg`;
+  return d.images && d.images.length > 1 && u !== undefined ? d.images[Math.abs(u) % d.images.length] : d.image;
+};
+// Format des images du jeu (ex. 170 × 324 pour le Gwynt) et position de son rond de force imprimé
+function appliquerFormat(e, d) {
+  if (d && d.format) {
+    const [w, h] = d.format;
+    e.style.aspectRatio = `${w} / ${h}`;
+    // même hauteur qu'une carte 3:4 : la largeur s'adapte
+    e.style.setProperty('--k', String(((w / h) / 0.75).toFixed(3)));
+  }
+  if (d && d.rond) {
+    e.style.setProperty('--rond-x', `${d.rond.x}%`);
+    e.style.setProperty('--rond-y', `${d.rond.y}%`);
+    e.style.setProperty('--rond-d', `${d.rond.taille}%`);
+  }
+}
 function ajouterImage(e, id, chemin) {
+  chemin = chemin || cheminImage(id);
+  id = chemin; // une image absente est retenue par son fichier
   if (imagesAbsentes.has(id)) return;
   const img = document.createElement('img');
   img.className = 'image-carte';
   img.alt = CARTES[id] ? CARTES[id].nom : '';
   img.decoding = 'async';
-  img.src = chemin || cheminImage(id);
+  img.src = chemin;
   img.addEventListener('error', () => { imagesAbsentes.add(id); img.remove(); });
   img.addEventListener('load', () => { imagesChargees.add(id); e.classList.add('image-pleine'); });
   if (imagesChargees.has(id)) e.classList.add('image-pleine');
@@ -138,6 +159,7 @@ function carteChefEl(chef, couleur, taille = 'atelier') {
   e.style.setProperty('--clan', couleur || '#3A3A3A');
   e.append(el('span', 'kanji-special', '将'), el('span', 'nom', chef.nom));
   e.title = `${chef.nom} : ${chef.texte}`;
+  appliquerFormat(e, chef);
   ajouterImage(e, chef.id, chef.image);
   return e;
 }
@@ -148,7 +170,8 @@ function carteEl(carte, { force, taille = '' } = {}) {
   const e = el('div', `carte ${taille} type-${d.type}`);
   // sur le plateau, la force actuelle reste affichée par-dessus l'image (elle change avec les effets)
   if (force !== undefined) e.classList.add('sur-plateau');
-  ajouterImage(e, carte.c);
+  appliquerFormat(e, d);
+  ajouterImage(e, carte.c, cheminImage(carte.c, carte.u));
   const clan = d.clan ? CLANS[d.clan] : null;
   e.style.setProperty('--clan', clan ? clan.couleur : '#2E2A26');
   if (d.legende) e.classList.add('legende');
@@ -534,9 +557,8 @@ function rendreCamp(zone, j, ordre) {
     ligne.appendChild(tete);
     // emplacement du cor (taiko), comme dans The Witcher 3
     const pj = etat.players[j];
-    const plein = pj.cors[r] || pj.mardroeme[r];
-    const cor = el('div', 'emplacement-cor' + (plein ? ' plein' : ''), pj.cors[r] ? '鼓' : pj.mardroeme[r] ? '茸' : '');
-    cor.title = pj.cors[r] ? 'Cor : force doublée' : pj.mardroeme[r] ? 'Mardroeme : les Berserkers de cette rangée se transforment' : 'Emplacement du cor';
+    const cor = el('div', 'emplacement-cor' + (pj.cors[r] ? ' plein' : ''), pj.cors[r] ? '鼓' : '');
+    cor.title = pj.cors[r] ? 'Cor : force doublée' : 'Emplacement du cor';
     ligne.appendChild(cor);
     const cartes = el('div', 'rangee-cartes');
     etat.players[j].rangees[r].forEach((carte) => {
@@ -565,7 +587,9 @@ function rendreCiel() {
   const zone = $('ciel');
   zone.innerHTML = '';
   const actives = RANGEES.filter((r) => etat.meteo[r]);
-  const noms = { cac: ['雪', 'Neige'], dist: ['霧', 'Brume'], siege: ['嵐', 'Typhon'] };
+  const noms = M.editionDe(etat) === 'gwynt'
+    ? { cac: ['❄', 'Froid mordant'], dist: ['☁', 'Brouillard impénétrable'], siege: ['☂', 'Pluie torrentielle'] }
+    : { cac: ['雪', 'Neige'], dist: ['霧', 'Brume'], siege: ['嵐', 'Typhon'] };
   if (!actives.length) zone.appendChild(el('span', 'ciel-calme', 'Ciel dégagé'));
   actives.forEach((r) => zone.appendChild(el('span', 'meteo-active', `${noms[r][0]} ${noms[r][1]}`)));
   zone.appendChild(el('span', 'manche', `Manche ${etat.manche}`));
@@ -642,12 +666,6 @@ function rendreStatut() {
     st.textContent = etat.attente.type === 'premier'
       ? (moiQui ? 'Choisis qui commence la première manche.' : `${qui.name} choisit qui commence…`)
       : (moiQui ? 'Médecin : choisis l\'unité à ramener.' : `${qui.name} choisit l'unité à ramener…`);
-    st.classList.remove('a-toi');
-    return;
-  }
-  if (etat.skellige) {
-    const qui = etat.players[etat.skellige.joueur];
-    st.textContent = etat.skellige.joueur === maPlace ? 'Pouvoir de Skellige : choisis tes unités.' : `Pouvoir de Skellige : ${qui.name} choisit ses unités…`;
     st.classList.remove('a-toi');
     return;
   }
@@ -764,21 +782,6 @@ function ouvrirFenetreChef(titre, texte, cartes, siChoix) {
 function fermerFenetreChef() { $('fenetre-chef').hidden = true; }
 $('btn-chef-fermer').addEventListener('click', fermerFenetreChef);
 
-// Pouvoir de Skellige : au début de la manche 3, choisir jusqu'à 2 unités de la défausse.
-let dernierSkellige = '';
-function verifierSkellige() {
-  const sk = etat && etat.skellige;
-  const cle = sk ? `${sk.ts}-${sk.restant}` : '';
-  if (!sk || sk.joueur !== maPlace || (dernierSkellige === cle && !$('fenetre-chef').hidden)) return;
-  dernierSkellige = cle;
-  const options = M.choixSkellige(etat, maPlace);
-  if (!options.length) return;
-  ouvrirFenetreChef('Pouvoir de Skellige', `Choisis ${Math.min(sk.restant, options.length)} unité${sk.restant > 1 ? 's' : ''} de ta défausse.`, options, (carte) => {
-    action({ type: 'skellige', u: carte.u });
-  });
-  $('btn-chef-fermer').hidden = true;
-}
-
 // Choix en cours de partie (Gwynt) : unité ramenée par un médecin, ou qui commence la manche 1.
 // La fenêtre ne peut pas être fermée sans choisir (sinon la partie resterait bloquée).
 let derniereAttente = '';
@@ -824,7 +827,7 @@ function remplirRegles() {
   const cap = $('regles-capacites');
   Object.values(CAPACITES).forEach((c) => cap.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.texte}`)));
   const spe = $('regles-speciales');
-  ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin', 'mardroeme'].forEach((k) => { if (CARTES[k]) spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)); });
+  ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin'].forEach((k) => { if (CARTES[k]) spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)); });
   const clans = $('regles-clans');
   Object.values(CLANS).forEach((c) => clans.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.atout} Chefs au choix : ${(c.chefs || []).map((h) => `« ${h.nom} » (${h.texte.charAt(0).toLowerCase()}${h.texte.slice(1)})`).join(', ')}.`)));
 }
@@ -847,7 +850,6 @@ function rendre() {
     rendreMain();
     rendreCommandes();
     verifierAnnonce();
-    verifierSkellige();
     verifierAttente();
     verifierRevelation();
   }

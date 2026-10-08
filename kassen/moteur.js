@@ -24,10 +24,8 @@ export function normaliser(s) {
     p.defausse = p.defausse || [];
     p.rangees = p.rangees || {};
     p.cors = p.cors || {};
-    p.mardroeme = p.mardroeme || {};
-    RANGEES.forEach((r) => { p.rangees[r] = p.rangees[r] || []; p.cors[r] = !!p.cors[r]; p.mardroeme[r] = !!p.mardroeme[r]; });
+    RANGEES.forEach((r) => { p.rangees[r] = p.rangees[r] || []; p.cors[r] = !!p.cors[r]; });
     p.echanges = p.echanges || 0;
-    p.skelligeChoix = p.skelligeChoix || 0;
   });
   s.meteo = s.meteo || {};
   RANGEES.forEach((r) => { s.meteo[r] = !!s.meteo[r]; });
@@ -70,7 +68,7 @@ export function nouvellePartie(s) {
   s.players.forEach((p) => {
     Object.assign(p, {
       clan: '', main: [], pioche: [], defausse: [], vies: 2, passe: false, chefUtilise: false, pret: false, echanges: 0,
-      rangees: { cac: [], dist: [], siege: [] }, cors: { cac: false, dist: false, siege: false }, mardroeme: { cac: false, dist: false, siege: false },
+      rangees: { cac: [], dist: [], siege: [] }, cors: { cac: false, dist: false, siege: false },
     });
   });
   s.meteo = { cac: false, dist: false, siege: false };
@@ -82,10 +80,7 @@ export function nouvellePartie(s) {
   s.gagnant = null;
   s.finManche = null;
   s.revelation = null;
-  s.skellige = null;
-  s.skelligeAttente = [];
   s.attente = null;
-  s.prochainUid = 900000;
 }
 
 // Deck à plat (['samourai', ...]) : celui du joueur s'il est valable, sinon le deck par défaut du clan
@@ -192,97 +187,10 @@ function piocher(s, i, n) {
 }
 
 // Pose une unité dans le bon camp (espion : chez l'adversaire) avec ses effets immédiats
-function nouvelUid(s) {
-  s.prochainUid = (s.prochainUid || 900000) + 1;
-  return s.prochainUid;
-}
-
-function invoquer(s, i, id, r) {
-  if (!CARTES[id]) return false;
-  const carte = { c: id, u: nouvelUid(s) };
-  const d = def(carte);
-  if (d.type !== 'unite') return false;
-  poserUnite(s, i, carte, r || d.rangees[0], { effets: false });
-  journal(s, `${s.players[i].name} invoque ${d.nom}.`);
-  return true;
-}
-
-function retirerDuPlateau(s, j, r, carte) {
-  s.players[j].defausse.push(carte);
-  const d = def(carte);
-  if (d && d.capacite === 'kambi' && d.invoque) invoquer(s, j, d.invoque, r);
-}
-
-// Un Mardroeme agit sur la rangée r du camp i : carte posée, ou unité avec la capacité « mardroeme »
-const mardroemeSur = (s, i, r) => s.players[i].mardroeme[r] || s.players[i].rangees[r].some((c) => def(c).capacite === 'mardroeme');
-
-function transformerBerserkers(s, i, r) {
-  const rangee = s.players[i].rangees[r];
-  let n = 0;
-  rangee.forEach((c, k) => {
-    const d = def(c);
-    if (d.capacite === 'berserker' && d.transformeEn && CARTES[d.transformeEn]) {
-      rangee[k] = { c: d.transformeEn, u: c.u };
-      n++;
-    }
-  });
-  return n;
-}
-
-function demarrerPouvoirSkellige(s, i) {
-  if ((CLANS[s.players[i].clan] || {}).effetAtout !== 'skellige') return false;
-  const candidats = s.players[i].defausse.filter((c) => estUnite(c));
-  if (!candidats.length) return false;
-  // comme dans The Witcher 3 : 2 unités tirées au hasard
-  melanger(candidats).slice(0, 2).forEach((c) => jouerDepuisDefausseSkellige(s, i, c.u));
-  return true;
-}
-
-function jouerDepuisDefausseSkellige(s, i, u) {
-  const p = s.players[i];
-  const k = p.defausse.findIndex((c) => c.u === u);
-  if (k < 0) return false;
-  const [carte] = p.defausse.splice(k, 1);
-  const d = def(carte);
-  if (!d || d.type !== 'unite') { p.defausse.splice(k, 0, carte); return false; }
-  journal(s, `${p.name} joue ${d.nom} grâce au pouvoir de Skellige.`);
-  poserUnite(s, i, carte, d.rangees[0], { effets: true, auto: true });
-  return true;
-}
-
-export function choixSkellige(s, i) {
-  if (!s.skellige || s.skellige.joueur !== i) return [];
-  return s.players[i].defausse.filter((c) => s.skellige.options.includes(c.u));
-}
-
-// Pouvoirs de Skellige en attente (début de la manche 3) : l'un après l'autre, puis la manche commence
-function lancerSkellige(s) {
-  s.skelligeAttente = s.skelligeAttente || [];
-  while (!s.skellige && s.skelligeAttente.length) demarrerPouvoirSkellige(s, s.skelligeAttente.shift());
-  if (s.skellige) return;
-  s.active = s.premier;
-  passerSiBloque(s);
-}
-
-export function utiliserSkellige(s, i, u) {
-  if (!s.skellige || s.skellige.joueur !== i || s.skellige.restant <= 0) return false;
-  if (!jouerDepuisDefausseSkellige(s, i, u)) return false;
-  s.skellige.options = s.skellige.options.filter((x) => x !== u);
-  s.skellige.restant--;
-  if (s.skellige.restant <= 0 || !choixSkellige(s, i).length) {
-    s.skellige = null;
-    lancerSkellige(s);
-  }
-  s.coup = (s.coup || 0) + 1;
-  return true;
-}
-
 function poserUnite(s, i, carte, r, { effets = true, auto = false } = {}) {
   const d = def(carte);
   const camp = d.capacite === 'espion' ? adversaire(i) : i;
   s.players[camp].rangees[r].push(carte);
-  // Berserker sur une rangée où agit un Mardroeme (carte posée ou unité comme Ermion) : il se transforme aussitôt
-  if (d.capacite === 'berserker' && mardroemeSur(s, camp, r)) transformerBerserkers(s, camp, r);
   if (!effets) return;
   if (d.capacite === 'espion') piocher(s, i, 2);
   if (d.capacite === 'rassemblement') {
@@ -292,7 +200,6 @@ function poserUnite(s, i, carte, r, { effets = true, auto = false } = {}) {
     copies.forEach((x) => s.players[i].rangees[def(x).rangees[0]].push(x));
   }
   if (d.capacite === 'medecin') ressusciter(s, i, { auto });
-  if (d.capacite === 'mardroeme') transformerBerserkers(s, camp, r);
   // Brûlure : détruit l'unité la plus forte de la même rangée adverse, si cette rangée vaut 10 ou plus
   if (d.capacite === 'brasier_rangee') bruler(s, adversaire(camp), r);
 }
@@ -305,7 +212,7 @@ function bruler(s, j, r) {
   const garder = [];
   let n = 0;
   s.players[j].rangees[r].forEach((c) => {
-    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { retirerDuPlateau(s, j, r, c); n++; } else garder.push(c);
+    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { s.players[j].defausse.push(c); n++; } else garder.push(c);
   });
   s.players[j].rangees[r] = garder;
   return n;
@@ -317,7 +224,7 @@ const ressuscitables = (s, i) => s.players[i].defausse.filter((x) => estUnite(x)
 
 // Médecin : au Gwynt, le joueur choisit l'unité et sa capacité s'applique (comme dans The Witcher 3) ;
 // à Kassen, c'est la plus forte, sans sa capacité. Chef « medecins-hasard » : au hasard.
-// auto : pas de choix (bot, pouvoir de Skellige, chef « résurrection »)
+// auto : pas de choix (bot, chef « résurrection »)
 function ressusciter(s, i, { auto = false } = {}) {
   const p = s.players[i];
   const candidates = ressuscitables(s, i);
@@ -378,7 +285,7 @@ function brasier(s) {
   s.players.forEach((p, j) => RANGEES.forEach((r) => {
     const garder = [];
     p.rangees[r].forEach((c) => {
-      if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { retirerDuPlateau(s, j, r, c); detruites++; } else garder.push(c);
+      if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { p.defausse.push(c); detruites++; } else garder.push(c);
     });
     p.rangees[r] = garder;
   }));
@@ -392,8 +299,7 @@ export function ciblesPossibles(s, i, u) {
   if (!carte) return [];
   const d = def(carte);
   if (d.type === 'unite') return d.rangees.map((r) => ({ rangee: r }));
-  // le cor et le Mardroeme se posent dans l'emplacement spécial de la rangée (un seul par rangée)
-  if (d.type === 'cor' || d.type === 'mardroeme') return RANGEES.filter((r) => !p.cors[r] && !p.mardroeme[r]).map((r) => ({ rangee: r }));
+  if (d.type === 'cor') return RANGEES.filter((r) => !p.cors[r]).map((r) => ({ rangee: r }));
   if (d.type === 'leurre') {
     const cibles = [];
     RANGEES.forEach((r) => p.rangees[r].forEach((c) => { if (estUnite(c) && !def(c).legende) cibles.push({ rangee: r, cible: c.u }); }));
@@ -438,13 +344,6 @@ export function jouerCarte(s, i, u, choix = {}) {
       p.defausse.push(carte);
       journal(s, `${p.name} bat le taiko sur sa rangée ${choix.rangee === 'cac' ? 'de corps à corps' : choix.rangee === 'dist' ? 'à distance' : 'de siège'}.`);
       break;
-    case 'mardroeme': {
-      p.mardroeme[choix.rangee] = true;
-      const n = transformerBerserkers(s, i, choix.rangee);
-      p.defausse.push(carte);
-      journal(s, `${p.name} joue ${d.nom} : ${n} Berserker${n > 1 ? 's' : ''} transformé${n > 1 ? 's' : ''}.`);
-      break;
-    }
     case 'leurre': {
       const r = choix.rangee;
       const n = p.rangees[r].findIndex((c) => c.u === choix.cible);
@@ -662,7 +561,6 @@ function finManche(s) {
 
   // Le plateau est vidé (atout « hantise », ou chef « garder-unite » : une unité au hasard reste)
   const garderTous = s.players.some((p, k) => effetActif(s, k, 'garder-unite'));
-  const vengeurs = [];
   s.players.forEach((p, k) => {
     let reste = null;
     if (effetAtout(p) === 'hantise' || garderTous) {
@@ -674,17 +572,13 @@ function finManche(s) {
       p.rangees[r].forEach((c) => {
         if (reste && c.u === reste[1].u) return;
         p.defausse.push(c);
-        if (def(c).capacite === 'kambi' && def(c).invoque) vengeurs.push([k, c]);
       });
       p.rangees[r] = reste && reste[0] === r ? [reste[1]] : [];
       p.cors[r] = false;
-      p.mardroeme[r] = false;
     });
     p.passe = false;
   });
   RANGEES.forEach((r) => { s.meteo[r] = false; });
-  // Vengeur (Kambi) parti à la défausse en fin de manche : son unité arrive pour la manche suivante
-  vengeurs.forEach(([k, c]) => invoquer(s, k, def(c).invoque));
 
   s.resultats.push({ gagnant, scores });
   const nom = gagnant >= 0 ? s.players[gagnant].name : null;
@@ -701,17 +595,14 @@ function finManche(s) {
   s.manche += 1;
   s.active = gagnant >= 0 ? adversaire(gagnant) : adversaire(s.premier);
   s.premier = s.active;
-  s.skellige = null;
-  // Le pouvoir de Skellige se résout avant le premier tour de la troisième manche.
-  s.skelligeAttente = s.manche === 3 ? s.players.map((p, k) => (effetAtout(p) === 'skellige' ? k : -1)).filter((k) => k >= 0) : [];
-  lancerSkellige(s);
+  passerSiBloque(s);
 }
 
 // Qui doit agir maintenant
 export function acteur(s) {
   if (s.status === 'clans') return s.players.findIndex((p) => !p.clan);
   if (s.status === 'echange') return s.players.findIndex((p) => !p.pret);
-  if (s.status === 'jeu') return s.attente ? s.attente.joueur : s.skellige ? s.skellige.joueur : s.active;
+  if (s.status === 'jeu') return s.attente ? s.attente.joueur : s.active;
   return -1;
 }
 
@@ -811,7 +702,6 @@ export function jouerAction(s, i, a) {
     case 'pret': return pret(s, i);
     case 'jouer': return jouerCarte(s, i, a.u, a.choix || {});
     case 'chef': return utiliserChef(s, i, a.u, a.defausse);
-    case 'skellige': return utiliserSkellige(s, i, a.u);
     case 'medecin': return resoudreMedecin(s, i, a.u);
     case 'premier': return choisirPremier(s, i, !!a.moi);
     case 'passer': return passer(s, i);
