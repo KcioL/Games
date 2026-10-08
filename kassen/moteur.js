@@ -8,6 +8,10 @@ export const ECHANGES_MAX = 2;
 const melanger = (t) => { for (let i = t.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [t[i], t[j]] = [t[j], t[i]]; } return t; };
 const def = (carte) => CARTES[carte.c];
 const estUnite = (carte) => def(carte).type === 'unite';
+// Rangées touchées par une météo (une ou plusieurs : 'dist+siege')
+const zonesMeteo = (d) => String(d.meteo || '').split('+').filter((r) => RANGEES.includes(r));
+// Règles exactes de The Witcher 3 (Gwynt) ; Kassen garde ses règles simplifiées
+const regleWitcher = (s) => editionDe(s) === 'gwynt';
 
 // ---------------------------------------------------------------------
 // Outils
@@ -20,8 +24,10 @@ export function normaliser(s) {
     p.defausse = p.defausse || [];
     p.rangees = p.rangees || {};
     p.cors = p.cors || {};
-    RANGEES.forEach((r) => { p.rangees[r] = p.rangees[r] || []; p.cors[r] = !!p.cors[r]; });
+    p.mardroeme = p.mardroeme || {};
+    RANGEES.forEach((r) => { p.rangees[r] = p.rangees[r] || []; p.cors[r] = !!p.cors[r]; p.mardroeme[r] = !!p.mardroeme[r]; });
     p.echanges = p.echanges || 0;
+    p.skelligeChoix = p.skelligeChoix || 0;
   });
   s.meteo = s.meteo || {};
   RANGEES.forEach((r) => { s.meteo[r] = !!s.meteo[r]; });
@@ -64,7 +70,7 @@ export function nouvellePartie(s) {
   s.players.forEach((p) => {
     Object.assign(p, {
       clan: '', main: [], pioche: [], defausse: [], vies: 2, passe: false, chefUtilise: false, pret: false, echanges: 0,
-      rangees: { cac: [], dist: [], siege: [] }, cors: { cac: false, dist: false, siege: false },
+      rangees: { cac: [], dist: [], siege: [] }, cors: { cac: false, dist: false, siege: false }, mardroeme: { cac: false, dist: false, siege: false },
     });
   });
   s.meteo = { cac: false, dist: false, siege: false };
@@ -76,6 +82,10 @@ export function nouvellePartie(s) {
   s.gagnant = null;
   s.finManche = null;
   s.revelation = null;
+  s.skellige = null;
+  s.skelligeAttente = [];
+  s.attente = null;
+  s.prochainUid = 900000;
 }
 
 // Deck à plat (['samourai', ...]) : celui du joueur s'il est valable, sinon le deck par défaut du clan
@@ -158,6 +168,13 @@ export function pret(s, i) {
     s.status = 'jeu';
     // Première manche : face à un clan « patience » (Sōhei), c'est l'adversaire qui commence ; sinon au hasard
     const patients = s.players.map((q, k) => (effetAtout(q) === 'patience' ? k : -1)).filter((k) => k >= 0);
+    const decideurs = s.players.map((q, k) => (effetAtout(q) === 'choix-premier' ? k : -1)).filter((k) => k >= 0);
+    // atout « choix-premier » (Scoia'tael) : ce joueur décide qui commence
+    if (decideurs.length === 1 && !patients.length) {
+      s.attente = { type: 'premier', joueur: decideurs[0] };
+      s.active = -1;
+      return true;
+    }
     s.active = patients.length === 1 ? adversaire(patients[0]) : Math.floor(Math.random() * 2);
     s.premier = s.active;
     journal(s, `${s.players[s.active].name} commence la manche 1.`);
@@ -175,19 +192,107 @@ function piocher(s, i, n) {
 }
 
 // Pose une unité dans le bon camp (espion : chez l'adversaire) avec ses effets immédiats
-function poserUnite(s, i, carte, r, { effets = true } = {}) {
+function nouvelUid(s) {
+  s.prochainUid = (s.prochainUid || 900000) + 1;
+  return s.prochainUid;
+}
+
+function invoquer(s, i, id, r) {
+  if (!CARTES[id]) return false;
+  const carte = { c: id, u: nouvelUid(s) };
+  const d = def(carte);
+  if (d.type !== 'unite') return false;
+  poserUnite(s, i, carte, r || d.rangees[0], { effets: false });
+  journal(s, `${s.players[i].name} invoque ${d.nom}.`);
+  return true;
+}
+
+function retirerDuPlateau(s, j, r, carte) {
+  s.players[j].defausse.push(carte);
+  const d = def(carte);
+  if (d && d.capacite === 'kambi' && d.invoque) invoquer(s, j, d.invoque, r);
+}
+
+// Un Mardroeme agit sur la rangée r du camp i : carte posée, ou unité avec la capacité « mardroeme »
+const mardroemeSur = (s, i, r) => s.players[i].mardroeme[r] || s.players[i].rangees[r].some((c) => def(c).capacite === 'mardroeme');
+
+function transformerBerserkers(s, i, r) {
+  const rangee = s.players[i].rangees[r];
+  let n = 0;
+  rangee.forEach((c, k) => {
+    const d = def(c);
+    if (d.capacite === 'berserker' && d.transformeEn && CARTES[d.transformeEn]) {
+      rangee[k] = { c: d.transformeEn, u: c.u };
+      n++;
+    }
+  });
+  return n;
+}
+
+function demarrerPouvoirSkellige(s, i) {
+  if ((CLANS[s.players[i].clan] || {}).effetAtout !== 'skellige') return false;
+  const candidats = s.players[i].defausse.filter((c) => estUnite(c));
+  if (!candidats.length) return false;
+  // comme dans The Witcher 3 : 2 unités tirées au hasard
+  melanger(candidats).slice(0, 2).forEach((c) => jouerDepuisDefausseSkellige(s, i, c.u));
+  return true;
+}
+
+function jouerDepuisDefausseSkellige(s, i, u) {
+  const p = s.players[i];
+  const k = p.defausse.findIndex((c) => c.u === u);
+  if (k < 0) return false;
+  const [carte] = p.defausse.splice(k, 1);
+  const d = def(carte);
+  if (!d || d.type !== 'unite') { p.defausse.splice(k, 0, carte); return false; }
+  journal(s, `${p.name} joue ${d.nom} grâce au pouvoir de Skellige.`);
+  poserUnite(s, i, carte, d.rangees[0], { effets: true, auto: true });
+  return true;
+}
+
+export function choixSkellige(s, i) {
+  if (!s.skellige || s.skellige.joueur !== i) return [];
+  return s.players[i].defausse.filter((c) => s.skellige.options.includes(c.u));
+}
+
+// Pouvoirs de Skellige en attente (début de la manche 3) : l'un après l'autre, puis la manche commence
+function lancerSkellige(s) {
+  s.skelligeAttente = s.skelligeAttente || [];
+  while (!s.skellige && s.skelligeAttente.length) demarrerPouvoirSkellige(s, s.skelligeAttente.shift());
+  if (s.skellige) return;
+  s.active = s.premier;
+  passerSiBloque(s);
+}
+
+export function utiliserSkellige(s, i, u) {
+  if (!s.skellige || s.skellige.joueur !== i || s.skellige.restant <= 0) return false;
+  if (!jouerDepuisDefausseSkellige(s, i, u)) return false;
+  s.skellige.options = s.skellige.options.filter((x) => x !== u);
+  s.skellige.restant--;
+  if (s.skellige.restant <= 0 || !choixSkellige(s, i).length) {
+    s.skellige = null;
+    lancerSkellige(s);
+  }
+  s.coup = (s.coup || 0) + 1;
+  return true;
+}
+
+function poserUnite(s, i, carte, r, { effets = true, auto = false } = {}) {
   const d = def(carte);
   const camp = d.capacite === 'espion' ? adversaire(i) : i;
   s.players[camp].rangees[r].push(carte);
+  // Berserker sur une rangée où agit un Mardroeme (carte posée ou unité comme Ermion) : il se transforme aussitôt
+  if (d.capacite === 'berserker' && mardroemeSur(s, camp, r)) transformerBerserkers(s, camp, r);
   if (!effets) return;
   if (d.capacite === 'espion') piocher(s, i, 2);
   if (d.capacite === 'rassemblement') {
     const p = s.players[i];
-    const copies = p.pioche.filter((x) => def(x).capacite === 'rassemblement' && def(x).groupe === d.groupe);
+    const copies = p.pioche.filter((x) => estUnite(x) && def(x).groupe === d.groupe);
     p.pioche = p.pioche.filter((x) => !copies.includes(x));
     copies.forEach((x) => s.players[i].rangees[def(x).rangees[0]].push(x));
   }
-  if (d.capacite === 'medecin') ressusciter(s, i);
+  if (d.capacite === 'medecin') ressusciter(s, i, { auto });
+  if (d.capacite === 'mardroeme') transformerBerserkers(s, camp, r);
   // Brûlure : détruit l'unité la plus forte de la même rangée adverse, si cette rangée vaut 10 ou plus
   if (d.capacite === 'brasier_rangee') bruler(s, adversaire(camp), r);
 }
@@ -200,24 +305,65 @@ function bruler(s, j, r) {
   const garder = [];
   let n = 0;
   s.players[j].rangees[r].forEach((c) => {
-    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { s.players[j].defausse.push(c); n++; } else garder.push(c);
+    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { retirerDuPlateau(s, j, r, c); n++; } else garder.push(c);
   });
   s.players[j].rangees[r] = garder;
   return n;
 }
 
-// Ramène l'unité la plus forte de la défausse (hors légendes et espions)
-function ressusciter(s, i) {
+// Unités que le médecin peut ramener : hors légendes (et hors espions à Kassen)
+const ressuscitables = (s, i) => s.players[i].defausse.filter((x) => estUnite(x) && !def(x).legende
+  && (regleWitcher(s) || def(x).capacite !== 'espion'));
+
+// Médecin : au Gwynt, le joueur choisit l'unité et sa capacité s'applique (comme dans The Witcher 3) ;
+// à Kassen, c'est la plus forte, sans sa capacité. Chef « medecins-hasard » : au hasard.
+// auto : pas de choix (bot, pouvoir de Skellige, chef « résurrection »)
+function ressusciter(s, i, { auto = false } = {}) {
   const p = s.players[i];
-  const candidates = p.defausse.filter((x) => estUnite(x) && !def(x).legende && def(x).capacite !== 'espion');
+  const candidates = ressuscitables(s, i);
   if (!candidates.length) return false;
-  // chef « medecins-hasard » (pour les deux joueurs) : l'unité ramenée est tirée au hasard
   const auHasard = s.players.some((x, k) => effetActif(s, k, 'medecins-hasard'));
+  if (regleWitcher(s) && !auto && !auHasard && !p.bot && candidates.length > 1) {
+    s.attente = { type: 'medecin', joueur: i, options: candidates.map((c) => c.u) };
+    return true;
+  }
+  const score = (c) => (regleWitcher(s) ? valeurCarte(c) : def(c).force);
   const meilleure = auHasard ? candidates[Math.floor(Math.random() * candidates.length)]
-    : candidates.reduce((a, b) => (def(b).force > def(a).force ? b : a));
-  p.defausse = p.defausse.filter((x) => x.u !== meilleure.u);
-  poserUnite(s, i, meilleure, def(meilleure).rangees[0], { effets: false });
-  journal(s, `${p.name} ramène ${def(meilleure).nom} en jeu.`);
+    : candidates.reduce((a, b) => (score(b) > score(a) ? b : a));
+  ramener(s, i, meilleure, auto);
+  return true;
+}
+function ramener(s, i, carte, auto = false) {
+  const p = s.players[i];
+  p.defausse = p.defausse.filter((x) => x.u !== carte.u);
+  journal(s, `${p.name} ramène ${def(carte).nom} en jeu.`);
+  poserUnite(s, i, carte, def(carte).rangees[0], { effets: regleWitcher(s), auto: auto || !!p.bot });
+}
+
+// Choix du médecin (Gwynt) : l'unité choisie arrive, puis le tour se termine
+export function choixMedecin(s, i) {
+  if (!s.attente || s.attente.type !== 'medecin' || s.attente.joueur !== i) return [];
+  return s.players[i].defausse.filter((c) => s.attente.options.includes(c.u));
+}
+export function resoudreMedecin(s, i, u) {
+  const carte = choixMedecin(s, i).find((c) => c.u === u);
+  if (!carte) return false;
+  s.attente = null;
+  ramener(s, i, carte);
+  if (s.attente) { s.coup = (s.coup || 0) + 1; return true; } // un médecin ramené : nouveau choix
+  apresAction(s, i);
+  return true;
+}
+
+// Atout « choix-premier » : le joueur décide qui commence la première manche
+export function choisirPremier(s, i, moi) {
+  if (!s.attente || s.attente.type !== 'premier' || s.attente.joueur !== i) return false;
+  s.attente = null;
+  s.active = moi ? i : adversaire(i);
+  s.premier = s.active;
+  s.coup = (s.coup || 0) + 1;
+  journal(s, `${s.players[i].name} décide : ${s.players[s.active].name} commence la manche 1.`);
+  passerSiBloque(s);
   return true;
 }
 
@@ -232,7 +378,7 @@ function brasier(s) {
   s.players.forEach((p, j) => RANGEES.forEach((r) => {
     const garder = [];
     p.rangees[r].forEach((c) => {
-      if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { p.defausse.push(c); detruites++; } else garder.push(c);
+      if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { retirerDuPlateau(s, j, r, c); detruites++; } else garder.push(c);
     });
     p.rangees[r] = garder;
   }));
@@ -246,7 +392,8 @@ export function ciblesPossibles(s, i, u) {
   if (!carte) return [];
   const d = def(carte);
   if (d.type === 'unite') return d.rangees.map((r) => ({ rangee: r }));
-  if (d.type === 'cor') return RANGEES.filter((r) => !p.cors[r]).map((r) => ({ rangee: r }));
+  // le cor et le Mardroeme se posent dans l'emplacement spécial de la rangée (un seul par rangée)
+  if (d.type === 'cor' || d.type === 'mardroeme') return RANGEES.filter((r) => !p.cors[r] && !p.mardroeme[r]).map((r) => ({ rangee: r }));
   if (d.type === 'leurre') {
     const cibles = [];
     RANGEES.forEach((r) => p.rangees[r].forEach((c) => { if (estUnite(c) && !def(c).legende) cibles.push({ rangee: r, cible: c.u }); }));
@@ -256,7 +403,7 @@ export function ciblesPossibles(s, i, u) {
 }
 
 export function jouerCarte(s, i, u, choix = {}) {
-  if (s.status !== 'jeu' || s.active !== i) return false;
+  if (s.status !== 'jeu' || s.active !== i || s.attente) return false;
   const p = s.players[i];
   if (p.passe) return false;
   const k = p.main.findIndex((c) => c.u === u);
@@ -277,7 +424,7 @@ export function jouerCarte(s, i, u, choix = {}) {
       break;
     }
     case 'meteo':
-      s.meteo[d.meteo] = true;
+      zonesMeteo(d).forEach((r) => { s.meteo[r] = true; });
       p.defausse.push(carte);
       journal(s, `${p.name} déclenche : ${d.nom}.`);
       break;
@@ -291,6 +438,13 @@ export function jouerCarte(s, i, u, choix = {}) {
       p.defausse.push(carte);
       journal(s, `${p.name} bat le taiko sur sa rangée ${choix.rangee === 'cac' ? 'de corps à corps' : choix.rangee === 'dist' ? 'à distance' : 'de siège'}.`);
       break;
+    case 'mardroeme': {
+      p.mardroeme[choix.rangee] = true;
+      const n = transformerBerserkers(s, i, choix.rangee);
+      p.defausse.push(carte);
+      journal(s, `${p.name} joue ${d.nom} : ${n} Berserker${n > 1 ? 's' : ''} transformé${n > 1 ? 's' : ''}.`);
+      break;
+    }
     case 'leurre': {
       const r = choix.rangee;
       const n = p.rangees[r].findIndex((c) => c.u === choix.cible);
@@ -307,6 +461,8 @@ export function jouerCarte(s, i, u, choix = {}) {
     }
     default: return false;
   }
+  // médecin au Gwynt : le joueur choisit d'abord l'unité ramenée
+  if (s.attente) { s.coup = (s.coup || 0) + 1; return true; }
   apresAction(s, i);
   return true;
 }
@@ -330,7 +486,7 @@ function cartesChef(s, i) {
   const p = s.players[i];
   const q = s.players[adversaire(i)];
   switch (effetChef(p)) {
-    case 'meteo': return p.pioche.filter((c) => (def(c).type === 'meteo' && !s.meteo[def(c).meteo])
+    case 'meteo': return p.pioche.filter((c) => (def(c).type === 'meteo' && zonesMeteo(def(c)).some((r) => !s.meteo[r]))
       || (def(c).type === 'eclaircie' && RANGEES.some((r) => s.meteo[r])));
     case 'voler-defausse': return q.defausse.slice();
     case 'recuperer': return p.defausse.slice();
@@ -389,7 +545,7 @@ function placerAgiles(s, i) {
 // u : carte choisie (effets à choix) ; sans choix, la meilleure est prise automatiquement
 // defausse : pour « echanger », les 2 cartes de la main à défausser (sinon les 2 plus faibles)
 export function utiliserChef(s, i, u, defausse) {
-  if (s.status !== 'jeu' || s.active !== i || s.players[i].passe || !chefUtilisable(s, i)) return false;
+  if (s.status !== 'jeu' || s.active !== i || s.attente || s.players[i].passe || !chefUtilisable(s, i)) return false;
   const p = s.players[i];
   const j = adversaire(i);
   const q = s.players[j];
@@ -412,12 +568,12 @@ export function utiliserChef(s, i, u, defausse) {
       p.pioche = retirer(p.pioche, carte);
       p.defausse.push(carte);
       if (def(carte).type === 'eclaircie') RANGEES.forEach((x) => { s.meteo[x] = false; });
-      else s.meteo[def(carte).meteo] = true;
+      else zonesMeteo(def(carte)).forEach((x) => { s.meteo[x] = true; });
       detail = ` (${def(carte).nom})`;
       break;
     }
     case 'eclaircie': RANGEES.forEach((x) => { s.meteo[x] = false; }); break;
-    case 'resurrection': ressusciter(s, i); break;
+    case 'resurrection': ressusciter(s, i, { auto: true }); break;
     case 'pioche': piocher(s, i, 1); break;
     case 'espionner': {
       const vues = melanger(q.main.slice()).slice(0, 3).map((c) => c.c);
@@ -480,7 +636,7 @@ function passerSiBloque(s) {
 }
 
 export function passer(s, i) {
-  if (s.status !== 'jeu' || s.active !== i || s.players[i].passe) return false;
+  if (s.status !== 'jeu' || s.active !== i || s.attente || s.players[i].passe) return false;
   s.players[i].passe = true;
   s.coup = (s.coup || 0) + 1;
   journal(s, `${s.players[i].name} passe.`);
@@ -506,7 +662,8 @@ function finManche(s) {
 
   // Le plateau est vidé (atout « hantise », ou chef « garder-unite » : une unité au hasard reste)
   const garderTous = s.players.some((p, k) => effetActif(s, k, 'garder-unite'));
-  s.players.forEach((p) => {
+  const vengeurs = [];
+  s.players.forEach((p, k) => {
     let reste = null;
     if (effetAtout(p) === 'hantise' || garderTous) {
       const unites = [];
@@ -514,13 +671,20 @@ function finManche(s) {
       if (unites.length) reste = unites[Math.floor(Math.random() * unites.length)];
     }
     RANGEES.forEach((r) => {
-      p.rangees[r].forEach((c) => { if (!reste || c.u !== reste[1].u) p.defausse.push(c); });
+      p.rangees[r].forEach((c) => {
+        if (reste && c.u === reste[1].u) return;
+        p.defausse.push(c);
+        if (def(c).capacite === 'kambi' && def(c).invoque) vengeurs.push([k, c]);
+      });
       p.rangees[r] = reste && reste[0] === r ? [reste[1]] : [];
       p.cors[r] = false;
+      p.mardroeme[r] = false;
     });
     p.passe = false;
   });
   RANGEES.forEach((r) => { s.meteo[r] = false; });
+  // Vengeur (Kambi) parti à la défausse en fin de manche : son unité arrive pour la manche suivante
+  vengeurs.forEach(([k, c]) => invoquer(s, k, def(c).invoque));
 
   s.resultats.push({ gagnant, scores });
   const nom = gagnant >= 0 ? s.players[gagnant].name : null;
@@ -537,14 +701,17 @@ function finManche(s) {
   s.manche += 1;
   s.active = gagnant >= 0 ? adversaire(gagnant) : adversaire(s.premier);
   s.premier = s.active;
-  passerSiBloque(s);
+  s.skellige = null;
+  // Le pouvoir de Skellige se résout avant le premier tour de la troisième manche.
+  s.skelligeAttente = s.manche === 3 ? s.players.map((p, k) => (effetAtout(p) === 'skellige' ? k : -1)).filter((k) => k >= 0) : [];
+  lancerSkellige(s);
 }
 
 // Qui doit agir maintenant
 export function acteur(s) {
   if (s.status === 'clans') return s.players.findIndex((p) => !p.clan);
   if (s.status === 'echange') return s.players.findIndex((p) => !p.pret);
-  if (s.status === 'jeu') return s.active;
+  if (s.status === 'jeu') return s.attente ? s.attente.joueur : s.skellige ? s.skellige.joueur : s.active;
   return -1;
 }
 
@@ -595,6 +762,12 @@ export function decisionBot(s, i) {
     return { type: 'clan', clan, chef: chefs.length ? chefs[Math.floor(Math.random() * chefs.length)].id : '' };
   }
   if (s.status === 'echange') return { type: 'pret' };
+  if (s.status === 'jeu' && s.attente && s.attente.joueur === i) {
+    // jouer en second est un avantage ; médecin : la meilleure unité
+    if (s.attente.type === 'premier') return { type: 'premier', moi: false };
+    const options = choixMedecin(s, i);
+    return { type: 'medecin', u: options.reduce((a, b) => (valeurCarte(b) > valeurCarte(a) ? b : a), options[0]).u };
+  }
   if (s.status !== 'jeu' || s.active !== i) return null;
 
   const p = s.players[i];
@@ -638,6 +811,9 @@ export function jouerAction(s, i, a) {
     case 'pret': return pret(s, i);
     case 'jouer': return jouerCarte(s, i, a.u, a.choix || {});
     case 'chef': return utiliserChef(s, i, a.u, a.defausse);
+    case 'skellige': return utiliserSkellige(s, i, a.u);
+    case 'medecin': return resoudreMedecin(s, i, a.u);
+    case 'premier': return choisirPremier(s, i, !!a.moi);
     case 'passer': return passer(s, i);
     default: return false;
   }

@@ -59,6 +59,7 @@ const action = (a) => { selection = null; return agir((s) => M.jouerAction(s, ma
 function botAJouer(s) {
   if (s.status === 'clans') return s.players.every((p) => p.bot || p.clan) ? s.players.findIndex((p) => p.bot && !p.clan) : -1;
   if (s.status === 'echange') return s.players.findIndex((p) => p.bot && !p.pret);
+  if (s.status === 'jeu' && s.attente) return s.players[s.attente.joueur].bot ? s.attente.joueur : -1;
   if (s.status === 'jeu' && s.players[s.active] && s.players[s.active].bot) return s.active;
   return -1;
 }
@@ -532,8 +533,10 @@ function rendreCamp(zone, j, ordre) {
     tete.append(el('span', 'rangee-total', String(M.totalRangee(etat, j, r))), el('span', 'rangee-kanji', KANJI_RANGEES[r]));
     ligne.appendChild(tete);
     // emplacement du cor (taiko), comme dans The Witcher 3
-    const cor = el('div', 'emplacement-cor' + (etat.players[j].cors[r] ? ' plein' : ''), etat.players[j].cors[r] ? '鼓' : '');
-    cor.title = etat.players[j].cors[r] ? 'Taiko de guerre : force doublée' : 'Emplacement du taiko';
+    const pj = etat.players[j];
+    const plein = pj.cors[r] || pj.mardroeme[r];
+    const cor = el('div', 'emplacement-cor' + (plein ? ' plein' : ''), pj.cors[r] ? '鼓' : pj.mardroeme[r] ? '茸' : '');
+    cor.title = pj.cors[r] ? 'Cor : force doublée' : pj.mardroeme[r] ? 'Mardroeme : les Berserkers de cette rangée se transforment' : 'Emplacement du cor';
     ligne.appendChild(cor);
     const cartes = el('div', 'rangee-cartes');
     etat.players[j].rangees[r].forEach((carte) => {
@@ -633,6 +636,21 @@ function rendreStatut() {
   const actif = etat.players[etat.active];
   const moi = etat.players[maPlace];
   if (etat.status !== 'jeu') { st.textContent = ''; return; }
+  if (etat.attente) {
+    const qui = etat.players[etat.attente.joueur];
+    const moiQui = etat.attente.joueur === maPlace;
+    st.textContent = etat.attente.type === 'premier'
+      ? (moiQui ? 'Choisis qui commence la première manche.' : `${qui.name} choisit qui commence…`)
+      : (moiQui ? 'Médecin : choisis l\'unité à ramener.' : `${qui.name} choisit l'unité à ramener…`);
+    st.classList.remove('a-toi');
+    return;
+  }
+  if (etat.skellige) {
+    const qui = etat.players[etat.skellige.joueur];
+    st.textContent = etat.skellige.joueur === maPlace ? 'Pouvoir de Skellige : choisis tes unités.' : `Pouvoir de Skellige : ${qui.name} choisit ses unités…`;
+    st.classList.remove('a-toi');
+    return;
+  }
   if (monTour()) {
     const autre = etat.players[1 - maPlace];
     const nom = salon.estLocal() && !autre.bot ? `${moi.name}, ` : '';
@@ -740,10 +758,51 @@ function ouvrirFenetreChef(titre, texte, cartes, siChoix) {
     zone.appendChild(e);
   });
   $('btn-chef-fermer').textContent = siChoix ? 'Annuler' : 'Fermer';
+  $('btn-chef-fermer').hidden = false;
   $('fenetre-chef').hidden = false;
 }
 function fermerFenetreChef() { $('fenetre-chef').hidden = true; }
 $('btn-chef-fermer').addEventListener('click', fermerFenetreChef);
+
+// Pouvoir de Skellige : au début de la manche 3, choisir jusqu'à 2 unités de la défausse.
+let dernierSkellige = '';
+function verifierSkellige() {
+  const sk = etat && etat.skellige;
+  const cle = sk ? `${sk.ts}-${sk.restant}` : '';
+  if (!sk || sk.joueur !== maPlace || (dernierSkellige === cle && !$('fenetre-chef').hidden)) return;
+  dernierSkellige = cle;
+  const options = M.choixSkellige(etat, maPlace);
+  if (!options.length) return;
+  ouvrirFenetreChef('Pouvoir de Skellige', `Choisis ${Math.min(sk.restant, options.length)} unité${sk.restant > 1 ? 's' : ''} de ta défausse.`, options, (carte) => {
+    action({ type: 'skellige', u: carte.u });
+  });
+  $('btn-chef-fermer').hidden = true;
+}
+
+// Choix en cours de partie (Gwynt) : unité ramenée par un médecin, ou qui commence la manche 1.
+// La fenêtre ne peut pas être fermée sans choisir (sinon la partie resterait bloquée).
+let derniereAttente = '';
+function verifierAttente() {
+  const a = etat.attente;
+  if (!a || a.joueur !== maPlace) return;
+  const cle = `${a.type}-${etat.coup}`;
+  if (derniereAttente === cle && !$('fenetre-chef').hidden) return;
+  derniereAttente = cle;
+  if (a.type === 'medecin') {
+    ouvrirFenetreChef('Médecin', 'Choisis l\'unité de ta défausse à ramener en jeu.', M.choixMedecin(etat, maPlace), (carte) => {
+      action({ type: 'medecin', u: carte.u });
+    });
+  } else {
+    ouvrirFenetreChef('Qui commence ?', 'Ton clan choisit qui commence la première manche.', [], null);
+    const zone = $('chef-cartes');
+    const moi = el('button', 'btn btn-principal', 'Je commence');
+    const lui = el('button', 'btn', `${etat.players[1 - maPlace].name} commence`);
+    moi.addEventListener('click', () => { fermerFenetreChef(); action({ type: 'premier', moi: true }); });
+    lui.addEventListener('click', () => { fermerFenetreChef(); action({ type: 'premier', moi: false }); });
+    zone.append(moi, lui);
+  }
+  $('btn-chef-fermer').hidden = true;
+}
 
 // Chef « espionner » : les 3 cartes vues, montrées une seule fois à celui qui a utilisé son chef
 const revelationsVues = new Set();
@@ -755,14 +814,17 @@ function verifierRevelation() {
   const autre = etat.players[1 - maPlace];
   ouvrirFenetreChef('Cartes espionnées', `Voici ${r.cartes.length} carte${r.cartes.length > 1 ? 's' : ''} de la main ${de(autre.name)}.`, r.cartes.map((c, k) => ({ c, u: -1 - k })), null);
 }
-$('btn-jouer').addEventListener('click', () => jouerSelection({}));
+$('btn-jouer').addEventListener('click', () => {
+  const cibles = ciblesSelection();
+  jouerSelection(cibles.length === 1 && cibles[0].rangee ? { rangee: cibles[0].rangee } : {});
+});
 
 // ---------- Règles ----------
 function remplirRegles() {
   const cap = $('regles-capacites');
   Object.values(CAPACITES).forEach((c) => cap.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.texte}`)));
   const spe = $('regles-speciales');
-  ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin'].forEach((k) => spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)));
+  ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin', 'mardroeme'].forEach((k) => { if (CARTES[k]) spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)); });
   const clans = $('regles-clans');
   Object.values(CLANS).forEach((c) => clans.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.atout} Chefs au choix : ${(c.chefs || []).map((h) => `« ${h.nom} » (${h.texte.charAt(0).toLowerCase()}${h.texte.slice(1)})`).join(', ')}.`)));
 }
@@ -785,6 +847,8 @@ function rendre() {
     rendreMain();
     rendreCommandes();
     verifierAnnonce();
+    verifierSkellige();
+    verifierAttente();
     verifierRevelation();
   }
   if (etat.status !== 'jeu') fermerFenetreChef();
