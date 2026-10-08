@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gwynt · Kassen</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Shippori+Mincho:wght@600;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+    <link rel="stylesheet" href="kassen.css">
+  <script type="module" src="kassen.js"></script>
+</head>
+<body class="kassen">
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Gwynt <span class="kanji-titre">·</span> Kassen</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Une bataille à deux, en deux manches gagnantes. Un joueur crée le salon, l'autre entre le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <p class="astuce">Seul contre des bots ? <button type="button" class="lien" data-aller-volet="volet-local">Joue sur ce téléphone</button> (même sans internet).</p>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>À deux en se passant le téléphone, ou seul contre un bot. Pas besoin d'internet.</p>
+        <label>Adversaire
+          <select id="local-nb">
+            <option value="2">Un autre joueur</option>
+            <option value="1">Un bot</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente de ton adversaire</h2>
+      <p>Donne-lui ce code :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <!-- Choix du clan -->
+    <section class="choix-clan" id="choix-clan" hidden>
+      <h2>Choisis ton clan</h2>
+      <!-- Interrupteur : quel jeu ? -->
+      <div class="choix-jeu">
+        <button type="button" class="interrupteur" id="interrupteur" role="switch" aria-checked="false" aria-label="Choix du jeu : Gwynt ou Kassen">
+          <span class="interrupteur-texte" id="interrupteur-texte">KASSEN</span>
+          <span class="interrupteur-rond" aria-hidden="true"></span>
+        </button>
+        <p class="interrupteur-aide" id="interrupteur-aide" aria-live="polite"></p>
+      </div>
+      <div class="clans" id="clans"></div>
+      <p class="attente" id="attente-clan"></p>
+    </section>
+
+    <!-- Atelier : construire son deck à partir de toute la collection du clan -->
+    <section class="atelier" id="atelier" hidden>
+      <div class="atelier-tete">
+        <h2 id="atelier-titre"></h2>
+        <p class="atelier-stats" id="atelier-stats"></p>
+        <p class="atelier-erreur" id="atelier-erreur" aria-live="polite"></p>
+      </div>
+      <div class="atelier-filtres" role="group" aria-label="Filtrer les cartes">
+        <button type="button" class="filtre actif" data-filtre="tout">Tout</button>
+        <button type="button" class="filtre" data-filtre="cac">刀 Corps à corps</button>
+        <button type="button" class="filtre" data-filtre="dist">弓 Distance</button>
+        <button type="button" class="filtre" data-filtre="siege">砲 Siège</button>
+        <button type="button" class="filtre" data-filtre="special">Spéciales</button>
+        <button type="button" class="filtre" data-filtre="deck">Dans mon deck</button>
+      </div>
+      <div class="atelier-sections" id="atelier-sections"></div>
+      <p class="detail" id="atelier-detail"></p>
+      <div class="atelier-boutons">
+        <button class="btn" id="atelier-defaut">Deck par défaut</button>
+        <button class="btn" id="atelier-annuler">Annuler</button>
+        <button class="btn btn-principal" id="atelier-enregistrer">Enregistrer</button>
+      </div>
+    </section>
+
+    <!-- Échange de cartes avant la partie -->
+    <section class="echange-cartes" id="echange-cartes" hidden>
+      <h2>Ta main de départ</h2>
+      <p id="echange-texte"></p>
+      <div class="grille-atelier main-echange" id="main-echange"></div>
+      <p class="attente" id="attente-echange"></p>
+      <!-- barre fixe : description de la carte choisie, échange, départ -->
+      <div class="echange-actions">
+        <p class="detail" id="echange-detail"></p>
+        <div class="echange-boutons">
+          <button class="btn" id="btn-echanger" disabled>Échanger cette carte</button>
+          <button class="btn btn-principal" id="btn-pret">C'est parti !</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Plateau de bataille -->
+    <section class="bataille" id="bataille" hidden>
+      <div class="camp-info adverse" id="info-adverse"></div>
+      <div class="piles adverse" id="piles-adverse"></div>
+      <div class="camp adverse" id="camp-adverse"></div>
+      <div class="ciel" id="ciel"></div>
+      <div class="camp moi" id="camp-moi"></div>
+      <div class="camp-info moi" id="info-moi"></div>
+      <div class="piles moi" id="piles-moi"></div>
+      <p class="statut" id="statut" aria-live="polite"></p>
+      <div class="detail" id="detail"></div>
+      <div class="main" id="main"></div>
+      <div class="commandes">
+        <button class="btn" id="btn-chef"></button>
+        <button class="btn btn-principal" id="btn-jouer" hidden>Jouer cette carte</button>
+        <button class="btn" id="btn-passer">Passer</button>
+      </div>
+    </section>
+
+    <!-- Fin de manche -->
+    <div class="annonce" id="annonce" hidden>
+      <div class="annonce-carte" id="annonce-contenu"></div>
+    </div>
+
+    <!-- Chef : choisir une carte, ou voir les cartes adverses révélées -->
+    <div class="voile" id="fenetre-chef" hidden>
+      <div class="carte-salon fenetre-chef">
+        <h2 id="chef-titre"></h2>
+        <p id="chef-texte"></p>
+        <div class="grille-atelier" id="chef-cartes"></div>
+        <p class="detail" id="chef-detail"></p>
+        <button class="btn" id="btn-chef-fermer">Annuler</button>
+      </div>
+    </div>
+
+    <!-- Fin de partie -->
+    <div class="voile" id="fin" hidden>
+      <div class="carte-salon">
+        <h2 id="fin-titre"></h2>
+        <ol class="manches" id="fin-manches"></ol>
+        <button class="btn btn-principal" id="btn-revanche">Revanche</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Gwynt et Kassen</h2>
+    <p>Deux jeux, mêmes règles : le Gwynt (tes cartes) et Kassen (le Gwynt au Japon féodal). Deux armées s'affrontent en deux manches gagnantes. Chaque joueur commence avec 10 cartes, et on ne pioche pas entre les manches : il faut savoir économiser ses cartes.</p>
+    <h3>Déroulement</h3>
+    <ul>
+      <li>Choisis ton clan et ton deck (au moins 22 unités, 10 cartes spéciales au plus), puis échange jusqu'à 2 cartes de ta main si tu veux.</li>
+      <li>Chacun son tour, on joue une carte ou on passe. Celui qui a passé ne joue plus de la manche ; l'autre peut continuer.</li>
+      <li>Quand les deux ont passé, la plus grande force totale gagne la manche. Le perdant perd une vie (égalité : les deux en perdent une).</li>
+      <li>Le plateau est vidé entre les manches. Le perdant d'une manche commence la suivante.</li>
+      <li>Le premier à perdre ses 2 vies perd la partie.</li>
+    </ul>
+    <h3>Rangées</h3>
+    <ul>
+      <li>刀 Corps à corps, 弓 Distance, 砲 Siège. Chaque unité se joue dans sa rangée.</li>
+    </ul>
+    <h3>Capacités</h3>
+    <ul id="regles-capacites"></ul>
+    <h3>Cartes spéciales</h3>
+    <ul id="regles-speciales"></ul>
+    <h3>Clans</h3>
+    <ul id="regles-clans"></ul>
+    <h3>Ton chef</h3>
+    <ul>
+      <li>Chaque clan a plusieurs chefs au choix (dans « Modifier le deck »). La plupart s'utilisent une fois par partie, à la place de jouer une carte.</li>
+      <li>Les chefs marqués « passif » agissent tout seuls, pendant toute la partie, sans bouton à toucher.</li>
+      <li>Un chef annulé par celui de l'adversaire n'a aucun effet.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+Images des cartes du Gwynt.
+
+- Une image par carte : la carte complète (cadre, force, icônes, nom), au format portrait 3 x 4
+  (par exemple 765 x 1024 pixels), en JPG.
+- Le nom du fichier est l'« id » de la carte dans kassen/gwynt/jeu.js
+  (par exemple : id: 'archer'  ->  ce dossier doit contenir archer.jpg).
+- Une carte sans image garde un dessin par défaut.

@@ -1,0 +1,136 @@
+// =====================================================================
+//  KASSEN (合戦) : le Gwynt, édition Japon
+// =====================================================================
+//  Clans et cartes de Kassen. Ce fichier a exactement le même format que
+//  kassen/gwynt/jeu.js : sers-t'en d'exemple complet pour remplir le Gwynt.
+//  Les images vont dans kassen/kassen/cartes/<id>.jpg (voir cartes/LISTE-DES-CARTES.md).
+// =====================================================================
+
+export const JEU = {
+  nom: 'Kassen',
+
+  factions: {
+    dragon: { nom: 'Clan du Dragon', couleur: '#B5301D', symbole: '龍', atout: 'pioche-victoire', atoutNom: 'Victoire honorable',
+      chefs: [
+        { id: 'chef_dragon_cri', nom: 'Shōgun du Dragon', effet: 'cor-cac' },
+        { id: 'chef_dragon_artilleur', nom: 'Maître artilleur', effet: 'cor-siege' },
+        { id: 'chef_dragon_stratege', nom: 'Stratège du clan', effet: 'meteo-dist' },
+      ] },
+    shinobi: { nom: 'Shinobi', couleur: '#3B3F58', symbole: '忍', atout: 'egalites', atoutNom: 'Insaisissables',
+      chefs: [
+        { id: 'chef_shinobi_assassin', nom: 'Maître assassin', effet: 'bruler-dist' },
+        { id: 'chef_shinobi_lame', nom: 'Lame silencieuse', effet: 'bruler-cac' },
+        { id: 'chef_shinobi_espion', nom: 'Maître espion', effet: 'pioche' },
+      ] },
+    yokai: { nom: 'Yōkai', couleur: '#5B3A7A', symbole: '妖', atout: 'hantise', atoutNom: 'Hantise',
+      chefs: [
+        { id: 'chef_yokai_reine', nom: 'Reine des Yōkai', effet: 'resurrection' },
+        { id: 'chef_yokai_brume', nom: 'Esprit de la brume', effet: 'meteo-dist' },
+        { id: 'chef_yokai_tempete', nom: 'Seigneur des tempêtes', effet: 'meteo-siege' },
+      ] },
+    sohei: { nom: 'Sōhei', couleur: '#B07A1E', symbole: '僧', atout: 'patience', atoutNom: 'Patience',
+      chefs: [
+        { id: 'chef_sohei_soleil', nom: 'Grand prêtre du soleil', effet: 'eclaircie' },
+        { id: 'chef_sohei_tambour', nom: 'Maître des tambours', effet: 'cor-dist' },
+        { id: 'chef_sohei_feu', nom: 'Gardien du feu sacré', effet: 'bruler-siege' },
+      ] },
+  },
+
+  cartes: [
+    // Clan du Dragon
+    { id: 'shogun', nom: 'Shōgun du Dragon', faction: 'dragon', type: 'unite', force: 10, rangee: 'cac', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'archere', nom: 'Archère légendaire', faction: 'dragon', type: 'unite', force: 10, rangee: 'dist', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'daimyo', nom: 'Daimyō du Dragon', faction: 'dragon', type: 'unite', force: 8, rangee: 'siege', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'samourai', nom: 'Samouraï du Dragon', faction: 'dragon', type: 'unite', force: 4, rangee: 'cac', legende: false, capacite: 'lien', groupe: 'samourai', exemplaires: 3 },
+    { id: 'cavalier', nom: 'Cavalier lancier', faction: 'dragon', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'hatamoto', nom: 'Porte-étendard', faction: 'dragon', type: 'unite', force: 3, rangee: 'cac', legende: false, capacite: 'moral', exemplaires: 1 },
+    { id: 'ashigaru', nom: 'Ashigaru', faction: 'dragon', type: 'unite', force: 2, rangee: 'cac', legende: false, capacite: 'rassemblement', groupe: 'ashigaru', exemplaires: 3 },
+    { id: 'yumi', nom: 'Archer yumi', faction: 'dragon', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'teppo', nom: 'Arquebusier', faction: 'dragon', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'infiltre', nom: 'Shinobi infiltré', faction: 'dragon', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: 'espion', exemplaires: 1 },
+    { id: 'bombarde', nom: 'Bombarde', faction: 'dragon', type: 'unite', force: 6, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'catapulte', nom: 'Catapulte', faction: 'dragon', type: 'unite', force: 8, rangee: 'siege', legende: false, capacite: 'lien', groupe: 'catapulte', exemplaires: 2 },
+    { id: 'moine', nom: 'Moine guérisseur', faction: 'dragon', type: 'unite', force: 3, rangee: 'siege', legende: false, capacite: 'medecin', exemplaires: 1 },
+    { id: 'ronin', nom: 'Rōnin', faction: 'dragon', type: 'unite', force: 6, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'garde_chateau', nom: 'Garde du château', faction: 'dragon', type: 'unite', force: 5, rangee: 'cac', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'tour_siege', nom: 'Tour de siège', faction: 'dragon', type: 'unite', force: 7, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'ingenieur', nom: 'Ingénieur de siège', faction: 'dragon', type: 'unite', force: 4, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'archer_monte', nom: 'Archer monté', faction: 'dragon', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: '', exemplaires: 1 },
+    // Shinobi
+    { id: 'maitre_ombres', nom: 'Maître des ombres', faction: 'shinobi', type: 'unite', force: 10, rangee: 'cac', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'kunoichi_ecarlate', nom: 'Kunoichi écarlate', faction: 'shinobi', type: 'unite', force: 8, rangee: 'dist', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'ninja_ombre', nom: 'Ninja de l\'ombre', faction: 'shinobi', type: 'unite', force: 3, rangee: 'cac', legende: false, capacite: 'rassemblement', groupe: 'ombre', exemplaires: 3 },
+    { id: 'espion_cour', nom: 'Espion à la cour', faction: 'shinobi', type: 'unite', force: 1, rangee: 'cac', legende: false, capacite: 'espion', exemplaires: 2 },
+    { id: 'informatrice', nom: 'Informatrice', faction: 'shinobi', type: 'unite', force: 2, rangee: 'dist', legende: false, capacite: 'espion', exemplaires: 1 },
+    { id: 'kunoichi', nom: 'Kunoichi', faction: 'shinobi', type: 'unite', force: 5, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'shuriken', nom: 'Lanceur de shuriken', faction: 'shinobi', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'herboriste', nom: 'Herboriste', faction: 'shinobi', type: 'unite', force: 3, rangee: 'dist', legende: false, capacite: 'medecin', exemplaires: 1 },
+    { id: 'pieges', nom: 'Poseur de pièges', faction: 'shinobi', type: 'unite', force: 5, rangee: 'siege', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'fusees', nom: 'Fusées incendiaires', faction: 'shinobi', type: 'unite', force: 6, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'freres_lame', nom: 'Frères de lame', faction: 'shinobi', type: 'unite', force: 4, rangee: 'cac', legende: false, capacite: 'lien', groupe: 'lame', exemplaires: 2 },
+    { id: 'grimpeur', nom: 'Ninja grimpeur', faction: 'shinobi', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'poisons', nom: 'Maître des poisons', faction: 'shinobi', type: 'unite', force: 4, rangee: 'siege', legende: false, capacite: 'medecin', exemplaires: 1 },
+    { id: 'kusarigama', nom: 'Porteur de kusarigama', faction: 'shinobi', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'guetteuse', nom: 'Guetteuse', faction: 'shinobi', type: 'unite', force: 2, rangee: 'dist', legende: false, capacite: 'espion', exemplaires: 1 },
+    { id: 'cerf_volant', nom: 'Cerf-volant d\'attaque', faction: 'shinobi', type: 'unite', force: 7, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'recrues', nom: 'Jeunes recrues', faction: 'shinobi', type: 'unite', force: 3, rangee: 'cac', legende: false, capacite: '', exemplaires: 2 },
+    // Yōkai
+    { id: 'kitsune', nom: 'Kitsune à neuf queues', faction: 'yokai', type: 'unite', force: 10, rangee: 'dist', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'gashadokuro', nom: 'Gashadokuro', faction: 'yokai', type: 'unite', force: 10, rangee: 'siege', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'umibozu', nom: 'Umibōzu', faction: 'yokai', type: 'unite', force: 9, rangee: 'cac', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'oni', nom: 'Oni rouge', faction: 'yokai', type: 'unite', force: 7, rangee: 'cac', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'kappa', nom: 'Kappa', faction: 'yokai', type: 'unite', force: 2, rangee: 'cac', legende: false, capacite: 'rassemblement', groupe: 'kappa', exemplaires: 3 },
+    { id: 'tengu', nom: 'Tengu', faction: 'yokai', type: 'unite', force: 5, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'yukionna', nom: 'Yuki-onna', faction: 'yokai', type: 'unite', force: 6, rangee: 'dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'jorogumo', nom: 'Jorōgumo', faction: 'yokai', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'kodama', nom: 'Kodama', faction: 'yokai', type: 'unite', force: 2, rangee: 'siege', legende: false, capacite: 'rassemblement', groupe: 'kodama', exemplaires: 3 },
+    { id: 'nue', nom: 'Nue', faction: 'yokai', type: 'unite', force: 7, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'rokurokubi', nom: 'Rokurokubi', faction: 'yokai', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'freres_oni', nom: 'Frères oni', faction: 'yokai', type: 'unite', force: 5, rangee: 'cac', legende: false, capacite: 'lien', groupe: 'onis', exemplaires: 2 },
+    { id: 'bakeneko', nom: 'Bakeneko', faction: 'yokai', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'nurikabe', nom: 'Nurikabe', faction: 'yokai', type: 'unite', force: 7, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'tsuchigumo', nom: 'Tsuchigumo', faction: 'yokai', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'kamaitachi', nom: 'Kamaitachi', faction: 'yokai', type: 'unite', force: 5, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'ittan_momen', nom: 'Ittan-momen', faction: 'yokai', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 1 },
+    // Sōhei
+    { id: 'abbe', nom: 'Grand abbé', faction: 'sohei', type: 'unite', force: 11, rangee: 'siege', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'colosse', nom: 'Moine colossal', faction: 'sohei', type: 'unite', force: 10, rangee: 'cac', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'naginata', nom: 'Sōhei à naginata', faction: 'sohei', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: 'lien', groupe: 'naginata', exemplaires: 3 },
+    { id: 'tambour', nom: 'Joueur de tambour', faction: 'sohei', type: 'unite', force: 3, rangee: 'cac', legende: false, capacite: 'moral', exemplaires: 1 },
+    { id: 'archer_temple', nom: 'Archer du temple', faction: 'sohei', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: '', exemplaires: 3 },
+    { id: 'pretre', nom: 'Prêtre guérisseur', faction: 'sohei', type: 'unite', force: 3, rangee: 'siege', legende: false, capacite: 'medecin', exemplaires: 2 },
+    { id: 'novices', nom: 'Novices', faction: 'sohei', type: 'unite', force: 4, rangee: 'cac', legende: false, capacite: 'rassemblement', groupe: 'novices', exemplaires: 3 },
+    { id: 'arbalete', nom: 'Arbalète géante', faction: 'sohei', type: 'unite', force: 7, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'pelerin', nom: 'Pèlerin espion', faction: 'sohei', type: 'unite', force: 3, rangee: 'dist', legende: false, capacite: 'espion', exemplaires: 2 },
+    { id: 'yamabushi', nom: 'Yamabushi', faction: 'sohei', type: 'unite', force: 7, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'lanternes', nom: 'Moine aux lanternes', faction: 'sohei', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: 'moral', exemplaires: 1 },
+    { id: 'gardien_portail', nom: 'Gardien du portail', faction: 'sohei', type: 'unite', force: 6, rangee: 'cac', legende: false, capacite: '', exemplaires: 2 },
+    { id: 'archer_cheval', nom: 'Moine archer à cheval', faction: 'sohei', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'bonze', nom: 'Bonze guérisseur', faction: 'sohei', type: 'unite', force: 3, rangee: 'dist', legende: false, capacite: 'medecin', exemplaires: 1 },
+    { id: 'cloche', nom: 'Gardien de la cloche', faction: 'sohei', type: 'unite', force: 4, rangee: 'siege', legende: false, capacite: '', exemplaires: 1 },
+    // Cartes neutres (tous les clans)
+    { id: 'sabre_invaincu', nom: 'Le Sabre invaincu', faction: 'neutre', type: 'unite', force: 15, rangee: 'cac', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'grue_blanche', nom: 'La Grue blanche', faction: 'neutre', type: 'unite', force: 7, rangee: 'dist', legende: true, capacite: 'medecin', exemplaires: 1 },
+    { id: 'kirin', nom: 'Kirin', faction: 'neutre', type: 'unite', force: 8, rangee: 'siege', legende: true, capacite: '', exemplaires: 1 },
+    { id: 'marchand', nom: 'Marchand ambulant', faction: 'neutre', type: 'unite', force: 4, rangee: 'siege', legende: false, capacite: 'espion', exemplaires: 1 },
+    { id: 'moine_errant', nom: 'Moine errant', faction: 'neutre', type: 'unite', force: 5, rangee: 'dist', legende: false, capacite: 'medecin', exemplaires: 1 },
+    { id: 'ronin_errant', nom: 'Rōnin errant', faction: 'neutre', type: 'unite', force: 6, rangee: 'cac+dist', legende: false, capacite: '', exemplaires: 1 },
+    { id: 'maneki_neko', nom: 'Maneki-neko', faction: 'neutre', type: 'unite', force: 2, rangee: 'cac', legende: false, capacite: 'moral', exemplaires: 1 },
+    { id: 'conteuse', nom: 'Conteuse de légendes', faction: 'neutre', type: 'unite', force: 4, rangee: 'dist', legende: false, capacite: '', exemplaires: 1 },
+    // Cartes spéciales
+    { id: 'neige', nom: 'Neige', faction: 'neutre', type: 'meteo', meteo: 'cac', symbole: '雪', texte: 'Toutes les unités au corps à corps (des deux camps) tombent à 1 de force.', exemplaires: 3 },
+    { id: 'brume', nom: 'Brume', faction: 'neutre', type: 'meteo', meteo: 'dist', symbole: '霧', texte: 'Toutes les unités à distance (des deux camps) tombent à 1 de force.', exemplaires: 3 },
+    { id: 'typhon', nom: 'Typhon', faction: 'neutre', type: 'meteo', meteo: 'siege', symbole: '嵐', texte: 'Toutes les unités de siège (des deux camps) tombent à 1 de force.', exemplaires: 3 },
+    { id: 'soleil', nom: 'Éclaircie', faction: 'neutre', type: 'eclaircie', symbole: '晴', texte: 'Dissipe toutes les météos.', exemplaires: 3 },
+    { id: 'taiko', nom: 'Taiko de guerre', faction: 'neutre', type: 'cor', symbole: '鼓', texte: 'Double la force des unités d\'une de tes rangées (hors légendes).', exemplaires: 3 },
+    { id: 'kagemusha', nom: 'Kagemusha', faction: 'neutre', type: 'leurre', symbole: '影', texte: 'Ce sosie prend la place d\'une de tes unités (hors légendes), qui revient dans ta main.', exemplaires: 3 },
+    { id: 'raijin', nom: 'Colère de Raijin', faction: 'neutre', type: 'brasier', symbole: '雷', texte: 'Détruit la ou les unités les plus fortes du plateau, dans les deux camps (hors légendes).', exemplaires: 3 },
+  ],
+
+  decksParDefaut: {
+    dragon: [['shogun', 1], ['archere', 1], ['samourai', 3], ['cavalier', 1], ['hatamoto', 1], ['ashigaru', 3], ['yumi', 2], ['teppo', 2], ['infiltre', 1], ['bombarde', 1], ['catapulte', 2], ['moine', 1], ['ronin', 1], ['garde_chateau', 2], ['neige', 1], ['brume', 1], ['typhon', 1], ['soleil', 1], ['taiko', 2], ['kagemusha', 1], ['raijin', 1]],
+    shinobi: [['maitre_ombres', 1], ['kunoichi_ecarlate', 1], ['ninja_ombre', 3], ['espion_cour', 2], ['informatrice', 1], ['kunoichi', 2], ['shuriken', 2], ['herboriste', 1], ['pieges', 2], ['fusees', 1], ['freres_lame', 2], ['grimpeur', 2], ['kusarigama', 1], ['cerf_volant', 1], ['neige', 1], ['brume', 1], ['typhon', 1], ['soleil', 1], ['taiko', 2], ['kagemusha', 1], ['raijin', 1]],
+    yokai: [['kitsune', 1], ['gashadokuro', 1], ['oni', 1], ['kappa', 3], ['tengu', 2], ['yukionna', 1], ['jorogumo', 1], ['kodama', 3], ['nue', 1], ['rokurokubi', 2], ['freres_oni', 2], ['bakeneko', 2], ['tsuchigumo', 1], ['nurikabe', 1], ['neige', 1], ['brume', 1], ['typhon', 1], ['soleil', 1], ['taiko', 2], ['kagemusha', 1], ['raijin', 1]],
+    sohei: [['abbe', 1], ['colosse', 1], ['naginata', 3], ['tambour', 1], ['archer_temple', 3], ['pretre', 2], ['novices', 3], ['arbalete', 1], ['pelerin', 2], ['yamabushi', 1], ['lanternes', 1], ['gardien_portail', 2], ['archer_cheval', 1], ['neige', 1], ['brume', 1], ['typhon', 1], ['soleil', 1], ['taiko', 2], ['kagemusha', 1], ['raijin', 1]],
+  },
+};
