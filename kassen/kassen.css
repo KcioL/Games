@@ -330,7 +330,7 @@ body.kassen {
 }
 /* Grand écran : disposition à la The Witcher 3
    (joueurs et météo à gauche, plateau au centre, pioches et défausses à droite, main en bas) */
-@media (min-width: 900px) and (min-height: 600px) {
+@media (min-width: 900px) and (min-height: 600px), (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
   #jeu { max-width: 1400px; }
   .bataille {
     grid-template-columns: 240px minmax(0, 1fr) 120px;
@@ -415,7 +415,7 @@ body.kassen {
 
 /* ---------- Bataille en plein écran (grand écran) ----------
    Le plateau occupe toute la fenêtre ; la taille des cartes suit la hauteur de l'écran. */
-@media (min-width: 900px) and (min-height: 600px) {
+@media (min-width: 900px) and (min-height: 600px), (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
   body.en-bataille { overflow: hidden; }
   /* barre du haut plus fine pendant la partie */
   body.en-bataille .barre { padding-top: 3px; padding-bottom: 3px; }
@@ -651,3 +651,166 @@ body.en-bataille .rangee.cible { background: rgba(120, 200, 255, .08); border-co
 .fleche-glisse path { fill: none; stroke: #8FD8FF; stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(120, 200, 255, .9)); }
 .fleche-glisse polygon { fill: #BFEAFF; filter: drop-shadow(0 0 6px rgba(120, 200, 255, .9)); }
 body.glisse-en-cours, body.glisse-en-cours * { cursor: grabbing !important; user-select: none; }
+
+/* ---------- Téléphone en paysage : plateau plein écran compacté ---------- */
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .barre { display: none; }  /* toute la hauteur pour le jeu (bouton Quitter dans le panneau) */
+  body.en-bataille #jeu {
+    height: 100dvh; padding: 3px 6px;
+    --h-main: clamp(64px, 21vh, 120px);
+    --h-rangee: calc((100dvh - var(--h-main) - 34px) / 6);
+  }
+  body.en-bataille .bataille { grid-template-columns: clamp(118px, 17vw, 170px) minmax(0, 1fr) clamp(58px, 9vw, 90px); row-gap: 2px; column-gap: 6px; }
+  body.en-bataille .camp { gap: 2px; }
+  body.en-bataille .rangee { grid-template-columns: 34px 22px minmax(0, 1fr); border-radius: 4px; }
+  body.en-bataille .rangee-total { min-width: 24px; height: 24px; font-size: .8rem; border-width: 1px; }
+  body.en-bataille .rangee-kanji { font-size: .7rem; }
+  body.en-bataille .emplacement-cor { width: 18px; height: 26px; font-size: .75rem; }
+  body.en-bataille .camp-info { padding: 3px 5px; gap: 1px; font-size: .68rem; }
+  body.en-bataille .camp-info .score-total { font-size: 1.3rem; }
+  body.en-bataille .chef-panneau, body.en-bataille .camp-clan, body.en-bataille .camp-chef { display: none; }
+  body.en-bataille .camp-info .vie { width: 10px; height: 10px; }
+  body.en-bataille .embleme { width: 20px; height: 20px; }
+  body.en-bataille .ciel { font-size: .62rem; padding: 1px 4px; }
+  body.en-bataille .bataille .statut { font-size: .75rem; }
+  body.en-bataille .bataille .detail { display: none; }
+  body.en-bataille .pile-nombre { width: 34px; font-size: .85rem; }
+  body.en-bataille .piles { gap: 3px; }
+  body.en-bataille .pile-titre { font-size: .55rem; }
+  body.en-bataille .commandes { gap: 3px; align-content: end; }
+  body.en-bataille .commandes .btn { font-size: .62rem; padding: 4px 3px; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-height: 0; }
+  body.en-bataille .main .carte.grande:hover { transform: translateY(-2px) scale(1.25); }
+  body.en-bataille .main .carte.grande.choisie { transform: translateY(-2px) scale(1.2); }
+  .commandes .bouton-quitter-mobile { display: block; }
+}
+.bouton-quitter-mobile { display: none; }
+
+/* « Tourne ton téléphone » (téléphone en portrait pendant la partie) */
+.tourne-ecran {
+  position: fixed; inset: 0; z-index: 90; display: none; place-items: center; text-align: center; padding: 24px;
+  background: rgba(10, 6, 5, .96); color: var(--washi);
+}
+.tourne-ecran .icone { font-size: 4rem; display: inline-block; animation: tourne 1.6s ease-in-out infinite; }
+@keyframes tourne { 0%, 20% { transform: rotate(0); } 60%, 100% { transform: rotate(-90deg); } }
+.tourne-ecran p { margin: 14px 0; font-size: 1.05rem; }
+@media (orientation: portrait) and (max-width: 599px) {
+  body.en-bataille .tourne-ecran { display: grid; }
+}
+
+/* ---------- Pioche, défausse et score « à la The Witcher 3 » ---------- */
+.pile { cursor: default; --pile: clamp(46px, 4.6vw, 86px); }
+.pile.defausse:not(.vide) { cursor: pointer; }
+.tas {
+  position: relative; width: var(--pile); aspect-ratio: 3 / 4; border-radius: 6px;
+  /* épaisseur du tas : quelques cartes décalées dessous */
+  box-shadow:
+    calc(var(--epaisseur, 0) * 1px) calc(var(--epaisseur, 0) * 1px) 0 -1px #1A120E,
+    calc(var(--epaisseur, 0) * 2px) calc(var(--epaisseur, 0) * 2px) 0 -2px #2A1E16,
+    calc(var(--epaisseur, 0) * 3px) calc(var(--epaisseur, 0) * 3px) 0 -3px #1A120E,
+    0 8px 18px rgba(0, 0, 0, .6);
+}
+.pile.pioche .tas {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .05) 0 3px, transparent 3px 9px),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--clan) 85%, #fff 15%), var(--clan) 45%, color-mix(in srgb, var(--clan) 55%, #000 45%));
+  border: 2px solid #C9A24A; outline: 1px solid rgba(0, 0, 0, .6); outline-offset: -5px;
+}
+.pile.defausse .tas { background: rgba(10, 7, 5, .55); border: 1px dashed rgba(232, 200, 119, .3); }
+.pile.defausse:not(.vide) .tas { border: 0; }
+.pile.vide .tas { box-shadow: none; opacity: .75; }
+.pile.pioche.vide .tas { background: rgba(10, 7, 5, .55); border: 1px dashed rgba(232, 200, 119, .3); outline: 0; }
+.tas .dos-logo { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 58%; aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; overflow: hidden; border: 2px solid #C9A24A; background: rgba(0, 0, 0, .35);
+  font-family: var(--titre); color: var(--kin-clair); font-size: calc(var(--pile) * .26); box-shadow: 0 0 10px rgba(0, 0, 0, .6); }
+.tas .crane { position: absolute; inset: 0; display: grid; place-items: center; font-size: calc(var(--pile) * .5); color: rgba(232, 220, 190, .35); }
+.tas > .carte.pile { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; --l: var(--pile); border-radius: 6px; }
+.tas > .carte.pile .image-carte { object-fit: cover; }
+/* nombre de cartes dans un losange, à cheval sur le haut du tas */
+.losange {
+  position: absolute; left: 50%; top: 0; transform: translate(-50%, -45%) rotate(45deg); z-index: 2;
+  width: calc(var(--pile) * .36); aspect-ratio: 1; display: grid; place-items: center;
+  background: linear-gradient(135deg, #1E1612, #0C0806); border: 2px solid #C9A24A; box-shadow: 0 2px 6px rgba(0, 0, 0, .7);
+}
+.losange > span { transform: rotate(-45deg); font-family: var(--titre); font-weight: 800; color: var(--washi); font-size: calc(var(--pile) * .2); line-height: 1; }
+.pile-titre { margin-top: 2px; }
+.piles .pile-nombre { display: none; }
+body.en-bataille .piles { gap: clamp(14px, 3vh, 30px); }
+
+/* score dans un écusson */
+.score-total {
+  display: inline-grid; place-items: center; min-width: 0;
+  width: 1.9em; height: 2.15em; padding-bottom: .15em;
+  background: linear-gradient(180deg, #E8C877, #9A7426);
+  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
+  position: relative;
+}
+.score-total::before { content: ''; position: absolute; inset: 3px 3px 4px; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); background: linear-gradient(180deg, #3A2A1E, #120A07); z-index: 0; }
+.score-nombre { position: relative; z-index: 1; font-size: .62em; color: var(--kin-clair); }
+.camp-info .score-total { align-self: center; }
+/* nombre de cartes en main : petite icône de cartes */
+.nb-main { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--washi); }
+.icone-main { position: relative; width: 12px; height: 16px; border-radius: 2px; background: #C9A24A; transform: rotate(-8deg); box-shadow: 4px 1px 0 -1px #8A6A2A; }
+/* taille des tas : tient toujours dans la hauteur de 3 rangées (deux tas, titres et losanges) */
+body.en-bataille .pile { --pile: min(clamp(46px, 4.6vw, 86px), calc((var(--h-rangee, 100px) * 3 - 56px) * .36)); }
+body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .pile-titre { display: none; }
+  body.en-bataille .piles { gap: 12px; }
+  body.en-bataille .camp-info .score-total { font-size: 1.15rem; }
+}
+
+/* ---------- Rail de gauche, étroit et transparent (comme dans The Witcher 3) ----------
+   adversaire : nom tout en haut, score près du centre ; moi : score près du centre, nom tout en bas */
+@media (min-width: 900px) and (min-height: 600px), (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .bataille { grid-template-columns: clamp(104px, 8vw, 150px) minmax(0, 1fr) clamp(70px, 6.5vw, 130px) !important; }
+  body.en-bataille .camp-info, body.en-bataille .camp-info.actif {
+    background: none !important; border: 0 !important; backdrop-filter: none !important; box-shadow: none;
+    padding: 2px 0; gap: clamp(3px, .8vh, 10px); align-items: center; overflow: visible;
+    flex-direction: column; flex-wrap: nowrap;
+  }
+  body.en-bataille .camp-info.adverse { justify-content: flex-start; }
+  body.en-bataille .camp-info.moi { justify-content: flex-end; }
+  /* le nom : en haut (adversaire) ou en bas (moi), sur fond transparent */
+  body.en-bataille .camp-info .camp-nom { flex: none; width: 100%; align-self: stretch; gap: 6px; order: 0; text-shadow: 0 1px 3px #000, 0 0 8px #000; }
+  body.en-bataille .camp-info.adverse .camp-nom { margin-bottom: auto; }
+  body.en-bataille .camp-info.moi .camp-nom { order: 10; margin-top: auto; }
+  body.en-bataille .camp-ident strong { font-size: clamp(.8rem, .95vw, 1.05rem); }
+  body.en-bataille .camp-clan { font-size: clamp(.6rem, .7vw, .78rem); }
+  body.en-bataille .camp-chef { display: none; }
+  body.en-bataille .chef-panneau { --l: clamp(34px, calc(var(--h-rangee) * .5), 70px); }
+  /* ordre vers le centre : chef, cartes en main, vies, (a passé), score */
+  body.en-bataille .camp-info.adverse .chef-panneau { order: 1; }
+  body.en-bataille .camp-info.adverse .nb-main { order: 2; }
+  body.en-bataille .camp-info.adverse .vies { order: 3; }
+  body.en-bataille .camp-info.adverse .badge-passe { order: 4; }
+  body.en-bataille .camp-info.adverse .score-total { order: 5; }
+  body.en-bataille .camp-info.moi .score-total { order: 1; }
+  body.en-bataille .camp-info.moi .badge-passe { order: 2; }
+  body.en-bataille .camp-info.moi .vies { order: 3; }
+  body.en-bataille .camp-info.moi .nb-main { order: 4; }
+  body.en-bataille .camp-info.moi .chef-panneau { order: 5; }
+  body.en-bataille .camp-info .score-total { font-size: clamp(1.6rem, 2.4vw, 2.8rem); transition: filter .2s; }
+  body.en-bataille .nb-main { font-size: clamp(.85rem, 1vw, 1.15rem); text-shadow: 0 1px 3px #000; }
+  /* tour du joueur : son écusson brille */
+  body.en-bataille .camp-info.actif .score-total { filter: drop-shadow(0 0 6px #FFD36A) drop-shadow(0 0 14px rgba(255, 190, 70, .7)); }
+  /* au centre : médaillon de la manche, avec la météo en dessous */
+  body.en-bataille .ciel, body.en-bataille .ciel:has(.meteo-active) {
+    background: none !important; backdrop-filter: none !important; border: 0;
+    flex-direction: column; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 2px; padding: 0; text-align: center;
+  }
+  body.en-bataille .ciel .manche {
+    order: -1; display: grid; place-items: center; text-align: center; line-height: 1.05;
+    width: clamp(46px, 4.4vw, 76px); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #8A5A34, #4A2C18 60%, #2A170C);
+    border: 3px solid #B07C48; box-shadow: inset 0 0 0 3px rgba(0, 0, 0, .35), 0 4px 12px rgba(0, 0, 0, .7);
+    color: var(--kin-clair); font-size: clamp(.55rem, .62vw, .78rem); text-transform: uppercase; letter-spacing: .04em; padding: 4px;
+  }
+  body.en-bataille .ciel .manche b { display: block; font-size: 2.2em; letter-spacing: 0; }
+  body.en-bataille .ciel .meteo-active, body.en-bataille .ciel .ciel-calme { font-size: clamp(.58rem, .65vw, .78rem); text-shadow: 0 1px 3px #000; }
+  body.en-bataille .ciel .ciel-calme { display: none; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .ciel .manche { width: 42px; font-size: .4rem; border-width: 2px; padding: 2px; }
+  body.en-bataille .ciel .manche b { font-size: 2.6em; }
+  body.en-bataille .camp-info .score-total { font-size: 1.35rem; }
+}

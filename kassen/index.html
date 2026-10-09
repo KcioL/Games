@@ -152,6 +152,7 @@
         <button class="btn" id="btn-chef"></button>
         <button class="btn btn-principal" id="btn-jouer" hidden>Jouer cette carte</button>
         <button class="btn" id="btn-passer">Passer</button>
+        <button class="btn bouton-quitter-mobile" id="btn-quitter-jeu" type="button">Quitter</button>
       </div>
     </section>
 
@@ -225,6 +226,13 @@
     <p class="compte-message" id="compte-message" aria-live="polite"></p>
     <button class="btn fermer" id="compte-fermer">Fermer</button>
   </dialog>
+  <div class="tourne-ecran" id="tourne-ecran">
+    <div>
+      <span class="icone" aria-hidden="true">📱</span>
+      <p>Tourne ton téléphone pour jouer en paysage.</p>
+      <button class="btn btn-principal" id="btn-paysage" type="button" hidden>Passer en paysage</button>
+    </div>
+  </div>
   <div class="bulle" id="bulle" hidden></div>
   <div class="panneau-apercu" id="apercu" hidden></div>
   <script src="../commun/service-worker.js"></script>

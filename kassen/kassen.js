@@ -442,6 +442,23 @@ function montrer(ecran) {
 function mesurerBarre() { document.documentElement.style.setProperty('--h-barre', `${document.querySelector('.barre').offsetHeight}px`); }
 window.addEventListener('resize', mesurerBarre);
 mesurerBarre();
+// Téléphone : la partie se joue en paysage. Sur Android, plein écran + verrouillage de l'orientation
+// (il faut un geste du joueur) ; sur iPhone c'est impossible pour un site : on demande de tourner le téléphone.
+const ecranTactile = window.matchMedia('(pointer: coarse)').matches;
+const verrouPossible = ecranTactile && !!(screen.orientation && screen.orientation.lock) && !!document.documentElement.requestFullscreen;
+function passerPaysage() {
+  if (!verrouPossible) return;
+  const verrouiller = () => screen.orientation.lock('landscape').catch(() => {});
+  if (document.fullscreenElement) verrouiller();
+  else document.documentElement.requestFullscreen().then(verrouiller).catch(() => {});
+}
+$('btn-paysage').hidden = !verrouPossible;
+$('btn-paysage').addEventListener('click', passerPaysage);
+$('btn-pret').addEventListener('click', passerPaysage);
+$('btn-quitter-jeu').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  $('btn-quitter').click();
+});
 // Bouton « plein écran » (cache aussi la barre du navigateur)
 $('btn-plein-ecran').addEventListener('click', () => {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -882,21 +899,54 @@ function infoCamp(zone, j) {
   const vies = el('span', 'vies');
   for (let k = 0; k < 2; k++) vies.appendChild(el('span', k < p.vies ? 'vie' : 'vie perdue'));
   zone.appendChild(vies);
-  zone.appendChild(el('span', 'nb-main', `${p.main.length} carte${p.main.length > 1 ? 's' : ''}`));
+  const nbMain = el('span', 'nb-main');
+  nbMain.append(el('span', 'icone-main', ''), document.createTextNode(String(p.main.length)));
+  nbMain.title = `${p.main.length} carte${p.main.length > 1 ? 's' : ''} en main`;
+  zone.appendChild(nbMain);
   if (p.passe) zone.appendChild(el('span', 'badge-passe', 'a passé'));
-  zone.appendChild(el('span', 'score-total', String(M.total(etat, j))));
+  // score : en grand, dans un écusson
+  const score = el('span', 'score-total');
+  score.appendChild(el('span', 'score-nombre', String(M.total(etat, j))));
+  score.title = 'Force totale';
+  zone.appendChild(score);
   zone.classList.toggle('actif', etat.status === 'jeu' && etat.active === j);
 }
 
+// Pioche et défausse en tas de cartes (comme dans The Witcher 3) : nombre de cartes dans un losange
 function rendrePiles(zone, j) {
   const p = etat.players[j];
+  const clan = CLANS[p.clan] || {};
   zone.innerHTML = '';
-  const pile = (titre, n, classe) => {
-    const b = el('div', `pile ${classe}`);
-    b.append(el('span', 'pile-nombre', String(n)), el('span', 'pile-titre', titre));
-    return b;
-  };
-  zone.append(pile('Pioche', p.pioche.length, 'pioche'), pile('Défausse', p.defausse.length, 'defausse'));
+  const losange = (n) => { const l = el('span', 'losange'); l.appendChild(el('span', '', String(n))); return l; };
+  // pioche : dos de cartes aux couleurs du clan, avec son logo
+  const pioche = el('div', 'pile pioche' + (p.pioche.length ? '' : ' vide'));
+  const tasP = el('div', 'tas');
+  tasP.style.setProperty('--clan', clan.couleur || '#3A3A3A');
+  tasP.style.setProperty('--epaisseur', String(Math.min(4, Math.ceil(p.pioche.length / 6))));
+  if (p.pioche.length) tasP.appendChild(logoClan(clan, 'dos-logo'));
+  tasP.appendChild(losange(p.pioche.length));
+  pioche.append(tasP, el('span', 'pile-titre', 'Pioche'));
+  pioche.title = `Pioche : ${p.pioche.length} carte${p.pioche.length > 1 ? 's' : ''}`;
+  // défausse : la dernière carte défaussée, face visible ; touchée, elle montre toute la défausse
+  const defausse = el('div', 'pile defausse' + (p.defausse.length ? '' : ' vide'));
+  const tasD = el('div', 'tas');
+  tasD.style.setProperty('--epaisseur', String(Math.min(4, Math.ceil(p.defausse.length / 4))));
+  if (p.defausse.length) {
+    const derniere = p.defausse[p.defausse.length - 1];
+    const c = carteEl(derniere, { taille: 'pile' });
+    tasD.appendChild(c);
+  } else {
+    tasD.appendChild(el('span', 'crane', '☠'));
+  }
+  tasD.appendChild(losange(p.defausse.length));
+  defausse.append(tasD, el('span', 'pile-titre', 'Défausse'));
+  defausse.title = 'Voir la défausse';
+  defausse.addEventListener('click', () => {
+    if (!p.defausse.length) return;
+    const qui = j === maPlace ? 'Ta défausse' : `Défausse ${de(p.name)}`;
+    ouvrirFenetreChef(qui, `${p.defausse.length} carte${p.defausse.length > 1 ? 's' : ''}, de la plus ancienne à la plus récente.`, p.defausse.slice(), null);
+  });
+  zone.append(pioche, defausse);
 }
 
 function rendreCamp(zone, j, ordre) {
@@ -947,7 +997,9 @@ function rendreCiel() {
     : { cac: ['雪', 'Neige'], dist: ['霧', 'Brume'], siege: ['嵐', 'Typhon'] };
   if (!actives.length) zone.appendChild(el('span', 'ciel-calme', 'Ciel dégagé'));
   actives.forEach((r) => zone.appendChild(el('span', 'meteo-active', `${noms[r][0]} ${noms[r][1]}`)));
-  zone.appendChild(el('span', 'manche', `Manche ${etat.manche}`));
+  const manche = el('span', 'manche', 'Manche');
+  manche.appendChild(el('b', '', String(etat.manche)));
+  zone.appendChild(manche);
 }
 
 const monTour = () => etat.status === 'jeu' && etat.active === maPlace && !etat.players[maPlace].passe;
