@@ -478,6 +478,20 @@ $('interrupteur').addEventListener('click', () => {
   action({ type: 'edition', edition: autre });
 });
 
+// Logo du clan (image), ou son symbole si l'image manque
+const logosAbsents = new Set();
+function logoClan(clan, classe) {
+  const e = el('span', classe, clan.kanji || '');
+  if (!clan.logo || logosAbsents.has(clan.logo)) return e;
+  const img = document.createElement('img');
+  img.className = 'logo-clan';
+  img.alt = '';
+  img.src = clan.logo;
+  img.addEventListener('load', () => { e.textContent = ''; e.appendChild(img); e.classList.add('avec-logo'); });
+  img.addEventListener('error', () => logosAbsents.add(clan.logo));
+  return e;
+}
+
 const chefTexte = (clan) => {
   const chef = chefEnregistre(clan);
   const n = (CLANS[clan].chefs || []).length;
@@ -529,7 +543,7 @@ function rendreClans() {
       bouton.addEventListener('click', () => { choisirEmplacement(cle, n); zone.dataset.cle = ''; rendreClans(); });
       choixDeck.appendChild(bouton);
     }
-    b.append(el('span', 'clan-kanji', c.kanji), el('strong', '', c.nom), el('span', 'clan-atout', c.atout),
+    b.append(logoClan(c, 'clan-kanji'), el('strong', '', c.nom), el('span', 'clan-atout', c.atout),
       el('span', 'clan-chef', chefTexte(cle)),
       choixDeck,
       el('span', 'clan-deck', `${nomDeck(cle, actif)}${persoDeck(cle) ? '' : ' (par défaut)'} : ${deck.length} cartes, ${unites} unités`),
@@ -846,7 +860,7 @@ function infoCamp(zone, j) {
   zone.innerHTML = '';
   const clan = CLANS[p.clan] || {};
   const nom = el('span', 'camp-nom');
-  const embleme = el('span', 'embleme', clan.kanji || '');
+  const embleme = logoClan(clan, 'embleme');
   embleme.style.setProperty('--clan', clan.couleur || '#555');
   const ident = el('span', 'camp-ident');
   ident.append(el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')), el('span', 'camp-clan', clan.nom || ''));

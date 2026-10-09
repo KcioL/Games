@@ -114,6 +114,8 @@ function charger(edition, jeu, prefixe) {
     const clan = id(cle);
     CLANS[clan] = {
       nom: f.nom, kanji: f.symbole || f.nom.charAt(0), couleur: f.couleur || '#3A3A3A', edition,
+      // logo du clan : <jeu>/logos/<clé du clan>.jpg (sinon, le symbole est affiché)
+      logo: f.logo ? `${edition}/logos/${f.logo}` : `${edition}/logos/${cle}.jpg`,
       effetAtout: f.atout,
       atout: `${f.atoutNom ? `${f.atoutNom} : ` : ''}${f.atoutNom ? EFFETS_ATOUT[f.atout] : majuscule(EFFETS_ATOUT[f.atout])}`,
       // chefs au choix (image : <jeu>/cartes/<id>.jpg)
