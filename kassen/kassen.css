@@ -844,3 +844,146 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   body.en-bataille .ciel .manche { width: var(--med); height: var(--med); font-size: calc(var(--med) * .15); padding: 0; border-width: 2px; }
   body.en-bataille .ciel .manche b { font-size: 2.8em; }
 }
+
+/* ---------- Annonce d'un chef utilisé ---------- */
+.annonce-chef {
+  position: fixed; inset: 0; z-index: 64; pointer-events: none;
+  display: grid; place-items: center; align-content: center; gap: 14px;
+  animation: annonce-fond 2.3s ease-in-out forwards;
+}
+@keyframes annonce-fond { 0% { background: rgba(8, 4, 3, 0); } 15%, 80% { background: rgba(8, 4, 3, .55); } 100% { background: rgba(8, 4, 3, 0); } }
+.annonce-chef-halo {
+  position: absolute; left: 50%; top: 50%; width: 70vmin; height: 70vmin; transform: translate(-50%, -55%);
+  background: radial-gradient(circle, rgba(255, 210, 110, .55), rgba(255, 170, 50, .18) 40%, transparent 68%);
+  animation: halo-chef 2.3s ease-in-out forwards;
+}
+@keyframes halo-chef { 0% { opacity: 0; transform: translate(-50%, -55%) scale(.4); } 25% { opacity: 1; transform: translate(-50%, -55%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -55%) scale(1.15); } }
+.annonce-chef .carte.vol { position: relative; z-index: 1; box-shadow: 0 0 0 3px #E8C877, 0 0 30px 8px rgba(255, 190, 70, .7), 0 24px 60px rgba(0, 0, 0, .7); }
+.annonce-chef-texte {
+  position: relative; z-index: 1; display: grid; gap: 4px; justify-items: center; text-align: center; max-width: min(560px, 90vw);
+  padding: 10px 18px; border-radius: 10px; background: rgba(16, 10, 8, .88); border: 1px solid var(--kin);
+  animation: texte-chef 2.3s ease-in-out forwards;
+}
+@keyframes texte-chef { 0%, 18% { opacity: 0; transform: translateY(10px); } 30%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
+.annonce-chef-titre { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--brume); }
+.annonce-chef-texte strong { font-family: var(--titre); font-size: 1.3rem; color: var(--kin-clair); }
+.annonce-chef-effet { color: var(--washi); font-size: .95rem; }
+
+/* ---------- Carte détruite : elle s'embrase puis part en cendres ---------- */
+.carte.carte-brulee { position: fixed; z-index: 62; pointer-events: none; margin: 0; overflow: visible; animation: carte-brule 1.4s ease-in forwards; }
+@keyframes carte-brule {
+  0% { filter: none; box-shadow: 0 0 0 0 rgba(255, 120, 20, 0); transform: none; opacity: 1; }
+  25% { filter: brightness(1.4) sepia(.6) saturate(2.2) hue-rotate(-15deg); box-shadow: 0 0 8px 3px #FFD36A, 0 0 22px 10px #FF6A00, 0 0 40px 18px rgba(180, 20, 0, .8); }
+  60% { filter: brightness(.6) sepia(1) saturate(3) hue-rotate(-25deg); box-shadow: 0 0 10px 4px #FF8A1F, 0 0 26px 12px rgba(200, 30, 0, .7); opacity: 1; }
+  100% { filter: brightness(.1) grayscale(1); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); transform: translateY(6px) scale(.9); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .annonce-chef, .carte-brulee { display: none; } }
+
+/* ---------- Téléphone en paysage : éléments plus gros et lisibles ---------- */
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille #jeu { padding-left: max(4px, calc(env(safe-area-inset-left) - 14px)); padding-right: max(4px, calc(env(safe-area-inset-right) - 14px)); }
+  /* rail de gauche collé au bord, plus étroit */
+  body.en-bataille .bataille { grid-template-columns: clamp(84px, 11vw, 120px) minmax(0, 1fr) clamp(104px, 14vw, 140px) !important; column-gap: 6px; }
+  body.en-bataille .camp-info .camp-nom { gap: 4px; }
+  body.en-bataille .camp-ident strong { font-size: .8rem; max-width: 100%; }
+  body.en-bataille .embleme { width: 22px; height: 22px; }
+  body.en-bataille .camp-info .score-total { font-size: 1.55rem; }
+  body.en-bataille .nb-main { font-size: .95rem; }
+  body.en-bataille .camp-info .vie { width: 12px; height: 12px; }
+  /* ronds de puissance des rangées */
+  body.en-bataille .rangee { grid-template-columns: 40px 18px minmax(0, 1fr); }
+  body.en-bataille .rangee-total { min-width: 32px; height: 32px; font-size: 1.05rem; border-width: 2px; }
+  body.en-bataille .rangee-kanji { display: none; }
+  body.en-bataille .emplacement-cor { width: 16px; height: 24px; }
+  /* pioche et défausse : chiffres lisibles */
+  body.en-bataille .pile { --pile: min(46px, calc((var(--h-rangee, 60px) * 3 - 40px) * .36)); }
+  body.en-bataille .losange { width: 26px; }
+  body.en-bataille .losange > span { font-size: .85rem; }
+  body.en-bataille .piles { gap: 16px; }
+  /* boutons Chef / Passer / Quitter : gros et faciles à toucher */
+  body.en-bataille .commandes { gap: 5px; align-content: center; }
+  body.en-bataille .commandes .btn { font-size: .85rem; padding: 9px 6px; min-height: 38px; border-radius: 10px; white-space: normal; line-height: 1.15; }
+  body.en-bataille #btn-chef { font-size: .72rem; }
+  body.en-bataille .commandes #btn-jouer:not([hidden]) { font-size: .85rem; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  /* pioche et défausse côte à côte */
+  body.en-bataille .piles { grid-auto-flow: column; grid-template-columns: 1fr 1fr; align-content: center; justify-items: center; gap: 6px; }
+  body.en-bataille .pile { --pile: min(50px, calc((100% - 6px) / 2), calc(var(--h-rangee, 60px) * 1.6)); }
+  body.en-bataille .piles .pile { --pile: clamp(38px, 6.4vw, 54px); }
+  body.en-bataille .losange { width: 24px; border-width: 2px; }
+  body.en-bataille .losange > span { font-size: .78rem; }
+  /* chef sur toute la largeur, puis Passer et Quitter côte à côte */
+  body.en-bataille .commandes { grid-template-columns: 1fr 1fr !important; align-content: center; }
+  body.en-bataille .commandes #btn-chef, body.en-bataille .commandes #btn-jouer { grid-column: 1 / -1; }
+  body.en-bataille .commandes .btn { min-height: 36px; padding: 7px 4px; font-size: .82rem; }
+  body.en-bataille #btn-chef { font-size: .68rem; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .bataille { grid-template-columns: clamp(84px, 11vw, 120px) minmax(0, 1fr) clamp(124px, 15vw, 150px) !important; }
+  body.en-bataille .commandes .btn { white-space: nowrap; overflow: visible; text-overflow: clip; font-size: clamp(.74rem, 1.9vw, .85rem); padding: 7px 2px; }
+  body.en-bataille #btn-chef { white-space: normal; }
+  /* le message du tour à droite : la météo reste lisible à gauche */
+  body.en-bataille .bataille .statut { text-align: right; padding-right: 10px; font-size: .78rem; }
+}
+
+/* ---------- Téléphone en paysage : main qui dépasse sous l'écran, plateau plus grand ---------- */
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille #jeu {
+    --h-carte-main: calc(var(--hauteur, 100dvh) * .34);   /* vraie hauteur des cartes en main */
+    --h-main: calc(var(--hauteur, 100dvh) * .15);         /* partie visible : le haut des cartes */
+    --h-rangee: calc((var(--hauteur, 100dvh) - var(--h-main) - 22px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 6);
+  }
+  body.en-bataille .bataille .statut, body.en-bataille .ciel { min-height: 0; }
+  body.en-bataille .bataille .main { overflow: visible; align-items: flex-start; padding: 4px 6px 0; container-type: normal; }
+  body.en-bataille .main .carte.grande { --l: calc(var(--h-carte-main) * .75); transition: transform .18s ease-out; }
+  /* carte touchée (ou survolée) : elle remonte en entier */
+  body.en-bataille .main .carte.grande:hover,
+  body.en-bataille .main .carte.grande.choisie { transform: translateY(calc(var(--h-main) - var(--h-carte-main) - 10px)); z-index: 6; }
+  /* cartes du plateau : la force toujours dans un grand rond lisible, posé sur le rond imprimé */
+  body.en-bataille .rangee-cartes .carte.sur-plateau > .force,
+  body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force {
+    display: grid; left: var(--rond-x, 13.7%); top: var(--rond-y, 9.8%); transform: translate(-30%, -30%);
+    min-width: 0; width: 52%; aspect-ratio: 1; font-size: calc(var(--l) * .34); font-weight: 800;
+    background: #fff; color: #1E1B18; border: 1.5px solid rgba(0, 0, 0, .55); box-shadow: 0 1px 4px rgba(0, 0, 0, .7); z-index: 2;
+  }
+  body.en-bataille .rangee-cartes .carte.legende > .force { background: #F2D27A; }
+  body.en-bataille .rangee-cartes .carte > .force.hausse { color: #1F8A2C; }
+  body.en-bataille .rangee-cartes .carte > .force.baisse { color: #C4231A; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .rangee-cartes .carte.sur-plateau > .force,
+  body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force { left: 3%; top: 2%; transform: none; width: 50%; }
+  body.en-bataille .rangee-cartes { padding: 1px 6px; }
+  body.en-bataille .rangee-cartes .carte { --l: calc((100cqh - 2px) * .75); }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .rangee-cartes .carte.sur-plateau > .force,
+  body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force {
+    width: 60%; font-size: calc(var(--l) * var(--k, 1) * .3); letter-spacing: -.06em; line-height: 1;
+  }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .rangee-cartes .carte.sur-plateau > .force.hausse,
+  body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force.hausse { color: #1F8A2C; }
+  body.en-bataille .rangee-cartes .carte.sur-plateau > .force.baisse,
+  body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force.baisse { color: #C4231A; }
+}
+
+/* Bandeau « … a utilisé son chef » : reste lisible quelques secondes après l'annonce */
+.bandeau-chef {
+  position: fixed; z-index: 46; left: 50%; top: 50%; transform: translate(-50%, -50%); pointer-events: none;
+  display: flex; align-items: center; gap: 10px; max-width: min(640px, 80vw);
+  padding: 8px 18px; border-radius: 999px; background: rgba(16, 10, 8, .9); border: 1px solid var(--kin);
+  color: var(--washi); font-weight: 700; font-size: clamp(.8rem, 1vw, 1rem); box-shadow: 0 6px 18px rgba(0, 0, 0, .6);
+  animation: apparait .3s ease-out 2.1s both; transition: opacity .6s;
+}
+.bandeau-chef.part { opacity: 0; }
+.bandeau-chef-icone { color: var(--kin-clair); font-size: 1.2em; }
+/* chef déjà utilisé : carte grisée et barrée d'un ruban « utilisé » */
+.chef-panneau.utilise { position: relative; filter: grayscale(1) brightness(.55); }
+.chef-panneau.utilise::after {
+  content: 'UTILISÉ'; position: absolute; left: -10%; right: -10%; top: 42%; text-align: center; z-index: 3;
+  background: #8A1A0E; color: #fff; font-weight: 800; font-size: calc(var(--l) * .17); letter-spacing: .06em;
+  transform: rotate(-18deg); box-shadow: 0 2px 6px rgba(0, 0, 0, .6); filter: none;
+}

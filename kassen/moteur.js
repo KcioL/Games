@@ -80,6 +80,7 @@ export function nouvellePartie(s) {
   s.gagnant = null;
   s.finManche = null;
   s.revelation = null;
+  s.dernierChef = null;
   s.attente = null;
 }
 
@@ -515,6 +516,8 @@ export function utiliserChef(s, i, u, defausse) {
     default: return false;
   }
   p.chefUtilise = true;
+  // dernier chef utilisé : chaque écran l'annonce (carte du chef au centre de l'écran)
+  s.dernierChef = { joueur: i, chef: chefDe(p).id, detail: detail.replace(/^ \(|\)$/g, ''), ts: Date.now() + Math.random() };
   journal(s, `${p.name} utilise son chef : ${chefDe(p).nom}${detail}.`);
   apresAction(s, i);
   return true;

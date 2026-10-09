@@ -28,11 +28,16 @@ const salon = initSalon({
     if (place !== maPlace) selection = null;
     // nouvelle carte jouée ? on note d'où elle part avant de redessiner (sa place dans la main)
     const coup = preparerAnimation(s, place);
+    const chef = preparerChef(s, place);
+    const pertes = preparerPertes(etat, s);   // cartes qui vont disparaître du plateau (détruites)
     etat = M.normaliser(s);
     maPlace = place;
     noterChangement();
     rendre();
-    if (coup) animerCoup(coup);
+    // ordre : annonce du chef, puis la carte jouée, puis les cartes détruites qui brûlent
+    const delaiChef = chef ? annoncerChef(chef) : 0;
+    if (coup) setTimeout(() => animerCoup(coup), delaiChef);
+    if (pertes.length) setTimeout(() => brulerCartes(pertes), delaiChef + (coup && CARTES[coup.c] && CARTES[coup.c].type === 'brasier' ? 1100 : coup ? 650 : 250));
     planifierBot();
   },
   // Sur un seul téléphone : la main de chacun est secrète, on cache l'écran entre deux joueurs
@@ -135,6 +140,109 @@ function preparerAnimation(s, place) {
   const panneau = dc.joueur === place ? $('info-moi') : $('info-adverse');
   const depart = (dansMain || (dc.joueur === place ? $('main') : panneau)).getBoundingClientRect();
   return { ...dc, depart };
+}
+
+// ---------- Chef utilisé : sa carte s'affiche en grand au centre, avec ce qu'il fait ----------
+let dernierChefVu;
+function preparerChef(s, place) {
+  const dc = s.dernierChef;
+  const ts = dc ? dc.ts : null;
+  if (dernierChefVu === undefined || ts === dernierChefVu || !dc || sansAnimation) { dernierChefVu = ts; return null; }
+  dernierChefVu = ts;
+  const p = (s.players || [])[dc.joueur];
+  const chef = p && ((CLANS[p.clan] || {}).chefs || []).find((c) => c.id === dc.chef);
+  if (!chef) return null;
+  const panneau = document.querySelector(dc.joueur === place ? '#info-moi .chef-panneau' : '#info-adverse .chef-panneau')
+    || $(dc.joueur === place ? 'info-moi' : 'info-adverse');
+  return { ...dc, chefDef: chef, couleur: (CLANS[p.clan] || {}).couleur, nom: p.name, moi: dc.joueur === place, depart: panneau ? panneau.getBoundingClientRect() : null };
+}
+// onglet en arrière-plan : l'annonce est gardée et montrée au retour
+let annonceEnAttente = null;
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && annonceEnAttente) { const a = annonceEnAttente; annonceEnAttente = null; annoncerChef(a); }
+});
+function annoncerChef(a) {
+  if (document.hidden) { annonceEnAttente = a; return 0; }
+  bandeauChef(a);
+  const duree = 2300;
+  finAnnonce = Math.max(finAnnonce, Date.now() + duree + 400); // les bots attendent la fin de l'annonce
+  const scene = el('div', 'annonce-chef');
+  const carte = carteChefEl(a.chefDef, a.couleur, 'vol');
+  const hauteur = Math.min(window.innerHeight * 0.5, 480);
+  carte.style.setProperty('--l', `${hauteur * 0.75}px`);
+  const texte = el('div', 'annonce-chef-texte');
+  texte.append(el('span', 'annonce-chef-titre', a.moi && pointDeVueJoueur() ? 'Tu utilises ton chef' : `${a.nom} utilise son chef`),
+    el('strong', '', a.chefDef.nom), el('span', 'annonce-chef-effet', a.chefDef.texte + (a.detail ? ` (${a.detail})` : '')));
+  scene.append(el('div', 'annonce-chef-halo'), carte, texte);
+  document.body.appendChild(scene);
+  // la carte part du panneau du joueur, grandit au centre, puis y retourne
+  const r = carte.getBoundingClientRect();
+  const d = a.depart;
+  const versPanneau = d ? `translate(${d.left + d.width / 2 - (r.left + r.width / 2)}px, ${d.top + d.height / 2 - (r.top + r.height / 2)}px) scale(${Math.max(0.08, d.width / r.width)})` : 'scale(.3)';
+  carte.animate([
+    { transform: versPanneau, opacity: .4 },
+    { transform: 'scale(1.06)', opacity: 1, offset: 0.2 },
+    { transform: 'scale(1)', opacity: 1, offset: 0.3 },
+    { transform: 'scale(1)', opacity: 1, offset: 0.82 },
+    { transform: versPanneau, opacity: 0 },
+  ], { duration: duree, easing: 'ease-in-out', fill: 'forwards' });
+  setTimeout(() => scene.remove(), duree + 50);
+  return duree - 350;
+}
+
+// Bandeau qui reste quelques secondes au milieu du plateau : « Bot a utilisé son chef : … »
+function bandeauChef(a) {
+  const ancien = document.querySelector('.bandeau-chef');
+  if (ancien) ancien.remove();
+  const b = el('div', 'bandeau-chef');
+  b.append(el('span', 'bandeau-chef-icone', '♛'),
+    el('span', '', `${a.moi && pointDeVueJoueur() ? 'Tu as utilisé ton chef' : `${a.nom} a utilisé son chef`} : ${a.chefDef.nom}${a.detail ? ` (${a.detail})` : ''}`));
+  // centré sur la ligne du milieu du plateau (là où s'affiche « à toi de jouer »)
+  const st = $('statut').getBoundingClientRect();
+  if (st.height) b.style.top = `${st.top + st.height / 2}px`;
+  document.body.appendChild(b);
+  setTimeout(() => b.classList.add('part'), 6500);
+  setTimeout(() => b.remove(), 7200);
+}
+
+// ---------- Cartes détruites (brûlées) : elles s'embrasent à leur place avant de disparaître ----------
+function preparerPertes(avant, apres) {
+  if (!avant || !apres || sansAnimation || document.hidden || avant.status !== 'jeu' || apres.status !== 'jeu') return [];
+  if ((avant.manche || 0) !== (apres.manche || 0)) return []; // fin de manche : le plateau est vidé, ce n'est pas une destruction
+  const surPlateau = (s) => {
+    const ids = new Set();
+    (s.players || []).forEach((p) => RANGEES.forEach((r) => ((p.rangees || {})[r] || []).forEach((c) => ids.add(c.u))));
+    return ids;
+  };
+  const restent = surPlateau(apres);
+  const enDefausse = new Set();
+  (apres.players || []).forEach((p) => (p.defausse || []).forEach((c) => enDefausse.add(c.u)));
+  const pertes = [];
+  surPlateau(avant).forEach((u) => {
+    if (restent.has(u) || !enDefausse.has(u)) return; // reprise en main (leurre) : pas une destruction
+    const e = document.querySelector(`.rangee-cartes .carte[data-u="${u}"]`);
+    if (!e) return;
+    const r = e.getBoundingClientRect();
+    const fantome = e.cloneNode(true);
+    pertes.push({ fantome, rect: r });
+  });
+  return pertes;
+}
+function brulerCartes(pertes) {
+  finAnnonce = Math.max(finAnnonce, Date.now() + 1500);
+  pertes.forEach(({ fantome, rect }) => {
+    fantome.classList.add('carte-brulee');
+    Object.assign(fantome.style, { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px` });
+    for (let k = 0; k < 10; k++) {
+      const b = el('span', 'braise');
+      b.style.left = `${Math.random() * 100}%`; b.style.bottom = `${Math.random() * 40}%`;
+      b.style.animationDelay = `${(Math.random() * 0.5).toFixed(2)}s`;
+      b.style.setProperty('--x', `${(Math.random() * 2 - 1) * 20}px`);
+      fantome.appendChild(b);
+    }
+    document.body.appendChild(fantome);
+    setTimeout(() => fantome.remove(), 1500);
+  });
 }
 
 // Effet plein écran : 'pluie', 'neige', 'brouillard', 'soleil' ou 'feu'
