@@ -435,12 +435,26 @@ function montrer(ecran) {
   ['choix-clan', 'atelier', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
   // pendant la bataille, le plateau occupe toute la fenêtre
   document.body.classList.toggle('en-bataille', ecran === 'bataille');
+  mesurerBarre();
   if (etat) document.body.dataset.jeu = M.editionDe(etat); // décor du plateau : Kassen ou Gwynt
   $('btn-plein-ecran').hidden = ecran !== 'bataille' || !document.fullscreenEnabled;
 }
 // hauteur réelle de la barre du haut (le plateau prend le reste de la fenêtre)
-function mesurerBarre() { document.documentElement.style.setProperty('--h-barre', `${document.querySelector('.barre').offsetHeight}px`); }
-window.addEventListener('resize', mesurerBarre);
+// Hauteur réelle de l'écran : sur iPhone, « 100dvh » est faux juste après une rotation.
+// On la mesure à chaque changement (et encore un peu après, le temps que Safari se stabilise).
+function mesurerBarre() {
+  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--hauteur', `${Math.round(h)}px`);
+  document.documentElement.style.setProperty('--h-barre', `${document.querySelector('.barre').offsetHeight}px`);
+  if (document.body.classList.contains('en-bataille')) window.scrollTo(0, 0);
+}
+function apresRotation() {
+  mesurerBarre();
+  [120, 350, 700].forEach((d) => setTimeout(() => { mesurerBarre(); if (etat && etat.status === 'jeu') serrerMain(); }, d));
+}
+window.addEventListener('resize', apresRotation);
+window.addEventListener('orientationchange', apresRotation);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', mesurerBarre);
 mesurerBarre();
 // Téléphone : la partie se joue en paysage. Sur Android, plein écran + verrouillage de l'orientation
 // (il faut un geste du joueur) ; sur iPhone c'est impossible pour un site : on demande de tourner le téléphone.
@@ -996,7 +1010,7 @@ function rendreCiel() {
     ? { cac: ['❄', 'Froid mordant'], dist: ['☁', 'Brouillard impénétrable'], siege: ['☂', 'Pluie torrentielle'] }
     : { cac: ['雪', 'Neige'], dist: ['霧', 'Brume'], siege: ['嵐', 'Typhon'] };
   if (!actives.length) zone.appendChild(el('span', 'ciel-calme', 'Ciel dégagé'));
-  actives.forEach((r) => zone.appendChild(el('span', 'meteo-active', `${noms[r][0]} ${noms[r][1]}`)));
+  if (actives.length) zone.appendChild(el('span', 'meteo-active', actives.map((r) => `${noms[r][0]} ${noms[r][1]}`).join('  ·  ')));
   const manche = el('span', 'manche', 'Manche');
   manche.appendChild(el('b', '', String(etat.manche)));
   zone.appendChild(manche);

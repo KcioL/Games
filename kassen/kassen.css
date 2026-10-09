@@ -422,11 +422,11 @@ body.kassen {
   body.en-bataille .barre h1 { font-size: 1.05rem; }
   body.en-bataille .barre .btn { padding-top: 4px; padding-bottom: 4px; }
   body.en-bataille #jeu {
-    max-width: none; height: calc(100dvh - var(--h-barre, 52px)); padding: 6px 12px 6px;
+    max-width: none; height: calc(var(--hauteur, 100dvh) - var(--h-barre, 52px)); padding: 6px 12px 6px;
     /* bande de la main plus basse : ses cartes grandissent au survol */
     --h-main: clamp(110px, 17vh, 250px);
     /* hauteur d'une rangée : ce qui reste, partagé entre les 6 rangées */
-    --h-rangee: calc((100dvh - var(--h-barre, 52px) - var(--h-main) - 60px) / 6);
+    --h-rangee: calc((var(--hauteur, 100dvh) - var(--h-barre, 52px) - var(--h-main) - 60px) / 6);
   }
   body.en-bataille .bataille {
     height: 100%; row-gap: 4px;
@@ -620,8 +620,11 @@ body.kassen {
 body.en-bataille .embleme { width: clamp(26px, 2.4vw, 40px); height: clamp(26px, 2.4vw, 40px); }
 
 /* ---------- Décor du plateau (sol peint, propre à chaque jeu) ---------- */
-body.en-bataille { background: #120d0a url('kassen/fond.jpg') center / cover no-repeat fixed; }
-body.en-bataille[data-jeu="gwynt"] { background-image: url('gwynt/fond.jpg'); }
+/* pendant la partie, la page est figée sur l'écran (pas de décalage après une rotation sur iPhone) */
+body.en-bataille { position: fixed; inset: 0; overflow: hidden; overscroll-behavior: none; background: transparent; }
+/* le décor est posé sur la page entière : il couvre tout l'écran, encoche comprise, même juste après une rotation */
+html:has(body.en-bataille) { background: #120d0a url('kassen/fond.jpg') center / cover no-repeat; min-height: 100%; }
+html:has(body.en-bataille[data-jeu="gwynt"]) { background-image: url('gwynt/fond.jpg'); }
 body.en-bataille .barre { background: rgba(12, 8, 6, .72); backdrop-filter: blur(4px); }
 /* rangées en verre sombre : on voit le sol à travers */
 body.en-bataille .rangee { background: rgba(8, 6, 4, .26); border: 1px solid rgba(232, 220, 190, .1); box-shadow: inset 0 0 24px rgba(0, 0, 0, .35); }
@@ -656,9 +659,11 @@ body.glisse-en-cours, body.glisse-en-cours * { cursor: grabbing !important; user
 @media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
   body.en-bataille .barre { display: none; }  /* toute la hauteur pour le jeu (bouton Quitter dans le panneau) */
   body.en-bataille #jeu {
-    height: 100dvh; padding: 3px 6px;
+    height: var(--hauteur, 100dvh);
+    /* l'encoche de l'iPhone : le décor va jusqu'au bord, le jeu s'en écarte */
+    padding: max(3px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(3px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
     --h-main: clamp(64px, 21vh, 120px);
-    --h-rangee: calc((100dvh - var(--h-main) - 34px) / 6);
+    --h-rangee: calc((var(--hauteur, 100dvh) - var(--h-main) - 34px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 6);
   }
   body.en-bataille .bataille { grid-template-columns: clamp(118px, 17vw, 170px) minmax(0, 1fr) clamp(58px, 9vw, 90px); row-gap: 2px; column-gap: 6px; }
   body.en-bataille .camp { gap: 2px; }
@@ -813,4 +818,29 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   body.en-bataille .ciel .manche { width: 42px; font-size: .4rem; border-width: 2px; padding: 2px; }
   body.en-bataille .ciel .manche b { font-size: 2.6em; }
   body.en-bataille .camp-info .score-total { font-size: 1.35rem; }
+}
+
+/* ---------- Bande du milieu compacte : médaillon de manche seul, météo à côté ---------- */
+@media (min-width: 900px) and (min-height: 600px), (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .ciel, body.en-bataille .ciel:has(.meteo-active) {
+    --med: clamp(40px, 3.6vw, 58px);
+    position: relative; overflow: visible; z-index: 3; height: var(--med); min-height: 0;
+  }
+  body.en-bataille .ciel .manche {
+    width: var(--med); height: var(--med); padding: 0; gap: 0; align-content: center;
+    font-size: calc(var(--med) * .15); letter-spacing: 0; line-height: 1;
+  }
+  body.en-bataille .ciel .manche b { font-size: 2.8em; line-height: .95; }
+  /* météo : sur une ligne, à droite du médaillon (dans l'espace vide du milieu du plateau) */
+  body.en-bataille .ciel .meteo-active {
+    position: absolute; top: 50%; transform: translateY(-50%); white-space: nowrap;
+    left: calc(50% + var(--med) / 2 + 12px); font-size: clamp(.62rem, .75vw, .9rem);
+  }
+  body.en-bataille .ciel .meteo-active ~ .meteo-active { transform: translateY(-50%); }
+  body.en-bataille .bataille .statut { align-self: center; line-height: 1.2; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .ciel, body.en-bataille .ciel:has(.meteo-active) { --med: 32px; }
+  body.en-bataille .ciel .manche { width: var(--med); height: var(--med); font-size: calc(var(--med) * .15); padding: 0; border-width: 2px; }
+  body.en-bataille .ciel .manche b { font-size: 2.8em; }
 }
