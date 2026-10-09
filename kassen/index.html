@@ -87,6 +87,8 @@
         </button>
         <p class="interrupteur-aide" id="interrupteur-aide" aria-live="polite"></p>
       </div>
+      <!-- Compte (facultatif) : decks enregistrés en ligne -->
+      <div class="compte" id="compte"></div>
       <div class="clans" id="clans"></div>
       <p class="attente" id="attente-clan"></p>
     </section>
@@ -95,6 +97,9 @@
     <section class="atelier" id="atelier" hidden>
       <div class="atelier-tete">
         <h2 id="atelier-titre"></h2>
+        <!-- 3 decks par clan : onglets et nom du deck -->
+        <div class="atelier-emplacements" id="atelier-emplacements" role="tablist" aria-label="Choix du deck"></div>
+        <label class="atelier-nom">Nom du deck <input id="atelier-nom" maxlength="30" placeholder="Deck 1"></label>
         <div class="atelier-stats" id="atelier-stats"></div>
         <p class="atelier-erreur" id="atelier-erreur" aria-live="polite"></p>
       </div>
@@ -204,6 +209,21 @@
       <li>Un chef annulé par celui de l'adversaire n'a aucun effet.</li>
     </ul>
     <button class="btn fermer">Fermer</button>
+  </dialog>
+  <dialog class="regles dialog-compte" id="dialog-compte">
+    <h2>Ton compte</h2>
+    <p>Facultatif : avec un compte (une adresse e-mail et un mot de passe), tes decks et tes chefs sont enregistrés en ligne et te suivent sur tous tes appareils.</p>
+    <form id="compte-form" class="compte-form">
+      <label>E-mail <input type="email" id="compte-email" autocomplete="email" required></label>
+      <label>Mot de passe <input type="password" id="compte-mdp" autocomplete="current-password" minlength="6" required></label>
+      <div class="compte-boutons">
+        <button type="submit" class="btn btn-principal" id="compte-connexion">Se connecter</button>
+        <button type="button" class="btn" id="compte-creer">Créer un compte</button>
+      </div>
+      <button type="button" class="lien" id="compte-oubli">Mot de passe oublié ?</button>
+    </form>
+    <p class="compte-message" id="compte-message" aria-live="polite"></p>
+    <button class="btn fermer" id="compte-fermer">Fermer</button>
   </dialog>
   <div class="bulle" id="bulle" hidden></div>
   <div class="panneau-apercu" id="apercu" hidden></div>

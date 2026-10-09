@@ -2,6 +2,10 @@ import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
 import { EDITIONS } from './editions.js'; // à importer en premier : charge les cartes du Gwynt et de Kassen
 import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES, COLLECTIONS, DECKS_DEFAUT, DECK_MIN_UNITES, DECK_MAX_SPECIALES, aPlat, erreurDeck } from './cartes.js';
 import * as M from './moteur.js';
+import {
+  initCompte, compteActuel, enregistrerDeck, connexionEmail, motDePasseOublie, deconnexion, messageErreur,
+  NB_DECKS, deckSauve, emplacementActif, choisirEmplacement,
+} from './compte.js';
 
 // =====================================================================
 // Salon
@@ -482,6 +486,7 @@ const chefTexte = (clan) => {
 
 function rendreClans() {
   rendreInterrupteur();
+  rendreCompte();
   const moi = etat.players[maPlace];
   const autre = etat.players[1 - maPlace];
   const zone = $('clans');
@@ -496,7 +501,7 @@ function rendreClans() {
   const edition = EDITIONS[etat.edition || 'japon'];
   // on ne redessine la liste que si elle change (sinon un toucher pendant le choix du bot serait perdu)
   const clans = M.clansDeLEdition(etat);
-  const cleListe = `${maPlace}|${etat.edition}|${clans.map((c) => deckEnregistre(c).length).join(',')}|${clans.map(persoDeck).map(Boolean).join(',')}|${clans.map((c) => (chefEnregistre(c) || {}).id).join(',')}`;
+  const cleListe = `${maPlace}|${etat.edition}|${clans.map((c) => `${emplacementActif(c)}:${deckEnregistre(c).length}:${Boolean(persoDeck(c))}:${(chefEnregistre(c) || {}).id}:${nomDeck(c, emplacementActif(c))}`).join(',')}`;
   if (zone.dataset.cle === cleListe && zone.children.length) return;
   zone.dataset.cle = cleListe;
   zone.innerHTML = '';
@@ -512,37 +517,127 @@ function rendreClans() {
     const modifier = el('button', 'btn', 'Modifier le deck');
     modifier.type = 'button';
     modifier.addEventListener('click', () => ouvrirAtelier(cle));
+    // les 3 decks du clan : on choisit celui avec lequel jouer
+    const actif = emplacementActif(cle);
+    const choixDeck = el('div', 'choix-deck');
+    choixDeck.setAttribute('role', 'group');
+    choixDeck.setAttribute('aria-label', 'Deck à jouer');
+    for (let n = 1; n <= NB_DECKS; n++) {
+      const bouton = el('button', 'deck-num' + (n === actif ? ' actif' : '') + (persoDeck(cle, n) ? '' : ' vide'), String(n));
+      bouton.type = 'button';
+      bouton.title = `${nomDeck(cle, n)}${persoDeck(cle, n) ? '' : ' (deck par défaut)'}`;
+      bouton.addEventListener('click', () => { choisirEmplacement(cle, n); zone.dataset.cle = ''; rendreClans(); });
+      choixDeck.appendChild(bouton);
+    }
     b.append(el('span', 'clan-kanji', c.kanji), el('strong', '', c.nom), el('span', 'clan-atout', c.atout),
       el('span', 'clan-chef', chefTexte(cle)),
-      el('span', 'clan-deck', `${persoDeck(cle) ? 'Ton deck' : 'Deck par défaut'} : ${deck.length} cartes, ${unites} unités`),
+      choixDeck,
+      el('span', 'clan-deck', `${nomDeck(cle, actif)}${persoDeck(cle) ? '' : ' (par défaut)'} : ${deck.length} cartes, ${unites} unités`),
       choisir, modifier);
     zone.appendChild(b);
   });
 }
 
 // =====================================================================
+// Compte (facultatif) : decks enregistrés en ligne
+// =====================================================================
+function rendreCompte() {
+  const zone = $('compte');
+  const c = compteActuel();
+  zone.innerHTML = '';
+  if (c) {
+    zone.append(el('span', 'compte-texte', `☁ Connecté : ${c.nom}. Tes decks sont enregistrés dans ton compte.`));
+    const b = el('button', 'btn btn-discret', 'Se déconnecter');
+    b.type = 'button';
+    b.addEventListener('click', () => deconnexion());
+    zone.appendChild(b);
+  } else {
+    zone.append(el('span', 'compte-texte', 'Tes decks sont enregistrés sur cet appareil.'));
+    const b = el('button', 'btn btn-discret', 'Se connecter pour les garder partout');
+    b.type = 'button';
+    b.addEventListener('click', ouvrirCompte);
+    zone.appendChild(b);
+  }
+}
+function ouvrirCompte() {
+  $('compte-message').textContent = navigator.onLine ? '' : 'Pas de connexion internet : la connexion au compte est impossible pour l\'instant.';
+  $('dialog-compte').showModal();
+}
+async function essayer(action, succes) {
+  const msg = $('compte-message');
+  msg.classList.remove('ok');
+  msg.textContent = 'Un instant…';
+  try {
+    await action();
+    if (succes) { msg.textContent = succes; msg.classList.add('ok'); } else $('dialog-compte').close();
+  } catch (err) {
+    msg.textContent = messageErreur(err);
+  }
+}
+$('compte-form').addEventListener('submit', (ev) => { ev.preventDefault(); essayer(() => connexionEmail($('compte-email').value.trim(), $('compte-mdp').value, false)); });
+$('compte-creer').addEventListener('click', () => {
+  if (!$('compte-form').reportValidity()) return;
+  essayer(() => connexionEmail($('compte-email').value.trim(), $('compte-mdp').value, true));
+});
+$('compte-oubli').addEventListener('click', () => {
+  const email = $('compte-email').value.trim();
+  if (!email) { $('compte-message').textContent = 'Indique d\'abord ton adresse e-mail.'; return; }
+  essayer(() => motDePasseOublie(email), 'Un e-mail pour choisir un nouveau mot de passe vient de t\'être envoyé.');
+});
+$('compte-fermer').addEventListener('click', () => $('dialog-compte').close());
+// connexion gardée d'une fois sur l'autre ; à chaque changement, la liste des clans est redessinée
+initCompte(() => {
+  if (!etat) return;
+  $('clans').dataset.cle = '';
+  if (etat.status === 'clans') rendreClans();
+});
+
+// =====================================================================
 // Atelier de deck (enregistré sur cet appareil, un deck par clan)
 // =====================================================================
-const cleDeck = (clan) => `jeux-vol:gwynt-deck:${clan}`;
-function persoDeck(clan) {
-  try {
-    const d = JSON.parse(localStorage.getItem(cleDeck(clan)));
-    return Array.isArray(d) && !erreurDeck(clan, d) ? d : null;
-  } catch (e) { return null; }
+// 3 decks par clan (n = 1, 2 ou 3) ; sans précision, le deck choisi pour jouer ce clan
+function persoDeck(clan, n = emplacementActif(clan)) {
+  const s = deckSauve(clan, n);
+  return s && Array.isArray(s.deck) && !erreurDeck(clan, s.deck) ? s.deck : null;
 }
-const deckEnregistre = (clan) => persoDeck(clan) || aPlat(DECKS_DEFAUT[clan]);
-// Chef choisi pour chaque clan (le premier de la liste par défaut)
-const cleChef = (clan) => `jeux-vol:gwynt-chef:${clan}`;
-function chefEnregistre(clan) {
+const deckEnregistre = (clan, n = emplacementActif(clan)) => persoDeck(clan, n) || aPlat(DECKS_DEFAUT[clan]);
+// Chef de ce deck (le premier de la liste par défaut)
+function chefEnregistre(clan, n = emplacementActif(clan)) {
   const chefs = (CLANS[clan] && CLANS[clan].chefs) || [];
-  let id = '';
-  try { id = localStorage.getItem(cleChef(clan)) || ''; } catch (e) { /* stockage indisponible */ }
+  const id = (deckSauve(clan, n) || {}).chef || '';
   return chefs.find((c) => c.id === id) || chefs[0];
 }
+const nomDeck = (clan, n) => ((deckSauve(clan, n) || {}).nom || '').trim() || `Deck ${n}`;
 
-let atelier = null; // { clan, deck: [ids], filtre }
+let atelier = null; // { clan, n (deck 1 à 3), deck: [ids], chef, nom, filtre }
+function chargerEmplacement(clan, n) {
+  atelier = { clan, n, deck: [...deckEnregistre(clan, n)], filtre: atelier ? atelier.filtre : 'tout', chef: (chefEnregistre(clan, n) || {}).id, nom: (deckSauve(clan, n) || {}).nom || '' };
+  atelier.depart = JSON.stringify([atelier.deck, atelier.chef, atelier.nom]); // pour repérer les modifications
+  $('atelier-nom').value = atelier.nom;
+  $('atelier-nom').placeholder = `Deck ${n}`;
+}
+const atelierModifie = () => atelier && JSON.stringify([atelier.deck, atelier.chef, atelier.nom]) !== atelier.depart;
+function rendreEmplacements() {
+  const zone = $('atelier-emplacements');
+  zone.innerHTML = '';
+  for (let n = 1; n <= NB_DECKS; n++) {
+    const b = el('button', 'onglet-deck' + (n === atelier.n ? ' actif' : ''), nomDeck(atelier.clan, n));
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.setAttribute('aria-selected', String(n === atelier.n));
+    b.addEventListener('click', () => {
+      if (n === atelier.n) return;
+      if (atelierModifie() && !window.confirm('Changer de deck sans enregistrer tes modifications ?')) return;
+      chargerEmplacement(atelier.clan, n);
+      rendreAtelier();
+    });
+    zone.appendChild(b);
+  }
+}
+$('atelier-nom').addEventListener('input', () => { if (atelier) atelier.nom = $('atelier-nom').value; });
 function ouvrirAtelier(clan) {
-  atelier = { clan, deck: [...deckEnregistre(clan)], filtre: 'tout', chef: (chefEnregistre(clan) || {}).id };
+  atelier = null;
+  chargerEmplacement(clan, emplacementActif(clan));
   $('atelier').hidden = false;
   $('choix-clan').hidden = true;
   document.querySelectorAll('.filtre').forEach((f) => f.classList.toggle('actif', f.dataset.filtre === 'tout'));
@@ -574,7 +669,8 @@ const ordre = (a, b) => {
 function rendreAtelier() {
   if (!atelier) return;
   const { clan, deck } = atelier;
-  $('atelier-titre').textContent = `Deck : ${CLANS[clan].nom}`;
+  $('atelier-titre').textContent = `Decks : ${CLANS[clan].nom}`;
+  rendreEmplacements();
   const unites = deck.filter((c) => CARTES[c].type === 'unite');
   const speciales = deck.length - unites.length;
   const force = unites.reduce((t, c) => t + CARTES[c].force, 0);
@@ -701,10 +797,8 @@ $('atelier-defaut').addEventListener('click', () => { atelier.deck = aPlat(DECKS
 $('atelier-annuler').addEventListener('click', fermerAtelier);
 $('atelier-enregistrer').addEventListener('click', () => {
   if (erreurDeck(atelier.clan, atelier.deck)) return;
-  try {
-    localStorage.setItem(cleDeck(atelier.clan), JSON.stringify(atelier.deck));
-    if (atelier.chef) localStorage.setItem(cleChef(atelier.clan), atelier.chef);
-  } catch (e) { /* stockage plein */ }
+  // sur l'appareil, et dans le compte si on est connecté
+  enregistrerDeck(atelier.clan, atelier.n, atelier.deck, atelier.chef, atelier.nom.trim());
   fermerAtelier();
 });
 

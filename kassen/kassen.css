@@ -581,3 +581,33 @@ body.kassen {
 .carte.apercu { --l: min(calc(50vh * .75), calc((25vw - 24px) / var(--k, 1)), 330px); border-radius: 10px; flex: none; }
 .carte.apercu .force { font-size: calc(var(--l) * .28); }
 .apercu-texte { display: grid; gap: 6px; width: 100%; color: var(--washi); font-size: .9rem; line-height: 1.35; }
+
+/* Compte (facultatif) */
+.compte { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; font-size: .85rem; color: var(--brume); margin: 2px 0 10px; }
+.compte .btn { padding: 6px 12px; font-size: .85rem; border: 1px solid var(--lisere); }
+.dialog-compte { max-width: 420px; }
+.compte-form { display: grid; gap: 10px; }
+.compte-form label { display: grid; gap: 4px; font-weight: 700; font-size: .9rem; }
+.compte-form input { padding: 10px; border-radius: 8px; border: 1px solid var(--lisere); background: var(--urushi-2); color: var(--washi); }
+.compte-boutons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.compte-form .lien { justify-self: start; background: none; border: 0; color: var(--kin-clair); text-decoration: underline; cursor: pointer; padding: 0; font: inherit; font-size: .85rem; }
+.compte-message { min-height: 1.3em; color: #F2A79A; font-size: .9rem; }
+.compte-message.ok { color: #8FD68A; }
+
+/* 3 decks par clan */
+.choix-deck { display: flex; justify-content: center; gap: 6px; }
+.deck-num {
+  width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font: inherit; font-weight: 800;
+  background: rgba(0, 0, 0, .3); color: var(--washi); border: 1px solid var(--lisere);
+}
+.deck-num.vide { color: var(--brume); border-style: dashed; }
+.deck-num.actif { background: var(--kin); color: #1E1B18; border: 1px solid var(--kin-clair); border-style: solid; }
+.atelier-emplacements { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.onglet-deck {
+  padding: 7px 16px; border-radius: 999px; cursor: pointer; font: inherit; font-weight: 700; font-size: .9rem;
+  background: var(--urushi-2); color: var(--washi); border: 1px solid var(--lisere);
+  max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.onglet-deck.actif { background: var(--kin); color: #1E1B18; border-color: var(--kin-clair); }
+.atelier-nom { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: .85rem; color: var(--brume); }
+.atelier-nom input { width: 220px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--lisere); background: var(--urushi-2); color: var(--washi); font: inherit; }
