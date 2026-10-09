@@ -190,6 +190,42 @@ function annoncerChef(a) {
   return duree - 350;
 }
 
+// ---------- Loupe (écran tactile) : une carte en grand, avec ses capacités à côté ----------
+function ouvrirLoupe(infos) {
+  if (survolPossible && !infos.forcer) { if (!infos.chef) return; }  // à la souris, l'aperçu au survol suffit (sauf pour le chef)
+  const zone = $('loupe');
+  zone.innerHTML = '';
+  const carte = infos.chef ? carteChefEl(infos.chef, infos.couleur, 'zoom') : carteEl({ c: infos.carte.c, u: infos.carte.u }, { taille: 'zoom' });
+  const texte = el('div', 'loupe-texte');
+  if (infos.joueur) texte.appendChild(el('span', 'loupe-joueur', `Chef ${de(infos.joueur)}${infos.utilise ? ' · déjà utilisé' : ''}`));
+  const corps = el('div', 'loupe-corps');
+  remplirBulle(corps, infos.chef ? { chef: infos.chef } : { d: infos.d });
+  texte.appendChild(corps);
+  if (infos.force !== undefined && infos.d && infos.d.type === 'unite' && infos.force !== infos.d.force) {
+    texte.appendChild(el('span', 'loupe-force ' + (infos.force > infos.d.force ? 'hausse' : 'baisse'), `Force actuelle sur le plateau : ${infos.force} (imprimée : ${infos.d.force})`));
+  }
+  texte.appendChild(el('span', 'loupe-fermer', 'Touche pour fermer'));
+  zone.append(carte, texte);
+  zone.hidden = false;
+  loupeOuverteA = Date.now();
+}
+// le toucher qui a ouvert la loupe (doigt relevé après un appui long) ne doit pas la refermer aussitôt
+let loupeOuverteA = 0;
+$('loupe').addEventListener('click', () => { if (Date.now() - loupeOuverteA > 450) $('loupe').hidden = true; });
+function appuiLong(e, action) {
+  let minuteur = null;
+  let x0 = 0; let y0 = 0;
+  const annuler = () => { clearTimeout(minuteur); minuteur = null; };
+  e.addEventListener('pointerdown', (ev) => {
+    if (ev.pointerType === 'mouse') return;
+    x0 = ev.clientX; y0 = ev.clientY;
+    minuteur = setTimeout(() => { minuteur = null; if (glisse && glisse.parti) return; annulerGlisse(); clicIgnore = true; setTimeout(() => { clicIgnore = false; }, 400); action(); }, 480);
+  });
+  e.addEventListener('pointermove', (ev) => { if (minuteur && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) annuler(); });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => e.addEventListener(t, annuler));
+  e.addEventListener('contextmenu', (ev) => ev.preventDefault());
+}
+
 // Bandeau qui reste quelques secondes au milieu du plateau : « Bot a utilisé son chef : … »
 function bandeauChef(a) {
   const ancien = document.querySelector('.bandeau-chef');
@@ -1006,6 +1042,7 @@ function infoCamp(zone, j) {
   const ident = el('span', 'camp-ident');
   ident.append(el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')), el('span', 'camp-clan', clan.nom || ''));
   nom.append(embleme, ident);
+  nom.addEventListener('click', () => { const c = M.chefDe(p); if (c) ouvrirLoupe({ chef: c, couleur: clan.couleur, joueur: p.name, utilise: p.chefUtilise }); });
   zone.appendChild(nom);
   const chefJ = M.chefDe(p);
   if (chefJ) {
@@ -1013,6 +1050,8 @@ function infoCamp(zone, j) {
     const carteChef = carteChefEl(chefJ, clan.couleur, 'mini');
     carteChef.classList.add('chef-panneau');
     if (p.chefUtilise) carteChef.classList.add('utilise');
+    // écran tactile : toucher le chef l'ouvre en grand avec sa capacité
+    carteChef.addEventListener('click', () => ouvrirLoupe({ chef: chefJ, couleur: clan.couleur, joueur: p.name, utilise: p.chefUtilise }));
     zone.appendChild(carteChef);
   }
   const chef = el('span', 'camp-chef' + (p.chefUtilise ? ' utilise' : ''), chefJ ? `Chef : ${chefJ.nom}${etiquetteChef(j)}` : '');
@@ -1089,6 +1128,12 @@ function rendreCamp(zone, j, ordre) {
     const cartes = el('div', 'rangee-cartes');
     etat.players[j].rangees[r].forEach((carte) => {
       const e = carteEl(carte, { force: M.forceCarte(etat, j, r, carte), taille: 'mini' });
+      // écran tactile : toucher une carte du plateau l'ouvre en grand (sauf si c'est une cible du kagemusha)
+      e.addEventListener('click', (ev) => {
+        if (e.classList.contains('cible') || survolPossible) return;
+        ev.stopPropagation();
+        ouvrirLoupe({ d: CARTES[carte.c], carte, force: M.forceCarte(etat, j, r, carte) });
+      });
       // Kagemusha : on touche l'unité à reprendre
       if (j === maPlace && cibles.some((c) => c.cible === carte.u)) {
         e.classList.add('cible');
@@ -1153,6 +1198,8 @@ function rendreMain() {
       rendre();
     });
     e.addEventListener('pointerdown', (ev) => commencerGlisse(ev, carte, e));
+    // écran tactile : appui long sur une carte de la main = la voir en grand
+    appuiLong(e, () => ouvrirLoupe({ d: CARTES[carte.c], carte }));
     if (glisse && glisse.u === carte.u && glisse.parti) e.classList.add('en-glisse');
     zone.appendChild(e);
   });
