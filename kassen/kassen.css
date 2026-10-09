@@ -352,7 +352,7 @@ body.kassen {
   .piles.moi { grid-area: piles-moi; }
   .bataille .statut { grid-area: statut; align-self: center; }
   .bataille .detail { grid-area: detail; text-align: left; align-self: center; font-size: .82rem; }
-  .bataille .main { grid-area: main; justify-content: center; padding-top: 14px; min-height: 140px; }
+  .bataille .main { grid-area: main; justify-content: safe center; padding-top: 14px; min-height: 140px; }
   .commandes { grid-area: commandes; grid-template-columns: 1fr !important; align-content: center; }
   .commandes #btn-jouer { grid-column: auto; }
 
@@ -417,28 +417,40 @@ body.kassen {
    Le plateau occupe toute la fenêtre ; la taille des cartes suit la hauteur de l'écran. */
 @media (min-width: 900px) and (min-height: 600px) {
   body.en-bataille { overflow: hidden; }
+  /* barre du haut plus fine pendant la partie */
+  body.en-bataille .barre { padding-top: 3px; padding-bottom: 3px; }
+  body.en-bataille .barre h1 { font-size: 1.05rem; }
+  body.en-bataille .barre .btn { padding-top: 4px; padding-bottom: 4px; }
   body.en-bataille #jeu {
-    max-width: none; height: calc(100dvh - var(--h-barre, 52px)); padding: 8px 14px 10px;
-    --h-main: clamp(130px, 22vh, 320px);
+    max-width: none; height: calc(100dvh - var(--h-barre, 52px)); padding: 6px 12px 6px;
+    /* bande de la main plus basse : ses cartes grandissent au survol */
+    --h-main: clamp(110px, 17vh, 250px);
     /* hauteur d'une rangée : ce qui reste, partagé entre les 6 rangées */
-    --h-rangee: calc((100dvh - var(--h-barre, 52px) - var(--h-main) - 92px) / 6);
+    --h-rangee: calc((100dvh - var(--h-barre, 52px) - var(--h-main) - 60px) / 6);
   }
   body.en-bataille .bataille {
-    height: 100%;
+    height: 100%; row-gap: 4px;
     grid-template-columns: clamp(220px, 15vw, 320px) minmax(0, 1fr) clamp(110px, 8vw, 170px);
     grid-template-rows: minmax(0, 1fr) auto minmax(0, 1fr) var(--h-main);
   }
   body.en-bataille .camp { grid-template-rows: repeat(3, minmax(0, 1fr)); }
   body.en-bataille .rangee { min-height: 0; height: auto; grid-template-columns: clamp(58px, 4.5vw, 84px) clamp(34px, 2.6vw, 52px) minmax(0, 1fr); }
   /* la taille des cartes suit la hauteur réelle de leur rangée / de la main (requêtes de conteneur) */
-  body.en-bataille .rangee-cartes { min-height: 0; height: 100%; padding: 4px 8px; gap: 5px; justify-content: safe center; container-type: size; }
-  body.en-bataille .rangee-cartes .carte { --l: calc((100cqh - 8px) * .75); }
+  body.en-bataille .camp { gap: 3px; }
+  body.en-bataille .rangee-cartes { min-height: 0; height: 100%; padding: 2px 8px; gap: 6px; justify-content: safe center; container-type: size; }
+  body.en-bataille .rangee-cartes .carte { --l: calc((100cqh - 2px) * .75); }
+  /* ligne du milieu compacte : météo sur une ligne, statut en petit */
+  body.en-bataille .ciel { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 2px 10px; padding: 3px 8px; font-size: .8rem; }
+  body.en-bataille .bataille .statut { min-height: 0; padding: 0 8px; }
   body.en-bataille .rangee-total { min-width: clamp(34px, 2.6vw, 50px); height: clamp(34px, 2.6vw, 50px); font-size: clamp(1.05rem, 1.3vw, 1.6rem); }
   body.en-bataille .rangee-kanji { font-size: clamp(.95rem, 1.2vw, 1.5rem); }
   body.en-bataille .emplacement-cor { width: calc(var(--h-rangee) * .45); height: calc(var(--h-rangee) * .62); max-width: 46px; font-size: 1.2rem; }
   /* main : grandes cartes */
-  body.en-bataille .bataille .main { min-height: 0; height: var(--h-main); padding: 14px 6px 6px; align-items: center; container-type: size; }
-  body.en-bataille .main .carte.grande { --l: calc((100cqh - 22px) * .75); }
+  body.en-bataille .bataille .main { min-height: 0; height: var(--h-main); padding: 6px 8px 2px; align-items: flex-end; overflow: visible; container-type: size; z-index: 4; }
+  body.en-bataille .main .carte.grande { --l: calc((100cqh - 10px) * .75); transform-origin: 50% 100%; transition: transform .15s ease-out, box-shadow .15s, margin .15s; }
+  /* carte survolée ou choisie : elle sort de la main et grandit (au-dessus du plateau) */
+  body.en-bataille .main .carte.grande:hover { transform: translateY(-4px) scale(1.6); z-index: 6; }
+  body.en-bataille .main .carte.grande.choisie { transform: translateY(-4px) scale(1.45); z-index: 5; }
   /* panneaux et piles à l'échelle */
   body.en-bataille .chef-panneau { --l: clamp(46px, calc(var(--h-rangee) * .58), 100px); flex: none; }
   body.en-bataille .camp-info { flex-wrap: nowrap; overflow: hidden; min-height: 0; justify-content: safe center; gap: 3px; }
@@ -555,3 +567,17 @@ body.kassen {
 }
 @keyframes braise-ecran { from { transform: translate(0, 0); opacity: 1; } to { transform: translate(var(--x), -80vh); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .effet-ecran, .carte.vol, .braise { display: none; } .carte.en-flammes::before { animation: none; opacity: 0; } }
+
+/* Aperçu en grand de la carte survolée (bataille, grand écran) */
+.panneau-apercu {
+  position: fixed; z-index: 45; right: 14px; top: 50%; transform: translateY(-50%);
+  display: grid; gap: 10px; justify-items: center; pointer-events: none;
+  width: min(25vw, 360px); padding: 12px;
+  background: rgba(18, 10, 9, .92); border: 1px solid var(--kin); border-radius: 12px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .7);
+  animation: apparait .12s ease-out;
+}
+.panneau-apercu[hidden] { display: none; }
+.carte.apercu { --l: min(calc(50vh * .75), calc((25vw - 24px) / var(--k, 1)), 330px); border-radius: 10px; flex: none; }
+.carte.apercu .force { font-size: calc(var(--l) * .28); }
+.apercu-texte { display: grid; gap: 6px; width: 100%; color: var(--washi); font-size: .9rem; line-height: 1.35; }

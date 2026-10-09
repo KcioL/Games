@@ -321,7 +321,7 @@ function carteEl(carte, { force, taille = '' } = {}) {
     e.appendChild(el('span', 'kanji-special', d.kanji));
   }
   if (taille !== 'mini') e.appendChild(el('span', 'nom', d.nom));
-  if (survolPossible) brancherBulle(e, { d }); // au survol de la souris : la bulle d'information
+  if (survolPossible) brancherBulle(e, { d, carte }); // au survol de la souris : la bulle d'information
   else e.title = description(carte);
   return e;
 }
@@ -394,15 +394,30 @@ function placerBulle(cible) {
   bulle.style.left = `${x}px`;
   bulle.style.top = `${y}px`;
 }
+// Pendant la bataille sur grand écran : la carte survolée s'affiche en grand à droite (comme dans The Witcher 3)
+const grandEcran = window.matchMedia('(min-width: 900px) and (min-height: 600px)');
+const modeApercu = () => document.body.classList.contains('en-bataille') && grandEcran.matches;
+function montrerApercu(infos) {
+  const zone = $('apercu');
+  zone.innerHTML = '';
+  const carte = infos.chef ? carteChefEl(infos.chef, '#3A3A3A', 'apercu') : carteEl({ c: infos.carte.c, u: infos.carte.u }, { taille: 'apercu' });
+  const texte = el('div', 'apercu-texte');
+  remplirBulle(texte, infos);
+  zone.append(carte, texte);
+  zone.hidden = false;
+}
+function cacherSurvol() { $('bulle').hidden = true; $('apercu').hidden = true; }
 function brancherBulle(e, infos) {
   if (!survolPossible) return;
   e.addEventListener('mouseenter', () => {
+    if (e.classList.contains('vol') || e.classList.contains('apercu')) return;
+    if (modeApercu()) { montrerApercu(infos); return; }
     const bulle = $('bulle');
     remplirBulle(bulle, infos);
     bulle.hidden = false;
     placerBulle(e);
   });
-  e.addEventListener('mouseleave', () => { $('bulle').hidden = true; });
+  e.addEventListener('mouseleave', cacherSurvol);
 }
 // la bulle disparaît dès qu'on clique ou fait défiler (la carte peut avoir été redessinée)
 ['click', 'scroll', 'keydown'].forEach((ev) => window.addEventListener(ev, () => { $('bulle').hidden = true; }, true));
@@ -854,7 +869,22 @@ function rendreMain() {
     zone.appendChild(e);
   });
   if (!moi.main.length) zone.appendChild(el('p', 'vide', 'Plus de cartes en main.'));
+  serrerMain();
 }
+// Main trop large pour l'écran : les cartes se chevauchent (au lieu de faire défiler)
+function serrerMain() {
+  const zone = $('main');
+  const cartes = [...zone.querySelectorAll('.carte')];
+  cartes.forEach((c) => { c.style.marginLeft = ''; });
+  if (cartes.length < 2 || !document.body.classList.contains('en-bataille')) return;
+  const ecart = parseFloat(getComputedStyle(zone).columnGap) || 0;
+  const largeur = cartes.reduce((t, c) => t + c.getBoundingClientRect().width, 0) + ecart * (cartes.length - 1);
+  const dispo = zone.clientWidth - 16;
+  if (largeur <= dispo) return;
+  const retrait = (largeur - dispo) / (cartes.length - 1);
+  cartes.slice(1).forEach((c) => { c.style.marginLeft = `${-retrait}px`; });
+}
+window.addEventListener('resize', () => { if (etat && etat.status === 'jeu') serrerMain(); });
 
 function rendreCommandes() {
   const moi = etat.players[maPlace];
@@ -1064,7 +1094,7 @@ function remplirRegles() {
 // =====================================================================
 function rendre() {
   if (!etat) return;
-  $('bulle').hidden = true; // la carte survolée a pu être redessinée
+  cacherSurvol(); // la carte survolée a pu être redessinée
   if (etat.status === 'clans') { montrer('choix-clan'); rendreClans(); }
   else if (etat.status === 'echange') { montrer('echange-cartes'); rendreEchange(); }
   else {
