@@ -279,6 +279,7 @@ function ajouterImage(e, id, chemin) {
   img.className = 'image-carte';
   img.alt = CARTES[id] ? CARTES[id].nom : '';
   img.decoding = 'async';
+  img.draggable = false; // pas de « glisser l'image » du navigateur (il bloquerait le glisser-déposer des cartes)
   img.src = chemin;
   img.addEventListener('error', () => { imagesAbsentes.add(id); img.remove(); });
   img.addEventListener('load', () => { imagesChargees.add(id); e.classList.add('image-pleine'); });
@@ -434,6 +435,7 @@ function montrer(ecran) {
   ['choix-clan', 'atelier', 'echange-cartes', 'bataille'].forEach((id) => { $(id).hidden = id !== ecran; });
   // pendant la bataille, le plateau occupe toute la fenêtre
   document.body.classList.toggle('en-bataille', ecran === 'bataille');
+  if (etat) document.body.dataset.jeu = M.editionDe(etat); // décor du plateau : Kassen ou Gwynt
   $('btn-plein-ecran').hidden = ecran !== 'bataille' || !document.fullscreenEnabled;
 }
 // hauteur réelle de la barre du haut (le plateau prend le reste de la fenêtre)
@@ -918,6 +920,7 @@ function rendreCamp(zone, j, ordre) {
       // Kagemusha : on touche l'unité à reprendre
       if (j === maPlace && cibles.some((c) => c.cible === carte.u)) {
         e.classList.add('cible');
+        e.dataset.rangeeCible = r;
         e.addEventListener('click', (ev) => { ev.stopPropagation(); jouerSelection({ rangee: r, cible: carte.u }); });
       }
       cartes.appendChild(e);
@@ -971,14 +974,108 @@ function rendreMain() {
     e.addEventListener('mouseenter', () => { if (selection === null) $('detail').textContent = description(carte); });
     e.addEventListener('mouseleave', () => { if (selection === null) rendreCommandes(); });
     e.addEventListener('click', () => {
+      if (clicIgnore) return; // fin d'un glisser-déposer
       selection = selection === carte.u ? null : carte.u;
       rendre();
     });
+    e.addEventListener('pointerdown', (ev) => commencerGlisse(ev, carte, e));
+    if (glisse && glisse.u === carte.u && glisse.parti) e.classList.add('en-glisse');
     zone.appendChild(e);
   });
   if (!moi.main.length) zone.appendChild(el('p', 'vide', 'Plus de cartes en main.'));
   serrerMain();
 }
+// ---------- Glisser-déposer : on prend une carte de la main et on la lâche sur sa rangée ----------
+let glisse = null;      // { u, c, x0, y0, depart, parti, fantome, fleche }
+let clicIgnore = false;
+function commencerGlisse(ev, carte, e) {
+  if (ev.button !== 0 || !monTour() || glisse) return;
+  if (ev.pointerType === 'mouse') ev.preventDefault(); // ni glisser natif, ni sélection de texte
+  const r = e.getBoundingClientRect();
+  glisse = { u: carte.u, c: carte.c, x0: ev.clientX, y0: ev.clientY, depart: [r.left + r.width / 2, r.top + r.height * 0.25], parti: false };
+  window.addEventListener('pointermove', bougerGlisse);
+  window.addEventListener('pointerup', lacherGlisse);
+  window.addEventListener('pointercancel', annulerGlisse);
+}
+function demarrerGlisse() {
+  glisse.parti = true;
+  selection = glisse.u;            // les rangées possibles s'illuminent
+  cacherSurvol();
+  rendre();
+  document.body.classList.add('glisse-en-cours');
+  const f = carteEl({ c: glisse.c, u: glisse.u }, { taille: 'grande' });
+  f.classList.add('fantome');
+  document.body.appendChild(f);
+  glisse.fantome = f;
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('class', 'fleche-glisse');
+  svg.innerHTML = '<path/><polygon/>';
+  document.body.appendChild(svg);
+  glisse.fleche = svg;
+}
+// ce qu'il y a sous le pointeur : une unité ciblée (leurre), une rangée, ou le plateau
+function cibleSous(x, y) {
+  const sous = document.elementFromPoint(x, y);
+  if (!sous) return null;
+  const unite = sous.closest('.rangee-cartes .carte.cible');
+  if (unite) return { el: unite, choix: { rangee: unite.dataset.rangeeCible, cible: Number(unite.dataset.u) } };
+  const rangee = sous.closest('.rangee.cible');
+  if (rangee) return { el: rangee, choix: { rangee: rangee.dataset.rangee } };
+  // carte sans place à choisir (météo, éclaircie, Raijin…) : lâchée n'importe où sur le plateau
+  const cibles = ciblesSelection();
+  if (cibles.length === 1 && !cibles[0].rangee && !cibles[0].cible && sous.closest('.camp, .ciel, .bataille .statut')) return { el: null, choix: {} };
+  return null;
+}
+function bougerGlisse(ev) {
+  if (!glisse) return;
+  if (!glisse.parti) {
+    if (Math.hypot(ev.clientX - glisse.x0, ev.clientY - glisse.y0) < 10) return;
+    demarrerGlisse();
+  }
+  ev.preventDefault();
+  Object.assign(glisse.fantome.style, { left: `${ev.clientX}px`, top: `${ev.clientY}px` });
+  // flèche courbe de la main vers le pointeur
+  const [x1, y1] = glisse.depart;
+  const x2 = ev.clientX; const y2 = ev.clientY;
+  const cx = (x1 + x2) / 2 + (y2 - y1) * 0.15; const cy = Math.min(y1, y2) - 40;
+  glisse.fleche.querySelector('path').setAttribute('d', `M${x1},${y1} Q${cx},${cy} ${x2},${y2}`);
+  const a = Math.atan2(y2 - cy, x2 - cx); const t = 16;
+  const pts = [[x2 + Math.cos(a) * 4, y2 + Math.sin(a) * 4], [x2 - t * Math.cos(a - 0.5), y2 - t * Math.sin(a - 0.5)], [x2 - t * Math.cos(a + 0.5), y2 - t * Math.sin(a + 0.5)]];
+  glisse.fleche.querySelector('polygon').setAttribute('points', pts.map((p) => p.join(',')).join(' '));
+  document.querySelectorAll('.survolee').forEach((x) => x.classList.remove('survolee'));
+  const cible = cibleSous(ev.clientX, ev.clientY);
+  if (cible && cible.el) cible.el.classList.add('survolee');
+}
+function finirGlisse() {
+  window.removeEventListener('pointermove', bougerGlisse);
+  window.removeEventListener('pointerup', lacherGlisse);
+  window.removeEventListener('pointercancel', annulerGlisse);
+  document.body.classList.remove('glisse-en-cours');
+  if (glisse && glisse.fantome) glisse.fantome.remove();
+  if (glisse && glisse.fleche) glisse.fleche.remove();
+  document.querySelectorAll('.survolee').forEach((x) => x.classList.remove('survolee'));
+  const parti = glisse && glisse.parti;
+  glisse = null;
+  if (parti) { clicIgnore = true; setTimeout(() => { clicIgnore = false; }, 0); }
+  return parti;
+}
+function lacherGlisse(ev) {
+  if (!glisse) return;
+  const parti = glisse.parti;
+  const u = glisse.u;
+  const cible = parti ? cibleSous(ev.clientX, ev.clientY) : null;
+  finirGlisse();
+  if (!parti) return; // simple clic : la sélection habituelle s'en charge
+  if (cible && monTour() && selection === u) { jouerSelection(cible.choix); return; }
+  selection = null; // lâchée ailleurs : la carte revient dans la main
+  rendre();
+}
+function annulerGlisse() {
+  if (!glisse) return;
+  const parti = finirGlisse();
+  if (parti) { selection = null; rendre(); }
+}
+
 // Main trop large pour l'écran : les cartes se chevauchent (au lieu de faire défiler)
 function serrerMain() {
   const zone = $('main');
