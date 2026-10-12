@@ -1432,8 +1432,13 @@ function rendreCommandes() {
   const clan = CLANS[moi.clan] || {};
   const chef = $('btn-chef');
   const chefMoi = M.chefDe(moi);
-  chef.textContent = chefMoi ? (moi.chefUtilise ? `Chef utilisé (${chefMoi.nom})` : `Chef : ${chefMoi.nom}${etiquetteChef(maPlace)}`) : 'Chef';
-  chef.title = chefMoi ? chefMoi.texte : '';
+  // deux lignes au plus : « Chef » (utilisé, passif, annulé) puis le nom, coupé s'il est trop long
+  // (le nom complet et l'effet restent dans l'infobulle), pour que « Passer » reste toujours visible
+  chef.innerHTML = '';
+  const etiquette = !chefMoi ? 'Chef' : moi.chefUtilise ? 'Chef utilisé' : `Chef${etiquetteChef(maPlace)}`;
+  chef.appendChild(el('span', 'chef-etiquette', etiquette));
+  if (chefMoi) chef.appendChild(el('span', 'chef-nom', chefMoi.nom));
+  chef.title = chefMoi ? `${chefMoi.nom} : ${chefMoi.texte}` : '';
   // chef indisponible : le bouton reste touchable pour expliquer pourquoi
   const raison = chefMoi && etat.status === 'jeu' ? M.raisonChef(etat, maPlace) : '';
   chef.disabled = !tour && !raison;
