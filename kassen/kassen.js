@@ -897,9 +897,12 @@ const passeFiltre = (id, dansDeck = {}) => {
   if (atelier.filtre === 'special') return d.type !== 'unite';
   return d.type === 'unite' && d.rangees.includes(atelier.filtre);
 };
-// ordre d'affichage : unités par rangée puis force, puis spéciales
+// ordre d'affichage : légendes d'abord, puis unités par rangée et force, puis spéciales
 const ordre = (a, b) => {
   const da = CARTES[a]; const db = CARTES[b];
+  const la = da.type === 'unite' && da.legende ? 0 : 1;
+  const lb = db.type === 'unite' && db.legende ? 0 : 1;
+  if (la !== lb) return la - lb;
   const ra = da.type === 'unite' ? RANGEES.indexOf(da.rangees[0]) : 9;
   const rb = db.type === 'unite' ? RANGEES.indexOf(db.rangees[0]) : 9;
   return ra - rb || (db.force || 0) - (da.force || 0) || da.nom.localeCompare(db.nom);
@@ -933,6 +936,7 @@ function rendreAtelier() {
   const dansDeck = {};
   deck.forEach((c) => { dansDeck[c] = (dansDeck[c] || 0) + 1; });
   const dispo = Object.fromEntries(COLLECTIONS[clan]);
+  rendreRecap(clan, dansDeck);
 
   // Toutes les cartes disponibles pour ce clan, en trois sections
   const ids = COLLECTIONS[clan].map(([id]) => id);
@@ -982,6 +986,35 @@ function rendreAtelier() {
     zone.appendChild(section);
   });
   if (!zone.children.length) zone.appendChild(el('p', 'vide', atelier.filtre === 'deck' ? 'Ton deck est vide.' : 'Aucune carte ici.'));
+}
+
+// Récapitulatif en haut de l'atelier : le chef puis chaque carte du deck avec son nombre d'exemplaires
+function rendreRecap(clan, dansDeck) {
+  const zone = $('atelier-recap');
+  zone.innerHTML = '';
+  const chef = (CLANS[clan].chefs || []).find((c) => c.id === atelier.chef);
+  if (chef) {
+    const bloc = el('div', 'recap-carte recap-chef');
+    const carte = carteChefEl(chef, CLANS[clan].couleur, 'recap');
+    carte.addEventListener('mouseenter', () => { $('atelier-detail').textContent = `${chef.nom} : ${chef.texte}`; });
+    bloc.append(carte, el('span', 'recap-n', 'Chef'));
+    zone.appendChild(bloc);
+  }
+  const ids = Object.keys(dansDeck).sort((a, b) => {
+    // unités avant spéciales, puis l'ordre habituel (légendes d'abord)
+    const sa = CARTES[a].type === 'unite' ? 0 : 1;
+    const sb = CARTES[b].type === 'unite' ? 0 : 1;
+    return sa - sb || ordre(a, b);
+  });
+  ids.forEach((id) => {
+    const bloc = el('div', 'recap-carte');
+    const carte = carteEl({ c: id }, { taille: 'recap' });
+    carte.addEventListener('mouseenter', () => { $('atelier-detail').textContent = description({ c: id }); });
+    carte.addEventListener('click', () => changerDeck(id, -1));
+    bloc.append(carte, el('span', 'recap-n', `×${dansDeck[id]}`));
+    zone.appendChild(bloc);
+  });
+  if (!ids.length) zone.appendChild(el('p', 'recap-vide', 'Ton deck est vide : touche les cartes plus bas pour les ajouter.'));
 }
 
 // Une carte de l'atelier : la carte en grand, et dessous le compteur « dans le deck / disponibles » avec − et +
