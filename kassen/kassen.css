@@ -1044,25 +1044,27 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 #btn-chef.indispo { opacity: .5; cursor: help; }
 .bandeau-chef.bandeau-info { border-color: rgba(150, 190, 255, .7); }
 
-/* Récapitulatif du deck en haut de l'atelier */
+/* Récapitulatif du deck en haut de l'atelier (plusieurs lignes si besoin) */
 .atelier-recap {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
-  padding: 8px; margin: 2px 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px 8px;
+  padding: 10px; margin: 2px 0;
   background: rgba(0, 0, 0, .3); border: 1px solid rgba(232, 200, 119, .25); border-radius: 10px;
-  max-height: 260px; overflow-y: auto;
 }
-.recap-carte { display: grid; justify-items: center; gap: 2px; }
-.carte.recap { --l: 50px; width: 50px; border-radius: 4px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
-.carte.recap .nom { display: none; }
+.recap-carte { display: grid; justify-items: center; gap: 3px; }
+.carte.recap { --l: 92px; width: 100%; max-width: 120px; border-radius: 6px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .recap-chef .carte.recap { cursor: default; }
 @media (hover: hover) {
-  .recap-carte:not(.recap-chef) .carte.recap:hover { transform: translateY(-3px); box-shadow: 0 0 0 2px #E0705F; }
+  .recap-carte:not(.recap-chef) .carte.recap:hover { transform: translateY(-4px); box-shadow: 0 0 0 2px #E0705F, 0 8px 16px rgba(0, 0, 0, .5); }
 }
-.recap-n { font-size: .75rem; font-weight: 700; color: var(--kin-clair); line-height: 1; }
-.recap-chef .recap-n { color: var(--brume); font-weight: 400; }
-.recap-vide { font-size: .85rem; color: var(--brume); margin: 4px; }
-/* téléphone : une seule ligne qui défile */
-@media (max-width: 599px), (max-height: 599px) {
-  .atelier-recap { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; max-height: none; }
-  .recap-carte { flex: none; }
+.recap-n { font-size: .95rem; font-weight: 700; color: var(--kin-clair); line-height: 1; }
+.recap-chef .recap-n { color: var(--brume); font-weight: 400; font-size: .85rem; }
+.recap-vide { grid-column: 1 / -1; font-size: .85rem; color: var(--brume); margin: 4px; }
+@media (min-width: 900px) {
+  .atelier-recap { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+  .carte.recap { --l: 110px; }
+}
+/* petit téléphone : 4 cartes par ligne au moins */
+@media (max-width: 420px) {
+  .atelier-recap { grid-template-columns: repeat(4, 1fr); gap: 8px 6px; padding: 8px; }
+  .carte.recap { --l: 76px; }
 }
