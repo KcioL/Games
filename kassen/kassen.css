@@ -1013,3 +1013,33 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 @media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
   body.en-bataille .chef-panneau { display: block !important; --l: clamp(26px, calc(var(--h-rangee) * .42), 40px); cursor: pointer; }
 }
+
+/* historique des coups */
+.historique { margin: 0; padding: 4px 4px 4px 26px; display: grid; gap: 6px; text-align: left; max-height: 60vh; overflow-y: auto; grid-column: 1 / -1; color: var(--washi); font-size: .9rem; }
+.historique li:last-child { color: var(--kin-clair); font-weight: 700; }
+.commandes .btn-historique { font-size: 1.1rem; }
+/* unité revenue de la défausse */
+.carte.revient { animation: revient 1.5s ease-out; }
+@keyframes revient {
+  0% { box-shadow: 0 0 0 0 rgba(120, 230, 140, 0); transform: scale(1.25); }
+  20% { box-shadow: 0 0 8px 3px #B8F5B0, 0 0 22px 10px rgba(80, 200, 100, .8); transform: scale(1.1); }
+  100% { box-shadow: 0 0 0 0 rgba(120, 230, 140, 0); transform: none; }
+}
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) {
+  body.en-bataille .commandes { grid-template-columns: 1fr 1fr 34px !important; gap: 4px; align-content: center; padding-bottom: 4px; }
+  body.en-bataille .commandes .btn { min-height: 32px; padding-top: 5px; padding-bottom: 5px; }
+  body.en-bataille .commandes #btn-chef { grid-row: 1; grid-column: 1 / 3; }
+  body.en-bataille .commandes .btn-historique { grid-row: 1; grid-column: 3; padding: 4px 0 !important; font-size: .95rem !important; }
+  body.en-bataille .commandes #btn-jouer { grid-row: 2; grid-column: 1 / -1; }
+  body.en-bataille .commandes #btn-passer { grid-row: 3; grid-column: 1; }
+  body.en-bataille .commandes #btn-quitter-jeu { grid-row: 3; grid-column: 2 / 4; }
+  body.en-bataille .commandes:has(#btn-jouer[hidden]) #btn-passer,
+  body.en-bataille .commandes:has(#btn-jouer[hidden]) #btn-quitter-jeu { grid-row: 2; }
+}
+@media (min-width: 900px) and (min-height: 600px) {
+  body.en-bataille .commandes .btn-historique { justify-self: center; width: 52px; padding: 6px 0; }
+}
+
+/* Chef indisponible : grisé mais touchable pour savoir pourquoi */
+#btn-chef.indispo { opacity: .5; cursor: help; }
+.bandeau-chef.bandeau-info { border-color: rgba(150, 190, 255, .7); }

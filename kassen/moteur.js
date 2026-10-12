@@ -1,6 +1,6 @@
 // Moteur de règles du Gwynt, édition Japon (sans affichage).
 // Toutes les actions modifient l'état `s` et renvoient false si elles sont interdites.
-import { CARTES, CLANS, DECKS_DEFAUT, RANGEES, ALIAS_CHEF, CHEFS_PASSIFS, CHEFS_A_CHOIX, aPlat, erreurDeck } from './cartes.js';
+import { CARTES, CLANS, DECKS_DEFAUT, RANGEES, NOMS_RANGEES, ALIAS_CHEF, CHEFS_PASSIFS, CHEFS_A_CHOIX, aPlat, erreurDeck } from './cartes.js';
 
 export const TAILLE_MAIN = 10;
 export const ECHANGES_MAX = 2;
@@ -36,7 +36,7 @@ export function normaliser(s) {
 
 function journal(s, texte) {
   s.journal.push(texte);
-  if (s.journal.length > 6) s.journal.shift();
+  if (s.journal.length > 14) s.journal.shift();
 }
 
 const adversaire = (i) => 1 - i;
@@ -418,6 +418,43 @@ export function chefUtilisable(s, i) {
     case 'agiles': return RANGEES.some((x) => p.rangees[x].some((c) => estUnite(c) && def(c).rangees.length > 1));
     case 'melanger-defausses': return s.players.some((x) => x.defausse.length > 0);
     default: return false;
+  }
+}
+
+// Pourquoi le chef ne peut pas servir maintenant ('' s'il est utilisable)
+function nomMeteo(s, r) {
+  const gwynt = editionDe(s) === 'gwynt';
+  const e = Object.entries(CARTES).find(([k, d]) => d.type === 'meteo' && d.meteo === r && k.startsWith('g_') === gwynt);
+  return e ? e[1].nom : 'carte météo';
+}
+export function raisonChef(s, i) {
+  const p = s.players[i];
+  if (!p || !p.clan) return '';
+  if (p.chefUtilise) return 'Ton chef a déjà servi : sa capacité ne s\'utilise qu\'une fois par partie.';
+  if (chefPassif(p)) return 'Ce chef est passif : son effet s\'applique tout seul, il n\'y a rien à activer.';
+  if (chefAnnule(s, i)) return 'Le chef adverse annule le tien pour toute la partie.';
+  if (chefUtilisable(s, i)) return '';
+  const j = adversaire(i);
+  const effet = effetChef(p) || '';
+  const r = effet.split('-')[1];
+  const rangee = r ? (NOMS_RANGEES[r] || r).toLowerCase() : '';
+  switch (famille(effet)) {
+    case 'cor': return `Ta rangée ${rangee} a déjà un cor.`;
+    case 'bruler': return `Il faut que la rangée ${rangee} adverse totalise au moins 10 de force (avec une unité non légendaire) : elle n'en a que ${totalRangee(s, j, r)}.`;
+    case 'meteo':
+      if (r && s.meteo[r]) return `${nomMeteo(s, r)} est déjà en jeu sur cette rangée.`;
+      return r ? `Plus de ${nomMeteo(s, r)} dans ta pioche : ton chef va la chercher là, et il n'en reste aucune (déjà piochée ou jouée).`
+        : 'Aucune carte météo utile dans ta pioche.';
+    case 'eclaircie': return 'Aucune météo en jeu à dissiper.';
+    case 'resurrection': return 'Aucune unité à ramener dans ta défausse.';
+    case 'pioche': return 'Ta pioche est vide.';
+    case 'espionner': return 'L\'adversaire n\'a plus de cartes en main.';
+    case 'voler-defausse': return 'La défausse adverse ne contient aucune carte à prendre.';
+    case 'recuperer': return 'Ta défausse ne contient aucune carte à reprendre.';
+    case 'echanger': return 'Il faut au moins 2 cartes en main et une carte dans ta pioche.';
+    case 'agiles': return 'Aucune unité agile sur ton plateau.';
+    case 'melanger-defausses': return 'Les deux défausses sont vides.';
+    default: return 'Ce chef n\'est pas utilisable maintenant.';
   }
 }
 

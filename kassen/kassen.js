@@ -30,6 +30,7 @@ const salon = initSalon({
     const coup = preparerAnimation(s, place);
     const chef = preparerChef(s, place);
     const pertes = preparerPertes(etat, s);   // cartes qui vont disparaître du plateau (détruites)
+    noterRetours(etat, s);                     // cartes qui reviennent de la défausse
     etat = M.normaliser(s);
     maPlace = place;
     noterChangement();
@@ -37,6 +38,7 @@ const salon = initSalon({
     // ordre : annonce du chef, puis la carte jouée, puis les cartes détruites qui brûlent
     const delaiChef = chef ? annoncerChef(chef) : 0;
     if (coup) setTimeout(() => animerCoup(coup), delaiChef);
+    if (!coup) setTimeout(marquerRetours, delaiChef + 100);
     if (pertes.length) setTimeout(() => brulerCartes(pertes), delaiChef + (coup && CARTES[coup.c] && CARTES[coup.c].type === 'brasier' ? 1100 : coup ? 650 : 250));
     planifierBot();
   },
@@ -226,7 +228,29 @@ function appuiLong(e, action) {
   e.addEventListener('contextmenu', (ev) => ev.preventDefault());
 }
 
+// ---------- Historique des derniers coups (ce qui s'est passé, dans l'ordre) ----------
+$('btn-historique').addEventListener('click', () => {
+  ouvrirFenetreChef('Derniers coups', 'Du plus ancien au plus récent.', [], null);
+  const liste = el('ol', 'historique');
+  (etat.journal || []).forEach((t) => liste.appendChild(el('li', '', t)));
+  if (!(etat.journal || []).length) liste.appendChild(el('li', '', 'Rien pour l\'instant.'));
+  $('chef-cartes').appendChild(liste);
+  liste.scrollTop = liste.scrollHeight;
+});
+
 // Bandeau qui reste quelques secondes au milieu du plateau : « Bot a utilisé son chef : … »
+// Petit bandeau d'explication (même place que l'annonce du chef)
+function bandeauInfo(texte) {
+  const ancien = document.querySelector('.bandeau-chef');
+  if (ancien) ancien.remove();
+  const b = el('div', 'bandeau-chef bandeau-info');
+  b.append(el('span', 'bandeau-chef-icone', 'ℹ'), el('span', '', texte));
+  const st = $('statut').getBoundingClientRect();
+  if (st.height) b.style.top = `${st.top + st.height / 2}px`;
+  document.body.appendChild(b);
+  setTimeout(() => b.classList.add('part'), 4200);
+  setTimeout(() => b.remove(), 4900);
+}
 function bandeauChef(a) {
   const ancien = document.querySelector('.bandeau-chef');
   if (ancien) ancien.remove();
@@ -242,6 +266,29 @@ function bandeauChef(a) {
 }
 
 // ---------- Cartes détruites (brûlées) : elles s'embrasent à leur place avant de disparaître ----------
+// Unités revenues de la défausse (médecin, résurrection) : elles arrivent avec une lueur verte
+let retours = [];
+function noterRetours(avant, apres) {
+  retours = [];
+  if (!avant || !apres || avant.status !== 'jeu' || apres.status !== 'jeu') return;
+  (avant.players || []).forEach((p, j) => {
+    const q = (apres.players || [])[j];
+    if (!q) return;
+    const surPlateau = new Set();
+    RANGEES.forEach((r) => ((q.rangees || {})[r] || []).forEach((c) => surPlateau.add(c.u)));
+    (apres.players || []).forEach((x) => RANGEES.forEach((r) => ((x.rangees || {})[r] || []).forEach((c) => surPlateau.add(c.u))));
+    (p.defausse || []).forEach((c) => { if (surPlateau.has(c.u)) retours.push(c.u); });
+  });
+}
+function marquerRetours() {
+  retours.forEach((u) => {
+    const e = document.querySelector(`.rangee-cartes .carte[data-u="${u}"]`);
+    if (!e) return;
+    e.classList.add('revient');
+    setTimeout(() => e.classList.remove('revient'), 1600);
+  });
+  retours = [];
+}
 function preparerPertes(avant, apres) {
   if (!avant || !apres || sansAnimation || document.hidden || avant.status !== 'jeu' || apres.status !== 'jeu') return [];
   if ((avant.manche || 0) !== (apres.manche || 0)) return []; // fin de manche : le plateau est vidé, ce n'est pas une destruction
@@ -376,6 +423,7 @@ function animerCoup(dc) {
     // la carte a pu être redessinée entre-temps : on reprend celle du plateau
     const posee = d.type === 'unite' ? document.querySelector(`.rangee-cartes .carte[data-u="${dc.u}"]`) : null;
     if (arrivee) arrivee.style.visibility = '';
+    marquerRetours();
     if (posee) {
       posee.style.visibility = '';
       posee.classList.add('vient-de-poser');
@@ -1320,7 +1368,12 @@ function rendreCommandes() {
   const chefMoi = M.chefDe(moi);
   chef.textContent = chefMoi ? (moi.chefUtilise ? `Chef utilisé (${chefMoi.nom})` : `Chef : ${chefMoi.nom}${etiquetteChef(maPlace)}`) : 'Chef';
   chef.title = chefMoi ? chefMoi.texte : '';
-  chef.disabled = !tour || !M.chefUtilisable(etat, maPlace);
+  // chef indisponible : le bouton reste touchable pour expliquer pourquoi
+  const raison = chefMoi && etat.status === 'jeu' ? M.raisonChef(etat, maPlace) : '';
+  chef.disabled = !tour && !raison;
+  chef.classList.toggle('indispo', !!raison || !tour);
+  chef.dataset.raison = raison;
+  if (raison) chef.title = raison;
   $('btn-passer').disabled = !tour;
   // « Jouer cette carte » quand la carte n'a pas besoin qu'on choisisse sa place
   const carte = selectionCarte();
@@ -1415,6 +1468,9 @@ $('btn-revanche').addEventListener('click', () => agir((s) => { if (s.status !==
 $('btn-pret').addEventListener('click', () => action({ type: 'pret' }));
 $('btn-passer').addEventListener('click', () => action({ type: 'passer' }));
 $('btn-chef').addEventListener('click', () => {
+  const raison = $('btn-chef').dataset.raison;
+  if (raison) { bandeauInfo(raison); return; }
+  if (!monTour()) return;
   // effets à choix (météo, défausses, pioche) : on choisit la carte dans une fenêtre
   const options = M.choixChef(etat, maPlace);
   if (!options.length) { action({ type: 'chef' }); return; }
