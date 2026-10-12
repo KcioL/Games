@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v74';
+const VERSION = 'jeux-vol-v76';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'manifest.webmanifest',
@@ -15,6 +15,7 @@ const FICHIERS = [
   'chevaux/', 'chevaux/index.html', 'chevaux/chevaux.js', 'chevaux/chevaux.css',
   'puissance4/', 'puissance4/index.html', 'puissance4/puissance4.js', 'puissance4/puissance4.css',
   'kassen/', 'kassen/index.html', 'kassen/kassen.js', 'kassen/kassen.css', 'kassen/moteur.js', 'kassen/cartes.js', 'kassen/editions.js', 'kassen/compte.js', 'kassen/kassen/fond.jpg', 'kassen/gwynt/fond.jpg', 'kassen/kassen/jeu.js', 'kassen/gwynt/jeu.js',
+  'undercover/', 'undercover/index.html', 'undercover/undercover.js', 'undercover/undercover.css', 'undercover/mots.js',
   'tokyo/', 'tokyo/index.html', 'tokyo/tokyo.js', 'tokyo/tokyo.css', 'tokyo/moteur.js', 'tokyo/plateau.js',
 ];
 

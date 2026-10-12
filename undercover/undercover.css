@@ -1,0 +1,167 @@
+/* Undercover */
+:root {
+  --uc-civil: #4F8DE0;
+  --uc-undercover: #E0445A;
+  --uc-mrwhite: #F4F1E8;
+  --uc-violet: #2B1F4F;
+}
+
+/* ---------- Réglages (accueil) ---------- */
+.reglages { border: 1px solid var(--nuit-3); border-radius: 14px; padding: 12px 14px 14px; display: grid; gap: 12px; min-width: 0; }
+.reglages legend { font-weight: 700; padding: 0 6px; }
+.reglages legend small { color: var(--brume); font-weight: 400; }
+.themes { display: grid; gap: 8px; }
+.carte-salon label.theme { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--nuit); border: 2px solid var(--nuit-3); cursor: pointer; font-weight: 400; }
+.carte-salon label.theme input { width: auto; accent-color: var(--or); flex: none; }
+.theme span { display: grid; gap: 1px; }
+.theme strong { font-weight: 700; }
+.theme small { color: var(--brume); font-size: .82rem; }
+.theme:has(input:checked) { border-color: var(--or); background: #1E2A5C; }
+.ligne-reglages { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+#compo-apercu { margin: 0; }
+#compo-apercu.erreur { color: #F2A79A; }
+
+/* ---------- Jeu ---------- */
+#jeu { max-width: 680px; margin: 0 auto; padding: 10px 12px 40px; display: grid; gap: 12px; }
+.uc-entete { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--brume); font-size: .88rem; font-weight: 600; }
+.uc-theme { color: var(--or); }
+.statut { text-align: center; }
+.statut.a-toi { color: var(--or); }
+.uc-info { text-align: center; color: var(--brume); }
+
+/* Carte du mot */
+.carte-mot {
+  display: grid; justify-items: center; gap: 4px; width: 100%;
+  padding: 14px 16px; border-radius: 18px; border: 2px dashed var(--nuit-3);
+  background: linear-gradient(160deg, var(--uc-violet), var(--nuit-2));
+  color: var(--papier); font: inherit; text-align: center;
+}
+button.carte-mot { cursor: pointer; }
+.carte-mot.visible { border-style: solid; border-color: var(--or); }
+.carte-mot.grande { padding: 30px 18px; min-height: 180px; align-content: center; }
+.carte-mot-titre { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--brume); font-weight: 600; }
+.carte-mot-cache { font-size: 1.1rem; font-weight: 600; color: var(--or-clair); }
+.carte-mot-cache::before { content: "👁 "; }
+.carte-mot-texte { font-size: clamp(1.8rem, 7vw, 2.6rem); font-weight: 700; line-height: 1.1; color: var(--or-clair); overflow-wrap: anywhere; }
+.carte-mot-texte.mrwhite { color: #fff; text-shadow: 0 0 18px rgba(255, 255, 255, .45); }
+.carte-mot-aide { font-size: .88rem; color: var(--brume); max-width: 36ch; }
+.carte-mot:not(.grande) .carte-mot-texte { font-size: 1.6rem; }
+
+.uc-action { display: grid; gap: 12px; justify-items: stretch; }
+.uc-action > .btn { justify-self: center; min-width: min(320px, 100%); padding: 13px 20px; font-size: 1.05rem; }
+.btn-eliminer { background: var(--rouge) !important; color: #fff !important; }
+
+/* Ordre de parole */
+.uc-ordre { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; counter-reset: ordre; }
+.uc-ordre li { counter-increment: ordre; display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 999px; background: var(--nuit-2); border: 2px solid transparent; font-weight: 600; font-size: .92rem; }
+.uc-ordre li::before { content: counter(ordre); font-size: .75rem; color: var(--brume); min-width: 1ch; }
+.uc-ordre li .avatar { width: 24px; height: 24px; font-size: .8rem; }
+.uc-ordre li.fait { opacity: .5; }
+.uc-ordre li.actuel { border-color: var(--or); background: #2A3165; }
+
+/* Saisie d'un indice / d'une proposition */
+.uc-saisie { display: flex; gap: 8px; }
+.uc-saisie input { flex: 1 1 0; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--nuit-3); background: var(--nuit); color: var(--papier); font-size: max(16px, 1.05rem); }
+.uc-saisie input:focus { border-color: var(--or); outline: none; }
+.uc-saisie .btn { flex: none; }
+
+/* Joueurs */
+.uc-joueurs { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.uc-joueur {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 14px; background: var(--nuit-2); border: 2px solid transparent;
+  color: var(--papier); font: inherit; text-align: left;
+  transition: transform .12s, border-color .12s, background .12s;
+}
+.uc-joueur:disabled { cursor: default; opacity: 1; }
+.uc-joueur.moi { border-color: var(--nuit-3); }
+.uc-joueur.parle { border-color: var(--or); box-shadow: 0 0 0 3px rgba(242, 182, 50, .2); }
+.uc-joueur.elimine { opacity: .55; }
+.uc-joueur.elimine .uc-joueur-nom { text-decoration: line-through; }
+.uc-joueur.votable { cursor: pointer; background: #222E62; }
+.uc-joueur.votable:hover { border-color: var(--rouge); }
+.uc-joueur.votable:active { transform: scale(.98); }
+.uc-joueur.vise { border-color: var(--rouge); background: #4A2140; box-shadow: 0 0 0 3px rgba(224, 68, 90, .25); }
+.uc-joueur.vise::after { content: "🎯"; position: absolute; }
+.uc-joueur { position: relative; }
+.uc-joueur-texte { display: grid; gap: 3px; min-width: 0; justify-items: start; }
+.uc-joueur-nom { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.uc-joueur-etat { font-size: .84rem; color: var(--brume); overflow-wrap: anywhere; }
+.uc-joueur-score { font-size: .8rem; color: var(--brume); font-weight: 600; }
+.uc-joueur.vise::after { right: 8px; top: -8px; font-size: 1.1rem; }
+
+.avatar {
+  --c: var(--bleu);
+  width: 36px; height: 36px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; font-weight: 700; color: #fff;
+  background: var(--c); box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .2);
+}
+
+/* Rôles */
+.role { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .78rem; font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.role-civil { background: var(--uc-civil); color: #fff; }
+.role-undercover { background: var(--uc-undercover); color: #fff; }
+.role-mrwhite { background: var(--uc-mrwhite); color: var(--encre); }
+
+/* Joueur éliminé */
+.uc-elimine { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 18px 16px; border-radius: 18px; background: var(--nuit-2); border: 2px solid var(--nuit-3); animation: uc-apparait .4s cubic-bezier(.2, 1.2, .4, 1); }
+.uc-elimine.role-fond-civil { border-color: var(--uc-civil); }
+.uc-elimine.role-fond-undercover { border-color: var(--uc-undercover); }
+.uc-elimine.role-fond-mrwhite { border-color: var(--uc-mrwhite); }
+.uc-elimine-tete { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; }
+.uc-elimine-role { font-size: 1.1rem; }
+.uc-elimine-role .role { font-size: 1rem; padding: 2px 12px; }
+.uc-elimine-message { color: var(--papier); }
+.uc-detail { font-size: .85rem; color: var(--brume); }
+@keyframes uc-apparait { from { transform: scale(.85); opacity: 0; } }
+
+/* Indices écrits (en ligne) */
+.uc-indices { display: grid; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--nuit-3); }
+.uc-indices h3 { font-size: 1rem; color: var(--or); }
+.uc-indices-tour { display: grid; gap: 6px; }
+.uc-indices-titre { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--brume); font-weight: 600; }
+.uc-indices ul { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.uc-indices li { display: flex; gap: 6px; align-items: baseline; padding: 4px 10px; border-radius: 10px; background: var(--nuit-2); }
+.uc-indices-nom { font-size: .82rem; color: var(--brume); }
+.uc-indices-mot { font-weight: 700; }
+.uc-indices-elim { font-size: .85rem; color: var(--brume); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+
+/* Fin de partie */
+.uc-fin { display: grid; gap: 14px; justify-items: center; text-align: center; padding: 20px 16px; border-radius: 18px; background: linear-gradient(160deg, var(--uc-violet), var(--nuit-2)); border: 2px solid var(--or); animation: uc-apparait .4s cubic-bezier(.2, 1.2, .4, 1); }
+.uc-fin h2 { font-size: 1.6rem; color: var(--or-clair); }
+.uc-fin-civils { border-color: var(--uc-civil); }
+.uc-fin-imposteurs { border-color: var(--uc-undercover); }
+.uc-fin-mrwhite { border-color: var(--uc-mrwhite); }
+.uc-fin-detail { color: var(--papier); display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
+.uc-fin-mots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+.uc-fin-mot { display: grid; gap: 2px; padding: 10px; border-radius: 12px; background: rgba(79, 141, 224, .15); border: 1px solid var(--uc-civil); }
+.uc-fin-mot.undercover { background: rgba(224, 68, 90, .15); border-color: var(--uc-undercover); }
+.uc-fin-mot span { font-size: .78rem; color: var(--brume); text-transform: uppercase; letter-spacing: .06em; }
+.uc-fin-mot strong { font-size: 1.25rem; overflow-wrap: anywhere; }
+.uc-fin-joueurs { list-style: none; display: grid; gap: 6px; width: 100%; }
+.uc-fin-joueurs li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 3.2em 4.2em; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: rgba(0, 0, 0, .2); text-align: left; }
+.uc-fin-joueurs li .avatar { width: 28px; height: 28px; font-size: .85rem; }
+.uc-fin-joueurs li.gagnant { background: rgba(242, 182, 50, .14); }
+.uc-fin-nom { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uc-fin-gain { color: #8FD68A; font-weight: 700; text-align: right; }
+.uc-fin-total { color: var(--brume); font-size: .88rem; text-align: right; }
+.uc-fin-theme { display: grid; gap: 4px; font-weight: 600; font-size: .9rem; width: min(320px, 100%); }
+.uc-fin-theme select { padding: 10px 12px; border-radius: 10px; border: 2px solid var(--nuit-3); background: var(--nuit); color: var(--papier); }
+.uc-fin .btn { min-width: min(320px, 100%); padding: 13px 20px; }
+
+/* Revoir son mot */
+.uc-revoir { justify-self: center; }
+.uc-revoir-noms { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-top: 10px; }
+.uc-revoir-noms .btn { display: flex; align-items: center; gap: 8px; background: var(--nuit-3); color: var(--papier); margin: 0; text-align: left; }
+.uc-revoir-noms .avatar { width: 26px; height: 26px; font-size: .8rem; }
+.uc-dialog .carte-mot { margin-top: 10px; }
+.uc-dialog .btn-principal { margin-top: 12px; background: var(--or); color: var(--encre); }
+
+@media (max-width: 420px) {
+  .uc-joueurs { grid-template-columns: 1fr 1fr; }
+  .uc-joueur { grid-template-columns: auto minmax(0, 1fr); padding: 8px 10px; gap: 8px; }
+  .uc-joueur .avatar { width: 30px; height: 30px; }
+  .uc-joueur-score { grid-column: 2; font-size: .75rem; }
+  .uc-fin-joueurs li { grid-template-columns: auto minmax(0, 1fr) auto 2.6em; }
+  .uc-fin-total { display: none; }
+}

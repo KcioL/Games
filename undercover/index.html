@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Undercover</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🕵️</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="undercover.css">
+  <script type="module" src="undercover.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Undercover</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Chacun voit son mot sur son téléphone, écrit ses indices et vote. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <label>Joueurs
+          <select id="nb-joueurs">
+            <option value="3">3</option><option value="4">4</option><option value="5" selected>5</option>
+            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            <option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+          </select>
+        </label>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Tous autour d'un seul téléphone : chacun découvre son mot en secret, puis les indices se donnent à voix haute. Pas besoin d'internet.</p>
+        <label>Joueurs
+          <select id="local-nb">
+            <option value="3">3</option><option value="4">4</option><option value="5" selected>5</option>
+            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            <option value="9">9</option><option value="10">10</option><option value="11">11</option><option value="12">12</option>
+            <option value="13">13</option><option value="14">14</option><option value="15">15</option><option value="16">16</option>
+          </select>
+        </label>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+
+      <!-- Réglages : choisis par celui qui crée la partie -->
+      <fieldset class="reglages" id="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <div class="themes" role="radiogroup" aria-label="Thème des mots">
+          <label class="theme"><input type="radio" name="theme" value="general" checked><span><strong>Général</strong><small>Animaux, cuisine, objets, métiers…</small></span></label>
+          <label class="theme"><input type="radio" name="theme" value="anime"><span><strong>Anime · Jeux vidéo · Manga</strong><small>Personnages, séries, consoles…</small></span></label>
+          <label class="theme"><input type="radio" name="theme" value="melange"><span><strong>Les deux</strong><small>Un thème au hasard à chaque partie</small></span></label>
+        </div>
+        <div class="ligne-reglages">
+          <label>Undercover
+            <select id="reglage-undercover">
+              <option value="auto" selected>Auto</option>
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+            </select>
+          </label>
+          <label>Mister White
+            <select id="reglage-mrwhite">
+              <option value="auto" selected>Auto</option>
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+            </select>
+          </label>
+        </div>
+        <p class="astuce" id="compo-apercu"></p>
+      </fieldset>
+
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne-leur ce code :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" hidden>
+    <div class="uc-entete">
+      <span class="uc-tour" id="uc-tour"></span>
+      <span class="uc-theme" id="uc-theme"></span>
+    </div>
+    <p class="statut" id="statut" aria-live="polite"></p>
+    <section class="uc-mot" id="uc-mot" hidden></section>
+    <section class="uc-action" id="uc-action"></section>
+    <section class="uc-joueurs" id="uc-joueurs" aria-label="Joueurs"></section>
+    <section class="uc-indices" id="uc-indices" hidden></section>
+    <button class="btn btn-discret uc-revoir" id="btn-revoir" type="button" hidden>Revoir mon mot</button>
+  </main>
+
+  <!-- Revoir son mot (sur un seul téléphone) -->
+  <dialog class="regles uc-dialog" id="dialog-mot">
+    <h2>Revoir mon mot</h2>
+    <div id="dialog-mot-contenu"></div>
+    <button class="btn fermer" id="dialog-mot-fermer" type="button">Fermer</button>
+  </dialog>
+
+  <dialog class="regles" id="regles">
+    <h2>Undercover</h2>
+    <p>Chaque joueur reçoit un mot secret. Les <strong>civils</strong> ont tous le même mot. Les <strong>Undercover</strong> ont un mot proche, mais différent, et ne savent pas qu'ils sont Undercover. <strong>Mister White</strong> n'a aucun mot : il doit bluffer.</p>
+    <h3>Un tour</h3>
+    <ul>
+      <li>Chacun son tour, on donne un indice sur son mot : un seul mot, ni trop précis (les Undercover devineraient le mot des civils), ni trop vague (on vous soupçonnerait).</li>
+      <li>L'ordre de parole est tiré au sort à chaque tour : tout le monde peut commencer, Mister White compris (bon courage à lui !).</li>
+      <li>Quand tout le monde a parlé, on vote pour éliminer le joueur le plus suspect. Son rôle est révélé.</li>
+      <li>En cas d'égalité, on revote entre les ex æquo ; si l'égalité reste, le sort décide.</li>
+    </ul>
+    <h3>Gagner</h3>
+    <ul>
+      <li><strong>Civils</strong> : éliminer tous les Undercover et Mister White. +2 points pour chaque civil.</li>
+      <li><strong>Undercover et Mister White</strong> : tenir jusqu'à ce qu'il ne reste qu'un seul civil. +10 points pour chaque Undercover encore en jeu, +6 pour Mister White s'il est encore en jeu.</li>
+      <li><strong>Mister White éliminé</strong> : il a une chance de deviner le mot des civils. S'il trouve, il gagne seul (+6 points).</li>
+    </ul>
+    <h3>Jouer</h3>
+    <ul>
+      <li>En ligne, chacun écrit son indice sur son téléphone et vote de son côté.</li>
+      <li>Sur un seul téléphone, on se le passe pour découvrir son mot, puis on parle à voix haute et on désigne ensemble le joueur éliminé. « Revoir mon mot » permet de le relire en cas d'oubli.</li>
+      <li>Les points s'additionnent d'une partie à l'autre.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

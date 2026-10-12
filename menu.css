@@ -147,6 +147,13 @@ h1 {
   font-weight: 800;
 }
 
+.undercover .pastille {
+  background: radial-gradient(circle at 50% 120%, #F4F1E8 0 34%, transparent 35%), radial-gradient(circle, #2B1F4F 0 70%, #E0445A 71%);
+  color: #F4F1E8;
+  font-size: 1.7rem;
+  padding-bottom: 8px;
+}
+
 /* ---------- Deux façons de jouer ---------- */
 .modes-liste { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
 .mode { padding: 14px 16px; border-radius: 14px; border: 1px solid var(--nuit-3); display: grid; gap: 4px; }
@@ -167,6 +174,8 @@ h1 {
     padding: 18px;
   }
   .jouer { justify-self: stretch; text-align: center; padding: 9px 16px; }
+  /* rayon d'un seul jeu : la carte garde la taille des autres */
+  .jeux.seul { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
 }
 
 @media (max-width: 420px) {
