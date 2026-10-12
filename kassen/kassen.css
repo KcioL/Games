@@ -1063,6 +1063,12 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   .atelier-recap { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
   .carte.recap { --l: 110px; }
 }
+/* carte touchée dans le récap : n/max sur la carte et − / + dessous */
+.recap-carte.ouverte .carte.recap { box-shadow: 0 0 0 2px var(--kin-clair), 0 8px 16px rgba(0, 0, 0, .5); }
+.recap-carte.retiree .carte.recap { opacity: .45; }
+@media (hover: hover) {
+  .recap-carte:not(.recap-chef) .carte.recap:hover { box-shadow: 0 0 0 2px var(--kin-clair), 0 8px 16px rgba(0, 0, 0, .5); }
+}
 /* petit téléphone : 4 cartes par ligne au moins */
 @media (max-width: 420px) {
   .atelier-recap { grid-template-columns: repeat(4, 1fr); gap: 8px 6px; padding: 8px; }

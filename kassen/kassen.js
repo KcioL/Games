@@ -851,6 +851,7 @@ const nomDeck = (clan, n) => ((deckSauve(clan, n) || {}).nom || '').trim() || `D
 let atelier = null; // { clan, n (deck 1 à 3), deck: [ids], chef, nom, filtre }
 function chargerEmplacement(clan, n) {
   atelier = { clan, n, deck: [...deckEnregistre(clan, n)], filtre: atelier ? atelier.filtre : 'tout', chef: (chefEnregistre(clan, n) || {}).id, nom: (deckSauve(clan, n) || {}).nom || '' };
+  atelier.recapChoix = null;
   atelier.depart = JSON.stringify([atelier.deck, atelier.chef, atelier.nom]); // pour repérer les modifications
   $('atelier-nom').value = atelier.nom;
   $('atelier-nom').placeholder = `Deck ${n}`;
@@ -1000,18 +1001,50 @@ function rendreRecap(clan, dansDeck) {
     bloc.append(carte, el('span', 'recap-n', 'Chef'));
     zone.appendChild(bloc);
   }
-  const ids = Object.keys(dansDeck).sort((a, b) => {
+  // carte touchée dans le récap : on affiche « n / max » et les boutons − et +
+  // (elle reste affichée même à 0 exemplaire tant qu'elle est sélectionnée)
+  const choix = atelier.recapChoix;
+  const presents = Object.keys(dansDeck);
+  if (choix && !presents.includes(choix)) presents.push(choix);
+  const dispo = Object.fromEntries(COLLECTIONS[clan]);
+  const ids = presents.sort((a, b) => {
     // unités avant spéciales, puis l'ordre habituel (légendes d'abord)
     const sa = CARTES[a].type === 'unite' ? 0 : 1;
     const sb = CARTES[b].type === 'unite' ? 0 : 1;
     return sa - sb || ordre(a, b);
   });
+  const redessiner = () => { const y = window.scrollY; rendreAtelier(); window.scrollTo(0, y); };
   ids.forEach((id) => {
-    const bloc = el('div', 'recap-carte');
+    const n = dansDeck[id] || 0;
+    const max = dispo[id] || 0;
+    const ouvert = id === choix;
+    const bloc = el('div', 'recap-carte' + (ouvert ? ' ouverte' : '') + (n === 0 ? ' retiree' : ''));
     const carte = carteEl({ c: id }, { taille: 'recap' });
     carte.addEventListener('mouseenter', () => { $('atelier-detail').textContent = description({ c: id }); });
-    carte.addEventListener('click', () => changerDeck(id, -1));
-    bloc.append(carte, el('span', 'recap-n', `×${dansDeck[id]}`));
+    carte.addEventListener('click', () => {
+      atelier.recapChoix = ouvert ? null : id;
+      $('atelier-detail').textContent = description({ c: id });
+      redessiner();
+    });
+    if (ouvert) {
+      carte.appendChild(el('span', 'exemplaires' + (n > 0 ? ' pris' : ''), `${n}/${max}`));
+      bloc.appendChild(carte);
+      const barre = el('div', 'compteur');
+      const moins = el('button', 'btn pas', '−');
+      moins.type = 'button';
+      moins.disabled = n === 0;
+      moins.setAttribute('aria-label', `Retirer un exemplaire de ${CARTES[id].nom}`);
+      moins.addEventListener('click', () => changerDeck(id, -1));
+      const plus = el('button', 'btn pas', '+');
+      plus.type = 'button';
+      plus.disabled = n >= max;
+      plus.setAttribute('aria-label', `Ajouter un exemplaire de ${CARTES[id].nom}`);
+      plus.addEventListener('click', () => changerDeck(id, +1));
+      barre.append(moins, plus);
+      bloc.appendChild(barre);
+    } else {
+      bloc.append(carte, el('span', 'recap-n', `×${n}`));
+    }
     zone.appendChild(bloc);
   });
   if (!ids.length) zone.appendChild(el('p', 'recap-vide', 'Ton deck est vide : touche les cartes plus bas pour les ajouter.'));
