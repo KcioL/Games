@@ -1,6 +1,6 @@
 # Gwynt, édition Japon : liste des cartes
 
-Les **82 cartes** et les **12 chefs** sont illustrés (images de ce dossier, nommées avec leur id).
+Les **124 cartes** et les **12 chefs** sont illustrés (images de ce dossier, nommées avec leur id).
 
 ## Comment ajouter une carte
 
@@ -12,7 +12,7 @@ C'est tout : l'image remplace automatiquement le dessin de la carte, pour tous s
 
 Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter petit à petit.
 
-## 龍 Clan du Dragon (18 cartes)
+## 龍 Clan du Dragon (29 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
@@ -34,8 +34,19 @@ Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter peti
 | `tour_siege.jpg` | Tour de siège | 7 | Siège | — | 1 |
 | `ingenieur.jpg` | Ingénieur de siège | 4 | Siège | — | 1 |
 | `archer_monte.jpg` | Archer monté | 5 | Distance | — | 1 |
+| `tomoe.jpg` | Tomoe Gozen | 9 | Corps à corps | Légende | 1 |
+| `maitre_taiko.jpg` | Maître du taiko | 2 | Corps à corps | Cor | 1 |
+| `salve.jpg` | Arquebusiers en salve | 3 | Distance | Lien | 3 |
+| `canon_bronze.jpg` | Canon de bronze | 5 | Siège | Brûlure | 1 |
+| `garde_daimyo.jpg` | Garde du daimyō | 7 | Corps à corps | — | 2 |
+| `emissaire.jpg` | Émissaire du shōgun | 5 | Corps à corps | Espion | 1 |
+| `medecin_campagne.jpg` | Médecin de campagne | 4 | Distance | Médecin | 1 |
+| `belier.jpg` | Bélier de siège | 6 | Siège | — | 1 |
+| `capitaine_archers.jpg` | Capitaine des archers | 4 | Distance | Porte-étendard | 1 |
+| `onna_bugeisha.jpg` | Onna-bugeisha | 5 | Corps à corps ou Distance | — | 2 |
+| `infiltrateur_dragon.jpg` | Infiltrateur du Dragon | 4 | Corps à corps ou Distance | Espion | 1 |
 
-## 忍 Shinobi (17 cartes)
+## 忍 Shinobi (27 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
@@ -56,8 +67,18 @@ Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter peti
 | `guetteuse.jpg` | Guetteuse | 2 | Distance | Espion | 1 |
 | `cerf_volant.jpg` | Cerf-volant d'attaque | 7 | Siège | — | 1 |
 | `recrues.jpg` | Jeunes recrues | 3 | Corps à corps | — | 2 |
+| `fantome_iga.jpg` | Le Fantôme d'Iga | 9 | Corps à corps ou Distance | Légende | 1 |
+| `assassin_aube.jpg` | Assassin de l'aube | 4 | Corps à corps | Brûlure | 1 |
+| `saboteur.jpg` | Saboteur | 4 | Siège | Brûlure | 1 |
+| `corbeaux.jpg` | Clan des corbeaux | 2 | Distance | Rassemblement | 3 |
+| `jumelles.jpg` | Sœurs jumelles | 4 | Distance | Lien | 2 |
+| `jonin.jpg` | Jōnin | 4 | Corps à corps | Porte-étendard | 1 |
+| `komuso.jpg` | Komusō | 2 | Distance | Cor | 1 |
+| `agent_double.jpg` | Agent double | 3 | Siège | Espion | 1 |
+| `infiltree.jpg` | Infiltrée du château | 6 | Corps à corps ou Distance | — | 1 |
+| `fumigenes.jpg` | Lanceur de fumigènes | 5 | Siège | — | 2 |
 
-## 妖 Yōkai (17 cartes)
+## 妖 Yōkai (28 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
@@ -78,8 +99,19 @@ Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter peti
 | `tsuchigumo.jpg` | Tsuchigumo | 6 | Corps à corps | — | 1 |
 | `kamaitachi.jpg` | Kamaitachi | 5 | Corps à corps ou Distance | — | 1 |
 | `ittan_momen.jpg` | Ittan-momen | 4 | Distance | — | 1 |
+| `shuten_doji.jpg` | Shuten-dōji | 10 | Corps à corps | Légende | 1 |
+| `omukade.jpg` | Ōmukade | 6 | Corps à corps | Brûlure | 1 |
+| `hitodama.jpg` | Hitodama | 2 | Distance | Rassemblement | 3 |
+| `nopperabo.jpg` | Nopperabō | 4 | Corps à corps | Espion | 1 |
+| `inugami.jpg` | Meute d'inugami | 3 | Corps à corps | Lien | 3 |
+| `zashiki_warashi.jpg` | Zashiki-warashi | 2 | Siège | Porte-étendard | 1 |
+| `biwa.jpg` | Biwa-bokuboku | 2 | Distance | Cor | 1 |
+| `raiju.jpg` | Raijū | 6 | Corps à corps ou Distance | — | 1 |
+| `funayurei.jpg` | Funayūrei | 3 | Distance | Médecin | 1 |
+| `wanyudo.jpg` | Wanyūdō | 7 | Siège | — | 1 |
+| `chochin.jpg` | Chōchin-obake | 4 | Siège | Lien | 3 |
 
-## 僧 Sōhei (15 cartes)
+## 僧 Sōhei (25 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
@@ -98,6 +130,16 @@ Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter peti
 | `archer_cheval.jpg` | Moine archer à cheval | 5 | Distance | — | 1 |
 | `bonze.jpg` | Bonze guérisseur | 3 | Distance | Médecin | 1 |
 | `cloche.jpg` | Gardien de la cloche | 4 | Siège | — | 1 |
+| `benkei.jpg` | Benkei | 9 | Corps à corps | Légende | 1 |
+| `maitre_gong.jpg` | Maître du gong | 2 | Siège | Cor | 1 |
+| `sutras.jpg` | Récitant de sutras | 3 | Siège | Porte-étendard | 1 |
+| `frondeurs.jpg` | Frondeurs du temple | 3 | Distance | Rassemblement | 3 |
+| `porteurs_belier.jpg` | Porteurs de bélier | 4 | Siège | Lien | 2 |
+| `exorciste.jpg` | Exorciste | 4 | Distance | Brûlure | 1 |
+| `nio.jpg` | Gardien Niō | 7 | Corps à corps | — | 1 |
+| `moine_cimes.jpg` | Moine des cimes | 5 | Corps à corps ou Distance | — | 1 |
+| `catapulte_monastere.jpg` | Catapulte du monastère | 6 | Siège | — | 1 |
+| `nonne_guerriere.jpg` | Nonne guerrière | 5 | Corps à corps | — | 2 |
 
 ## Cartes neutres, utilisables par tous les clans (8 cartes)
 

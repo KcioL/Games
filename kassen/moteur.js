@@ -722,7 +722,8 @@ export function decisionBot(s, i) {
   }
 
   // Les espions d'abord : piocher des cartes vaut presque toujours le coup
-  const espion = coups.find((c) => c.carte && c.carte.capacite === 'espion');
+  // (espion jouable sur deux rangées : celle où il rapporte le moins à l'adversaire)
+  const espion = coups.filter((c) => c.carte && c.carte.capacite === 'espion').sort((a, b) => b.gain - a.gain)[0];
   if (espion) return espion.action;
 
   // Économiser ses cartes : passer avec une bonne avance, si ce n'est pas la manche décisive
