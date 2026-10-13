@@ -634,8 +634,22 @@ function montrer(ecran) {
 // hauteur réelle de la barre du haut (le plateau prend le reste de la fenêtre)
 // Hauteur réelle de l'écran : sur iPhone, « 100dvh » est faux juste après une rotation.
 // On la mesure à chaque changement (et encore un peu après, le temps que Safari se stabilise).
+// Ordinateur, fenêtre du navigateur sans barre (touche F11…) : elle couvre tout l'écran, mais la barre
+// des tâches de Windows reste par-dessus. On retire sa hauteur pour que rien ne passe derrière.
+// Le vrai « Plein écran » du site (qui cache la barre des tâches) garde toute la hauteur.
+function hauteurBarreTaches() {
+  if (document.fullscreenElement || !window.matchMedia('(pointer: fine)').matches) return 0;
+  const s = window.screen;
+  if (!s || !s.height || !s.availHeight) return 0;
+  const zoom = window.outerWidth && window.innerWidth ? window.outerWidth / window.innerWidth : 1; // pixels écran par pixel de page
+  const sansBarreNavigateur = Math.abs(window.outerHeight - window.innerHeight * zoom) < 4;
+  const toutEcran = window.outerHeight >= s.height - 2;
+  if (!sansBarreNavigateur || !toutEcran) return 0;
+  const enBas = s.height - ((s.availTop || 0) + s.availHeight); // barre des tâches en bas de l'écran
+  return Math.max(0, enBas) / zoom;
+}
 function mesurerBarre() {
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  const h = (window.visualViewport ? window.visualViewport.height : window.innerHeight) - hauteurBarreTaches();
   document.documentElement.style.setProperty('--hauteur', `${Math.round(h)}px`);
   document.documentElement.style.setProperty('--h-barre', `${document.querySelector('.barre').offsetHeight}px`);
   if (document.body.classList.contains('en-bataille')) window.scrollTo(0, 0);
@@ -646,6 +660,7 @@ function apresRotation() {
 }
 window.addEventListener('resize', apresRotation);
 window.addEventListener('orientationchange', apresRotation);
+document.addEventListener('fullscreenchange', apresRotation);
 if (window.visualViewport) window.visualViewport.addEventListener('resize', mesurerBarre);
 mesurerBarre();
 // Téléphone : la partie se joue en paysage. Sur Android, plein écran + verrouillage de l'orientation
