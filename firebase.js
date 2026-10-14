@@ -24,7 +24,6 @@ export { ref, set, get, onValue, update, runTransaction, query, orderByChild, en
 
 // Ménage : les salons inactifs depuis plus de 24 h sont supprimés (sans gêner le jeu)
 setTimeout(() => nettoyerVieuxSalons({ db, ref, get, query, orderByChild, endAt, remove }), 3000);
-
 // Le script UNO (non-module) lit ces deux variables globales.
 // En mode « sur ce téléphone », il utilise la base locale : on ne l'écrase pas.
 if (!window.modeLocal) {
