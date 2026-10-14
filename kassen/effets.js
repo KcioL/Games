@@ -168,16 +168,14 @@ const SYMBOLES = { rassemblement: SVG_RASSEMBLEMENT };
 
 export function flashCapacite(carte, capacite, { duree = 1300 } = {}) {
   if (!carte) return;
-  const r = carte.getBoundingClientRect();
-  if (!r.width) return;
+  // la lueur est posée DANS la carte : elle la suit exactement (même si la carte rebondit ou si la rangée se décale)
   const voile = document.createElement('div');
   voile.className = 'flash-capacite';
-  Object.assign(voile.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
   const symbole = document.createElement('div');
   symbole.className = 'flash-symbole';
   symbole.innerHTML = SYMBOLES[capacite] || '';
   voile.appendChild(symbole);
-  document.body.appendChild(voile);
+  carte.appendChild(voile);
   voile.animate([
     { opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.7 }, { opacity: 0 },
   ], { duration: duree, easing: 'ease-out', fill: 'forwards' });

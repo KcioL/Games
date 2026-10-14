@@ -427,11 +427,11 @@ function animerCoup(dc) {
   if (d.type === 'meteo') effet = { cac: 'neige', dist: 'brouillard', siege: 'pluie' }[String(d.meteo).split('+')[0]];
   if (d.type === 'eclaircie') effet = 'soleil';
   if (d.type === 'brasier') effet = 'feu';
-  const tenue = effet ? 1500 : 380;
-  const allerAuCentre = 420;
+  const tenue = legende ? 900 : effet ? 1500 : 380;
+  const allerAuCentre = legende ? 650 : 420;
   const seposer = 420;
-  // légende : comme dans The Witcher 3, elle file directement à sa place et sort d'un nuage de fumée
-  const duree = legende ? 520 : allerAuCentre + tenue + seposer;
+  // légende : agrandie au centre de l'écran, puis elle se pose dans un nuage de fumée (comme dans The Witcher 3)
+  const duree = allerAuCentre + tenue + seposer;
   // les bots attendent la fin de l'animation (fumée d'une légende, cartes appelées par un rassemblement)
   const suite = legende ? 2000 : appelees.length || d.capacite === 'rassemblement' ? 1500 + appelees.length * 220 : 300;
   finAnnonce = Math.max(finAnnonce, Date.now() + duree + suite);
@@ -439,10 +439,7 @@ function animerCoup(dc) {
   const fin = arrivee ? vers(arrivee.getBoundingClientRect()) : `translate(0, -20px) scale(.85)`;
   const t1 = allerAuCentre / duree;
   const t2 = (allerAuCentre + tenue) / duree;
-  const anim = legende ? vol.animate([
-    { transform: depart, opacity: 0.6 },
-    { transform: fin, opacity: 1 },
-  ], { duration: duree, easing: 'cubic-bezier(.3, .6, .3, 1)', fill: 'forwards' }) : vol.animate([
+  const anim = vol.animate([
     { transform: depart, opacity: 0.6, offset: 0 },
     { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: t1, easing: 'ease-in-out' },
     { transform: 'translate(0, 0) scale(1.03)', opacity: 1, offset: t2, easing: 'cubic-bezier(.5, 0, .75, 0)' },

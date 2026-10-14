@@ -110,7 +110,7 @@ body.kassen {
 .carte .image-carte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .carte.image-pleine { background: #120A09; border-color: transparent; }
 .carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
-.carte.image-pleine > :not(.image-carte):not(.exemplaires):not(.btn-harakiri) { display: none; }
+.carte.image-pleine > :not(.image-carte):not(.exemplaires):not(.btn-harakiri):not(.flash-capacite) { display: none; }
 /* …sauf sur le plateau quand la force a changé : un rond blanc recouvre le rond imprimé
    (centré sur lui : 13,7 % de la largeur, 9,8 % de la hauteur d'une carte 765 × 1024),
    avec la force actuelle en vert (en hausse) ou en rouge (en baisse) */
@@ -1116,9 +1116,9 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 /* ---------- Effets de pose (effets.js) : légende (fumée + mèche) et rassemblement ---------- */
 .effet-canvas { position: fixed; z-index: 57; pointer-events: none; }
 .flash-capacite {
-  position: fixed; z-index: 57; pointer-events: none; overflow: hidden; border-radius: 6px;
+  position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; border-radius: inherit;
   background: radial-gradient(ellipse at 50% 45%, rgba(255, 252, 235, .92) 0%, rgba(255, 228, 150, .78) 45%, rgba(214, 160, 60, .55) 100%);
-  box-shadow: 0 0 calc(var(--l, 60px) * .25) rgba(255, 210, 110, .9);
+  box-shadow: inset 0 0 calc(var(--l, 60px) * .2) rgba(255, 200, 90, .9);
   display: grid; place-items: center;
 }
 .flash-symbole { width: 72%; aspect-ratio: 1; filter: drop-shadow(0 0 6px rgba(255, 255, 255, .9)); }
