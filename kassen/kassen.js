@@ -13,6 +13,7 @@ import {
 let etat = null;
 let maPlace = 0;
 let selection = null; // uid de la carte choisie dans la main
+let harakiriDe = null; // uid de l'unité qui va faire harakiri (on choisit alors sa cible chez l'adversaire)
 
 const salon = initSalon({
   jeu: 'kassen',
@@ -30,6 +31,8 @@ const salon = initSalon({
     const coup = preparerAnimation(s, place);
     const chef = preparerChef(s, place);
     const pertes = preparerPertes(etat, s);   // cartes qui vont disparaître du plateau (détruites)
+    // harakiri : annoncé dans un bandeau (les deux cartes brûlent ensuite)
+    const hk = s.dernierHarakiri && etat && (!etat.dernierHarakiri || etat.dernierHarakiri.ts !== s.dernierHarakiri.ts) ? s.dernierHarakiri : null;
     noterRetours(etat, s);                     // cartes qui reviennent de la défausse
     etat = M.normaliser(s);
     maPlace = place;
@@ -40,6 +43,12 @@ const salon = initSalon({
     if (coup) setTimeout(() => animerCoup(coup), delaiChef);
     if (!coup) setTimeout(marquerRetours, delaiChef + 100);
     if (pertes.length) setTimeout(() => brulerCartes(pertes), delaiChef + (coup && CARTES[coup.c] && CARTES[coup.c].type === 'brasier' ? 1100 : coup ? 650 : 250));
+    if (hk) {
+      const jp = s.players[hk.joueur];
+      const trouver = (u) => (s.players.flatMap((q) => q.defausse || []).find((c) => c.u === u) || {}).c;
+      const a = CARTES[trouver(hk.u)]; const b = CARTES[trouver(hk.cible)];
+      if (a && b) bandeauInfo(`切 ${jp.name} : ${a.nom} fait harakiri et emporte ${b.nom}.`);
+    }
     planifierBot();
   },
   // Sur un seul téléphone : la main de chacun est secrète, on cache l'écran entre deux joueurs
@@ -65,7 +74,7 @@ function jeuPrefere() {
 function agir(fn) { return salon.agir((s) => fn(M.normaliser(s))); }
 // « Tu as gagné » a un sens en ligne ou contre le bot ; à deux sur un téléphone, on nomme le gagnant
 const pointDeVueJoueur = () => !salon.estLocal() || etat.players.some((p) => p.bot);
-const action = (a) => { selection = null; return agir((s) => M.jouerAction(s, maPlace, a)); };
+const action = (a) => { selection = null; harakiriDe = null; return agir((s) => M.jouerAction(s, maPlace, a)); };
 
 // =====================================================================
 // Bot (et surveillant anti-blocage)
@@ -514,6 +523,7 @@ function carteEl(carte, { force, taille = '' } = {}) {
     e.appendChild(el('span', 'rangee-icone', d.rangees.map((r) => KANJI_RANGEES[r]).join('')));
     if (d.capacite) e.appendChild(el('span', 'capacite', CAPACITES[d.capacite].kanji));
     if (d.legende) e.appendChild(el('span', 'capacite legende-icone', CAPACITES.legende.kanji));
+    if (d.pouvoir && CAPACITES[d.pouvoir]) e.appendChild(el('span', 'capacite pouvoir-icone', CAPACITES[d.pouvoir].kanji));
   } else {
     e.appendChild(el('span', 'kanji-special', d.kanji));
   }
@@ -537,6 +547,7 @@ function capacitesDe(d) {
   const liste = [];
   if (d.legende) liste.push({ cle: 'legende', ...CAPACITES.legende });
   if (d.capacite && CAPACITES[d.capacite]) liste.push({ cle: d.capacite, ...CAPACITES[d.capacite] });
+  if (d.pouvoir && CAPACITES[d.pouvoir]) liste.push({ cle: d.pouvoir, ...CAPACITES[d.pouvoir] });
   return liste.map((c) => ({ kanji: (d.edition === 'gwynt' && SYMBOLES_GWYNT[c.cle]) || c.kanji, nom: nomCapacite(d, c.cle), texte: (d.edition === 'gwynt' && TEXTES_GWYNT[c.cle]) || texteJeu(d, c.texte) }));
 }
 
@@ -1263,6 +1274,26 @@ function rendreCamp(zone, j, ordre) {
         ev.stopPropagation();
         ouvrirLoupe({ d: CARTES[carte.c], carte, force: M.forceCarte(etat, j, r, carte) });
       });
+      // Harakiri : bouton 切 sur mes unités qui en sont capables (à mon tour, si une cible existe)
+      if (j === maPlace && M.ciblesHarakiri(etat, maPlace, carte.u).length) {
+        const b = el('button', 'btn-harakiri' + (harakiriDe === carte.u ? ' actif' : ''), '切');
+        b.type = 'button';
+        b.title = harakiriDe === carte.u ? 'Annuler le harakiri' : 'Harakiri : se sacrifier et emporter une unité adverse';
+        b.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+        b.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          harakiriDe = harakiriDe === carte.u ? null : carte.u;
+          selection = null;
+          rendre();
+        });
+        e.appendChild(b);
+        if (harakiriDe === carte.u) e.classList.add('harakiri-pret');
+      }
+      // Harakiri en cours : on touche l'unité adverse à emporter
+      if (j !== maPlace && harakiriDe !== null && M.ciblesHarakiri(etat, maPlace, harakiriDe).some((c) => c.cible === carte.u)) {
+        e.classList.add('cible', 'cible-harakiri');
+        e.addEventListener('click', (ev) => { ev.stopPropagation(); action({ type: 'harakiri', u: harakiriDe, cible: carte.u }); });
+      }
       // Kagemusha : on touche l'unité à reprendre
       if (j === maPlace && cibles.some((c) => c.cible === carte.u)) {
         e.classList.add('cible');
@@ -1324,6 +1355,7 @@ function rendreMain() {
     e.addEventListener('click', () => {
       if (clicIgnore) return; // fin d'un glisser-déposer
       selection = selection === carte.u ? null : carte.u;
+      harakiriDe = null;
       rendre();
     });
     e.addEventListener('pointerdown', (ev) => commencerGlisse(ev, carte, e));
@@ -1493,6 +1525,11 @@ function rendreStatut() {
     st.classList.remove('a-toi');
     return;
   }
+  if (harakiriDe !== null) {
+    st.textContent = 'Harakiri : touche l\'unité adverse à emporter (ou 切 pour annuler).';
+    st.classList.add('a-toi');
+    return;
+  }
   if (monTour()) {
     const autre = etat.players[1 - maPlace];
     const nom = salon.estLocal() && !autre.bot ? `${moi.name}, ` : '';
@@ -1649,10 +1686,12 @@ $('btn-jouer').addEventListener('click', () => {
   jouerSelection(cibles.length === 1 && cibles[0].rangee ? { rangee: cibles[0].rangee } : {});
 });
 
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && harakiriDe !== null) { harakiriDe = null; rendre(); } });
+
 // ---------- Règles ----------
 function remplirRegles() {
   const cap = $('regles-capacites');
-  Object.values(CAPACITES).forEach((c) => cap.appendChild(el('li', '', `${c.kanji} ${c.nom} : ${c.texte}`)));
+  Object.values(CAPACITES).forEach((c) => cap.appendChild(el('li', '', `${c.kanji} ${c.nom}${c.clan ? ` (capacité de clan, ${c.clan})` : ''} : ${c.texte}`)));
   const spe = $('regles-speciales');
   ['neige', 'brume', 'typhon', 'soleil', 'taiko', 'kagemusha', 'raijin'].forEach((k) => { if (CARTES[k]) spe.appendChild(el('li', '', `${CARTES[k].kanji} ${CARTES[k].nom} : ${CARTES[k].texte}`)); });
   const clans = $('regles-clans');
@@ -1662,6 +1701,8 @@ function remplirRegles() {
 // =====================================================================
 function rendre() {
   if (!etat) return;
+  // harakiri annulé si ce n'est plus possible (tour fini, unité partie…)
+  if (harakiriDe !== null && !M.ciblesHarakiri(etat, maPlace, harakiriDe).length) harakiriDe = null;
   cacherSurvol(); // la carte survolée a pu être redessinée
   if (etat.status === 'clans') { montrer('choix-clan'); rendreClans(); }
   else if (etat.status === 'echange') { montrer('echange-cartes'); rendreEchange(); }

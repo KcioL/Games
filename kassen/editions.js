@@ -2,7 +2,7 @@
 // Les deux fichiers ont le même format. Chacun est vérifié, puis ses clans et ses cartes sont ajoutés
 // aux catalogues communs (cartes.js). Les images sont dans <jeu>/cartes/<id>.jpg.
 import {
-  CARTES, CLANS, COLLECTIONS, DECKS_DEFAUT, CAPACITES, RANGEES, EFFETS_ATOUT, EFFETS_CHEF, ALIAS_CHEF,
+  CARTES, CLANS, COLLECTIONS, DECKS_DEFAUT, CAPACITES, POUVOIRS, RANGEES, EFFETS_ATOUT, EFFETS_CHEF, ALIAS_CHEF,
   DECK_MIN_UNITES, DECK_MAX_SPECIALES,
 } from './cartes.js';
 
@@ -66,6 +66,8 @@ export function verifierJeu(jeu) {
       if (!Number.isInteger(c.force) || c.force < 0) erreurs.push(`${ou} : « force » doit être un nombre entier.`);
       if (!['cac', 'dist', 'siege', 'cac+dist'].includes(c.rangee)) erreurs.push(`${ou} : rangée inconnue (« ${c.rangee} »).`);
       if (c.capacite && !CAPACITES[c.capacite]) erreurs.push(`${ou} : capacité inconnue (« ${c.capacite} »).`);
+      if (c.pouvoir && !POUVOIRS.includes(c.pouvoir)) erreurs.push(`${ou} : capacité de clan inconnue (« ${c.pouvoir} » ; possibles : ${POUVOIRS.join(', ')}).`);
+      if (c.capacite && POUVOIRS.includes(c.capacite)) erreurs.push(`${ou} : « ${c.capacite} » est une capacité de clan, mets-la dans « pouvoir ».`);
       if (['lien', 'rassemblement'].includes(c.capacite) && !c.groupe) erreurs.push(`${ou} : la capacité « ${c.capacite} » demande un « groupe ».`);
     } else if (SPECIAUX[c.type]) {
       if (c.type === 'meteo' && !zones(c.meteo).every((r) => RANGEES.includes(r))) erreurs.push(`${ou} : précise « meteo » ('cac', 'dist', 'siege', ou plusieurs comme 'dist+siege').`);
@@ -100,6 +102,7 @@ function charger(edition, jeu, prefixe) {
       if (c.rangee === 'cac+dist') base.capacite = 'agile';
       if (c.capacite) base.capacite = c.capacite;
       if (c.groupe) base.groupe = id(c.groupe);
+      if (c.pouvoir) base.pouvoir = c.pouvoir;
     } else if (c.type === 'meteo') {
       Object.assign(base, { type: 'meteo', meteo: c.meteo, kanji: c.symbole || SPECIAUX.meteo.symbole[zones(c.meteo)[0]],
         texte: c.texte || `Toutes les unités ${zones(c.meteo).map((r) => NOMS_METEO[r]).join(' et ')} (des deux camps) tombent à 1 de force.` });

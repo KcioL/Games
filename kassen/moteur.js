@@ -49,12 +49,16 @@ export function forceCarte(s, j, r, carte) {
   const base = d.capacite === 'espion' && s.players.some((p, k) => effetActif(s, k, 'espions-doubles')) ? d.force * 2 : d.force;
   if (d.legende) return base;
   // mauvais temps : la force tombe à 1 (chef « météo à moitié » : elle n'est que divisée par deux)
-  let f = !s.meteo[r] ? base : effetActif(s, j, 'meteo-moitie') ? Math.max(1, Math.ceil(base / 2)) : 1;
+  // (Volonté de fer : insensible aux météos)
+  let f = !s.meteo[r] || d.pouvoir === 'volonte' ? base : effetActif(s, j, 'meteo-moitie') ? Math.max(1, Math.ceil(base / 2)) : 1;
   const rangee = s.players[j].rangees[r];
   if (d.capacite === 'lien') f *= rangee.filter((x) => def(x).capacite === 'lien' && def(x).groupe === d.groupe).length;
   f += rangee.filter((x) => x.u !== carte.u && def(x).capacite === 'moral').length;
   // cor : carte Taiko sur la rangée, ou une autre unité « Cor » dans la rangée (ne se cumulent pas)
   if (s.players[j].cors[r] || rangee.some((x) => x.u !== carte.u && def(x).capacite === 'cor')) f *= 2;
+  // Malédiction : −1 par yōkai maudit dans la rangée adverse en face (jamais sous 1)
+  const maudits = s.players[adversaire(j)].rangees[r].filter((x) => def(x).pouvoir === 'malediction').length;
+  if (maudits) f = Math.max(Math.min(f, 1), f - maudits);
   return f;
 }
 
@@ -205,15 +209,18 @@ function poserUnite(s, i, carte, r, { effets = true, auto = false } = {}) {
   if (d.capacite === 'brasier_rangee') bruler(s, adversaire(camp), r);
 }
 
+// Brûlure et Colère de Raijin épargnent les légendes et les unités camouflées
+const protegeeDuFeu = (c) => def(c).legende || def(c).pouvoir === 'camouflage';
+
 function bruler(s, j, r) {
   if (totalRangee(s, j, r) < 10) return 0;
-  const cibles = s.players[j].rangees[r].filter((c) => estUnite(c) && !def(c).legende);
+  const cibles = s.players[j].rangees[r].filter((c) => estUnite(c) && !protegeeDuFeu(c));
   if (!cibles.length) return 0;
   const max = Math.max(...cibles.map((c) => forceCarte(s, j, r, c)));
   const garder = [];
   let n = 0;
   s.players[j].rangees[r].forEach((c) => {
-    if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { s.players[j].defausse.push(c); n++; } else garder.push(c);
+    if (estUnite(c) && !protegeeDuFeu(c) && forceCarte(s, j, r, c) === max) { s.players[j].defausse.push(c); n++; } else garder.push(c);
   });
   s.players[j].rangees[r] = garder;
   return n;
@@ -279,14 +286,14 @@ export function choisirPremier(s, i, moi) {
 function brasier(s) {
   let max = 0;
   s.players.forEach((p, j) => RANGEES.forEach((r) => p.rangees[r].forEach((c) => {
-    if (estUnite(c) && !def(c).legende) max = Math.max(max, forceCarte(s, j, r, c));
+    if (estUnite(c) && !protegeeDuFeu(c)) max = Math.max(max, forceCarte(s, j, r, c));
   })));
   if (max <= 0) return 0;
   let detruites = 0;
   s.players.forEach((p, j) => RANGEES.forEach((r) => {
     const garder = [];
     p.rangees[r].forEach((c) => {
-      if (estUnite(c) && !def(c).legende && forceCarte(s, j, r, c) === max) { p.defausse.push(c); detruites++; } else garder.push(c);
+      if (estUnite(c) && !protegeeDuFeu(c) && forceCarte(s, j, r, c) === max) { p.defausse.push(c); detruites++; } else garder.push(c);
     });
     p.rangees[r] = garder;
   }));
@@ -407,7 +414,7 @@ export function chefUtilisable(s, i) {
   const r = effet.split('-')[1];
   switch (famille(effet)) {
     case 'cor': return !p.cors[r];
-    case 'bruler': return totalRangee(s, j, r) >= 10 && s.players[j].rangees[r].some((c) => estUnite(c) && !def(c).legende);
+    case 'bruler': return totalRangee(s, j, r) >= 10 && s.players[j].rangees[r].some((c) => estUnite(c) && !protegeeDuFeu(c));
     case 'meteo': return r ? !s.meteo[r] && !!meteoEnPioche(p, r) : choixChef(s, i).length > 0;
     case 'eclaircie': return RANGEES.some((x) => s.meteo[x]);
     case 'resurrection': return p.defausse.some((x) => estUnite(x) && !def(x).legende && def(x).capacite !== 'espion');
@@ -561,6 +568,40 @@ export function utiliserChef(s, i, u, defausse) {
 }
 
 // ---------------------------------------------------------------------
+// Harakiri (Clan du Dragon) : à son tour, au lieu de jouer une carte, une unité « harakiri » du joueur
+// se sacrifie et emporte avec elle l'unité adverse choisie (hors légendes)
+// ---------------------------------------------------------------------
+const trouverSurPlateau = (p, u) => {
+  for (const r of RANGEES) { const c = p.rangees[r].find((x) => x.u === u); if (c) return { carte: c, rangee: r }; }
+  return null;
+};
+// Unités adverses que l'unité u peut emporter (liste vide si elle ne peut pas faire harakiri maintenant)
+export function ciblesHarakiri(s, i, u) {
+  const p = s.players[i];
+  if (s.status !== 'jeu' || s.active !== i || s.attente || p.passe) return [];
+  const moi = trouverSurPlateau(p, u);
+  if (!moi || def(moi.carte).pouvoir !== 'harakiri') return [];
+  const cibles = [];
+  RANGEES.forEach((r) => s.players[adversaire(i)].rangees[r].forEach((c) => { if (estUnite(c) && !def(c).legende) cibles.push({ rangee: r, cible: c.u }); }));
+  return cibles;
+}
+export function harakiri(s, i, u, cible) {
+  if (!ciblesHarakiri(s, i, u).some((c) => c.cible === cible)) return false;
+  const p = s.players[i];
+  const q = s.players[adversaire(i)];
+  const moi = trouverSurPlateau(p, u);
+  const lui = trouverSurPlateau(q, cible);
+  p.rangees[moi.rangee] = p.rangees[moi.rangee].filter((x) => x.u !== u);
+  q.rangees[lui.rangee] = q.rangees[lui.rangee].filter((x) => x.u !== cible);
+  p.defausse.push(moi.carte);
+  q.defausse.push(lui.carte);
+  s.dernierHarakiri = { joueur: i, u, cible, ts: Date.now() + Math.random() };
+  journal(s, `${p.name} : ${def(moi.carte).nom} fait harakiri et emporte ${def(lui.carte).nom}.`);
+  apresAction(s, i);
+  return true;
+}
+
+// ---------------------------------------------------------------------
 // Tours, passes et manches
 // ---------------------------------------------------------------------
 function apresAction(s, i) {
@@ -574,7 +615,8 @@ function apresAction(s, i) {
 function passerSiBloque(s) {
   if (s.status !== 'jeu') return;
   const p = s.players[s.active];
-  if (!p.passe && p.main.length === 0 && !chefUtilisable(s, s.active)) passer(s, s.active);
+  const harakiriPossible = RANGEES.some((r) => p.rangees[r].some((c) => ciblesHarakiri(s, s.active, c.u).length));
+  if (!p.passe && p.main.length === 0 && !chefUtilisable(s, s.active) && !harakiriPossible) passer(s, s.active);
 }
 
 export function passer(s, i) {
@@ -674,6 +716,16 @@ function evaluerCoups(s, i) {
       coups.push({ action: { type: 'jouer', u: carte.u, choix }, gain, cout: d.type === 'unite' ? d.force : 4, carte: d });
     });
   });
+  // harakiri : chaque unité capable, contre chaque cible
+  RANGEES.forEach((r) => s.players[i].rangees[r].forEach((c) => {
+    if (def(c).pouvoir !== 'harakiri') return;
+    ciblesHarakiri(s, i, c.u).forEach((choix) => {
+      const t = cloner(s);
+      if (!harakiri(t, i, c.u, choix.cible)) return;
+      // garder une carte en main a de la valeur : un harakiri qui rapporte autant qu'une carte jouée est préférable
+      coups.push({ action: { type: 'harakiri', u: c.u, cible: choix.cible }, gain: (total(t, i) - total(t, j)) - ecart0 + 2, cout: 1 });
+    });
+  }));
   if (chefUtilisable(s, i)) {
     const options = choixChef(s, i);
     (options.length ? options.map((c) => c.u) : [undefined]).forEach((u) => {
@@ -746,6 +798,7 @@ export function jouerAction(s, i, a) {
     case 'pret': return pret(s, i);
     case 'jouer': return jouerCarte(s, i, a.u, a.choix || {});
     case 'chef': return utiliserChef(s, i, a.u, a.defausse);
+    case 'harakiri': return harakiri(s, i, a.u, a.cible);
     case 'medecin': return resoudreMedecin(s, i, a.u);
     case 'premier': return choisirPremier(s, i, !!a.moi);
     case 'passer': return passer(s, i);

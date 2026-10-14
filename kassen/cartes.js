@@ -16,7 +16,13 @@ export const CAPACITES = {
   agile: { kanji: '浪', nom: 'Rōnin', texte: 'Se joue au corps à corps ou à distance, au choix.' },
   cor: { kanji: '鼓', nom: 'Cor', texte: 'Double la force des autres unités de sa rangée (hors légendes).' },
   brasier_rangee: { kanji: '焔', nom: 'Brûlure', texte: 'Quand elle arrive : détruit l\'unité la plus forte de la même rangée adverse, si cette rangée vaut 10 ou plus.' },
+  // Capacités de clan (champ « pouvoir » des cartes, en plus de la capacité habituelle)
+  camouflage: { clan: 'Shinobi', kanji: '隠', nom: 'Camouflage', texte: 'Insensible à la Brûlure et à la Colère de Raijin.', pouvoir: true },
+  volonte: { clan: 'Sōhei', kanji: '鉄', nom: 'Volonté de fer', texte: 'Insensible aux météos.', pouvoir: true },
+  harakiri: { clan: 'Clan du Dragon', kanji: '切', nom: 'Harakiri', texte: 'À ton tour, au lieu de jouer une carte : elle se sacrifie et emporte avec elle l\'unité adverse de ton choix (hors légendes).', pouvoir: true },
+  malediction: { clan: 'Yōkai', kanji: '祟', nom: 'Malédiction', texte: 'Tant qu\'elle est en jeu : −1 de force à chaque unité de la rangée adverse en face (hors légendes, jamais sous 1).', pouvoir: true },
 };
+export const POUVOIRS = Object.keys(CAPACITES).filter((k) => CAPACITES[k].pouvoir);
 
 export const EFFETS_ATOUT = {
   'pioche-victoire': 'pioche 1 carte à chaque manche gagnée.',

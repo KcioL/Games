@@ -12,134 +12,145 @@ C'est tout : l'image remplace automatiquement le dessin de la carte, pour tous s
 
 Les cartes sans image gardent leur dessin par défaut : tu peux les ajouter petit à petit.
 
+## Capacités de clan
+
+En plus de sa capacité habituelle, une carte peut avoir une **capacité de clan** (écrite à la suite dans la colonne « Capacité », par exemple « Légende, Brûlure » pour une légende). Dans `kassen/jeu.js`, c'est le champ `pouvoir`.
+
+| Icône | Capacité | Clan | Effet | Dans jeu.js |
+|---|---|---|---|---|
+| 隠 | Camouflage | 忍 Shinobi | Insensible à la Brûlure et à la Colère de Raijin. | `pouvoir: 'camouflage'` |
+| 鉄 | Volonté de fer | 僧 Sōhei | Insensible aux météos. | `pouvoir: 'volonte'` |
+| 切 | Harakiri | 龍 Clan du Dragon | À ton tour, au lieu de jouer une carte : elle se sacrifie et emporte avec elle l'unité adverse de ton choix (hors légendes). | `pouvoir: 'harakiri'` |
+| 祟 | Malédiction | 妖 Yōkai | Tant qu'elle est en jeu : −1 de force à chaque unité de la rangée adverse en face (hors légendes, jamais sous 1). | `pouvoir: 'malediction'` |
+
 ## 龍 Clan du Dragon (29 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
-| `shogun.jpg` | Shōgun du Dragon | 10 | Corps à corps | Légende | 1 | 
-| `archere.jpg` | Archère légendaire | 10 | Distance | Légende | 1 | 
-| `daimyo.jpg` | Daimyō du Dragon | 8 | Siège | Légende, Cor | 1 | 
-| `tomoe.jpg` | Tomoe Gozen | 9 | Corps à corps | Légende, Brûlure | 1 | 
-| `samourai.jpg` | Samouraï du Dragon | 4 | Corps à corps | Lien | 3 | 
-| `cavalier.jpg` | Cavalier lancier | 6 | Corps à corps | — | 1 | 
-| `hatamoto.jpg` | Porte-étendard | 3 | Corps à corps | Porte-étendard | 1 | 
-| `ashigaru.jpg` | Ashigaru | 2 | Corps à corps | Rassemblement | 3 | 
-| `yumi.jpg` | Archer yumi | 4 | Distance | — | 2 | 
-| `teppo.jpg` | Arquebusier | 5 | Distance | — | 2 | 
-| `infiltre.jpg` | Shinobi infiltré | 4 | Distance | Espion | 1 | 
-| `bombarde.jpg` | Bombarde | 6 | Siège | — | 1 | 
-| `catapulte.jpg` | Catapulte | 8 | Siège | Lien | 2 | 
-| `moine.jpg` | Moine guérisseur | 3 | Siège | Médecin | 1 | 
-| `ronin.jpg` | Rōnin | 6 | Corps à corps ou Distance | — | 1 | 
-| `garde_chateau.jpg` | Garde du château | 5 | Corps à corps | — | 2 | 
-| `tour_siege.jpg` | Tour de siège | 7 | Siège | — | 1 | 
-| `ingenieur.jpg` | Ingénieur de siège | 4 | Siège | — | 1 | 
-| `archer_monte.jpg` | Archer monté | 5 | Distance | — | 1 | 
-| `maitre_taiko.jpg` | Maître du taiko | 2 | Corps à corps | Cor | 1 | 
-| `salve.jpg` | Arquebusiers en salve | 3 | Distance | Lien | 3 | 
-| `canon_bronze.jpg` | Canon de bronze | 5 | Siège | Brûlure | 1 | 
-| `garde_daimyo.jpg` | Garde du daimyō | 7 | Corps à corps | — | 2 | 
-| `emissaire.jpg` | Émissaire du shōgun | 5 | Corps à corps | Espion | 1 | 
-| `medecin_campagne.jpg` | Médecin de campagne | 4 | Distance | Médecin | 1 | 
-| `belier.jpg` | Bélier de siège | 6 | Siège | — | 1 | 
-| `capitaine_archers.jpg` | Capitaine des archers | 4 | Distance | Porte-étendard | 1 | 
-| `onna_bugeisha.jpg` | Onna-bugeisha | 5 | Corps à corps ou Distance | — | 2 | 
-| `infiltrateur_dragon.jpg` | Infiltrateur du Dragon | 4 | Corps à corps ou Distance | Espion | 1 | 
+| `shogun.jpg` | Shōgun du Dragon | 10 | Corps à corps | Légende | 1 |
+| `archere.jpg` | Archère légendaire | 10 | Distance | Légende | 1 |
+| `daimyo.jpg` | Daimyō du Dragon | 8 | Siège | Légende, Cor | 1 |
+| `samourai.jpg` | Samouraï du Dragon | 4 | Corps à corps | Lien | 3 |
+| `cavalier.jpg` | Cavalier lancier | 6 | Corps à corps | Harakiri | 1 |
+| `hatamoto.jpg` | Porte-étendard | 3 | Corps à corps | Porte-étendard | 1 |
+| `ashigaru.jpg` | Ashigaru | 2 | Corps à corps | Rassemblement | 3 |
+| `yumi.jpg` | Archer yumi | 4 | Distance | — | 2 |
+| `teppo.jpg` | Arquebusier | 5 | Distance | — | 2 |
+| `infiltre.jpg` | Shinobi infiltré | 4 | Distance | Espion | 1 |
+| `bombarde.jpg` | Bombarde | 6 | Siège | — | 1 |
+| `catapulte.jpg` | Catapulte | 8 | Siège | Lien | 2 |
+| `moine.jpg` | Moine guérisseur | 3 | Siège | Médecin | 1 |
+| `ronin.jpg` | Rōnin | 6 | Corps à corps ou Distance | — | 1 |
+| `garde_chateau.jpg` | Garde du château | 5 | Corps à corps | Harakiri | 2 |
+| `tour_siege.jpg` | Tour de siège | 7 | Siège | — | 1 |
+| `ingenieur.jpg` | Ingénieur de siège | 4 | Siège | — | 1 |
+| `archer_monte.jpg` | Archer monté | 5 | Distance | — | 1 |
+| `tomoe.jpg` | Tomoe Gozen | 9 | Corps à corps | Légende, Brûlure | 1 |
+| `maitre_taiko.jpg` | Maître du taiko | 2 | Corps à corps | Cor | 1 |
+| `salve.jpg` | Arquebusiers en salve | 3 | Distance | Lien | 3 |
+| `canon_bronze.jpg` | Canon de bronze | 5 | Siège | Brûlure | 1 |
+| `garde_daimyo.jpg` | Garde du daimyō | 7 | Corps à corps | Harakiri | 2 |
+| `emissaire.jpg` | Émissaire du shōgun | 5 | Corps à corps | Espion | 1 |
+| `medecin_campagne.jpg` | Médecin de campagne | 4 | Distance | Médecin | 1 |
+| `belier.jpg` | Bélier de siège | 6 | Siège | — | 1 |
+| `capitaine_archers.jpg` | Capitaine des archers | 4 | Distance | Porte-étendard | 1 |
+| `onna_bugeisha.jpg` | Onna-bugeisha | 5 | Corps à corps ou Distance | Harakiri | 2 |
+| `infiltrateur_dragon.jpg` | Infiltrateur du Dragon | 4 | Corps à corps ou Distance | Espion | 1 |
 
 ## 忍 Shinobi (27 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
-| `maitre_ombres.jpg` | Maître des ombres | 10 | Corps à corps | Légende, Cor | 1 | 
-| `kunoichi_ecarlate.jpg` | Kunoichi écarlate | 8 | Distance | Légende, Porte-étendard | 1 | 
-| `fantome_iga.jpg` | Le Fantôme d'Iga | 9 | Corps à corps ou Distance | Légende, Brûlure | 1 | 
-| `ninja_ombre.jpg` | Ninja de l'ombre | 3 | Corps à corps | Rassemblement | 3 | 
-| `espion_cour.jpg` | Espion à la cour | 1 | Corps à corps | Espion | 2 | 
-| `informatrice.jpg` | Informatrice | 2 | Distance | Espion | 1 | 
-| `kunoichi.jpg` | Kunoichi | 5 | Corps à corps ou Distance | — | 2 | 
-| `shuriken.jpg` | Lanceur de shuriken | 4 | Distance | — | 2 | 
-| `herboriste.jpg` | Herboriste | 3 | Distance | Médecin | 1 | 
-| `pieges.jpg` | Poseur de pièges | 5 | Siège | — | 2 | 
-| `fusees.jpg` | Fusées incendiaires | 6 | Siège | — | 1 | 
-| `freres_lame.jpg` | Frères de lame | 4 | Corps à corps | Lien | 2 | 
-| `grimpeur.jpg` | Ninja grimpeur | 5 | Distance | — | 2 | 
-| `poisons.jpg` | Maître des poisons | 4 | Siège | Médecin | 1 | 
-| `kusarigama.jpg` | Porteur de kusarigama | 6 | Corps à corps | — | 1 | 
-| `guetteuse.jpg` | Guetteuse | 2 | Distance | Espion | 1 | 
-| `cerf_volant.jpg` | Cerf-volant d'attaque | 7 | Siège | — | 1 | 
-| `recrues.jpg` | Jeunes recrues | 3 | Corps à corps | — | 2 | 
-| `assassin_aube.jpg` | Assassin de l'aube | 4 | Corps à corps | Brûlure | 1 | 
-| `saboteur.jpg` | Saboteur | 4 | Siège | Brûlure | 1 | 
-| `corbeaux.jpg` | Clan des corbeaux | 2 | Distance | Rassemblement | 3 | 
-| `jumelles.jpg` | Sœurs jumelles | 4 | Distance | Lien | 2 | 
-| `jonin.jpg` | Jōnin | 4 | Corps à corps | Porte-étendard | 1 | 
-| `komuso.jpg` | Komusō | 2 | Distance | Cor | 1 | 
-| `agent_double.jpg` | Agent double | 3 | Siège | Espion | 1 | 
-| `infiltree.jpg` | Infiltrée du château | 6 | Corps à corps ou Distance | — | 1 | 
-| `fumigenes.jpg` | Lanceur de fumigènes | 5 | Siège | — | 2 | 
+| `maitre_ombres.jpg` | Maître des ombres | 10 | Corps à corps | Légende, Cor | 1 |
+| `kunoichi_ecarlate.jpg` | Kunoichi écarlate | 8 | Distance | Légende, Porte-étendard | 1 |
+| `ninja_ombre.jpg` | Ninja de l'ombre | 3 | Corps à corps | Rassemblement | 3 |
+| `espion_cour.jpg` | Espion à la cour | 1 | Corps à corps | Espion | 2 |
+| `informatrice.jpg` | Informatrice | 2 | Distance | Espion | 1 |
+| `kunoichi.jpg` | Kunoichi | 5 | Corps à corps ou Distance | Camouflage | 2 |
+| `shuriken.jpg` | Lanceur de shuriken | 4 | Distance | — | 2 |
+| `herboriste.jpg` | Herboriste | 3 | Distance | Médecin | 1 |
+| `pieges.jpg` | Poseur de pièges | 5 | Siège | Camouflage | 2 |
+| `fusees.jpg` | Fusées incendiaires | 6 | Siège | — | 1 |
+| `freres_lame.jpg` | Frères de lame | 4 | Corps à corps | Lien | 2 |
+| `grimpeur.jpg` | Ninja grimpeur | 5 | Distance | Camouflage | 2 |
+| `poisons.jpg` | Maître des poisons | 4 | Siège | Médecin | 1 |
+| `kusarigama.jpg` | Porteur de kusarigama | 6 | Corps à corps | Camouflage | 1 |
+| `guetteuse.jpg` | Guetteuse | 2 | Distance | Espion | 1 |
+| `cerf_volant.jpg` | Cerf-volant d'attaque | 7 | Siège | — | 1 |
+| `recrues.jpg` | Jeunes recrues | 3 | Corps à corps | — | 2 |
+| `fantome_iga.jpg` | Le Fantôme d'Iga | 9 | Corps à corps ou Distance | Légende, Brûlure | 1 |
+| `assassin_aube.jpg` | Assassin de l'aube | 4 | Corps à corps | Brûlure | 1 |
+| `saboteur.jpg` | Saboteur | 4 | Siège | Brûlure | 1 |
+| `corbeaux.jpg` | Clan des corbeaux | 2 | Distance | Rassemblement | 3 |
+| `jumelles.jpg` | Sœurs jumelles | 4 | Distance | Lien | 2 |
+| `jonin.jpg` | Jōnin | 4 | Corps à corps | Porte-étendard | 1 |
+| `komuso.jpg` | Komusō | 2 | Distance | Cor | 1 |
+| `agent_double.jpg` | Agent double | 3 | Siège | Espion | 1 |
+| `infiltree.jpg` | Infiltrée du château | 6 | Corps à corps ou Distance | Camouflage | 1 |
+| `fumigenes.jpg` | Lanceur de fumigènes | 5 | Siège | Camouflage | 2 |
 
 ## 妖 Yōkai (28 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
-| `kitsune.jpg` | Kitsune à neuf queues | 10 | Distance | Légende | 1 | 
-| `gashadokuro.jpg` | Gashadokuro | 10 | Siège | Légende | 1 | 
-| `umibozu.jpg` | Umibōzu | 9 | Corps à corps | Légende, Brûlure | 1 | 
-| `shuten_doji.jpg` | Shuten-dōji | 8 | Corps à corps | Légende, Porte-étendard | 1 | 
-| `oni.jpg` | Oni rouge | 7 | Corps à corps | — | 1 | 
-| `kappa.jpg` | Kappa | 2 | Corps à corps | Rassemblement | 3 | 
-| `tengu.jpg` | Tengu | 5 | Corps à corps ou Distance | — | 2 | 
-| `yukionna.jpg` | Yuki-onna | 6 | Distance | — | 1 | 
-| `jorogumo.jpg` | Jorōgumo | 6 | Corps à corps | — | 1 | 
-| `kodama.jpg` | Kodama | 2 | Siège | Rassemblement | 3 | 
-| `nue.jpg` | Nue | 7 | Siège | — | 1 | 
-| `rokurokubi.jpg` | Rokurokubi | 4 | Distance | — | 2 | 
-| `freres_oni.jpg` | Frères oni | 5 | Corps à corps | Lien | 2 | 
-| `bakeneko.jpg` | Bakeneko | 4 | Distance | — | 2 | 
-| `nurikabe.jpg` | Nurikabe | 7 | Siège | — | 1 | 
-| `tsuchigumo.jpg` | Tsuchigumo | 6 | Corps à corps | — | 1 | 
-| `kamaitachi.jpg` | Kamaitachi | 5 | Corps à corps ou Distance | — | 1 | 
-| `ittan_momen.jpg` | Ittan-momen | 4 | Distance | — | 1 | 
-| `omukade.jpg` | Ōmukade | 6 | Corps à corps | Brûlure | 1 | 
-| `hitodama.jpg` | Hitodama | 2 | Distance | Rassemblement | 3 | 
-| `nopperabo.jpg` | Nopperabō | 4 | Corps à corps | Espion | 1 | 
-| `inugami.jpg` | Meute d'inugami | 3 | Corps à corps | Lien | 3 | 
-| `zashiki_warashi.jpg` | Zashiki-warashi | 2 | Siège | Porte-étendard | 1 | 
-| `biwa.jpg` | Biwa-bokuboku | 2 | Distance | Cor | 1 | 
-| `raiju.jpg` | Raijū | 6 | Corps à corps ou Distance | — | 1 | 
-| `funayurei.jpg` | Funayūrei | 3 | Distance | Médecin | 1 | 
-| `wanyudo.jpg` | Wanyūdō | 7 | Siège | — | 1 | 
-| `chochin.jpg` | Chōchin-obake | 4 | Siège | Lien | 3 | 
+| `kitsune.jpg` | Kitsune à neuf queues | 10 | Distance | Légende | 1 |
+| `gashadokuro.jpg` | Gashadokuro | 10 | Siège | Légende | 1 |
+| `umibozu.jpg` | Umibōzu | 9 | Corps à corps | Légende, Brûlure | 1 |
+| `oni.jpg` | Oni rouge | 7 | Corps à corps | — | 1 |
+| `kappa.jpg` | Kappa | 2 | Corps à corps | Rassemblement | 3 |
+| `tengu.jpg` | Tengu | 5 | Corps à corps ou Distance | — | 2 |
+| `yukionna.jpg` | Yuki-onna | 6 | Distance | Malédiction | 1 |
+| `jorogumo.jpg` | Jorōgumo | 6 | Corps à corps | Malédiction | 1 |
+| `kodama.jpg` | Kodama | 2 | Siège | Rassemblement | 3 |
+| `nue.jpg` | Nue | 7 | Siège | — | 1 |
+| `rokurokubi.jpg` | Rokurokubi | 4 | Distance | — | 2 |
+| `freres_oni.jpg` | Frères oni | 5 | Corps à corps | Lien | 2 |
+| `bakeneko.jpg` | Bakeneko | 4 | Distance | Malédiction | 2 |
+| `nurikabe.jpg` | Nurikabe | 7 | Siège | — | 1 |
+| `tsuchigumo.jpg` | Tsuchigumo | 6 | Corps à corps | Malédiction | 1 |
+| `kamaitachi.jpg` | Kamaitachi | 5 | Corps à corps ou Distance | — | 1 |
+| `ittan_momen.jpg` | Ittan-momen | 4 | Distance | — | 1 |
+| `shuten_doji.jpg` | Shuten-dōji | 8 | Corps à corps | Légende, Porte-étendard | 1 |
+| `omukade.jpg` | Ōmukade | 6 | Corps à corps | Brûlure | 1 |
+| `hitodama.jpg` | Hitodama | 2 | Distance | Rassemblement | 3 |
+| `nopperabo.jpg` | Nopperabō | 4 | Corps à corps | Espion | 1 |
+| `inugami.jpg` | Meute d'inugami | 3 | Corps à corps | Lien | 3 |
+| `zashiki_warashi.jpg` | Zashiki-warashi | 2 | Siège | Porte-étendard | 1 |
+| `biwa.jpg` | Biwa-bokuboku | 2 | Distance | Cor | 1 |
+| `raiju.jpg` | Raijū | 6 | Corps à corps ou Distance | — | 1 |
+| `funayurei.jpg` | Funayūrei | 3 | Distance | Médecin | 1 |
+| `wanyudo.jpg` | Wanyūdō | 7 | Siège | Malédiction | 1 |
+| `chochin.jpg` | Chōchin-obake | 4 | Siège | Lien | 3 |
 
 ## 僧 Sōhei (25 cartes)
 
 | Fichier | Carte | Force | Rangée | Capacité | Exemplaires |
 |---|---|---|---|---|---|
-| `abbe.jpg` | Grand abbé | 11 | Siège | Légende, Médecin | 1 | 
-| `colosse.jpg` | Moine colossal | 10 | Corps à corps | Légende, Brûlure | 1 | 
-| `benkei.jpg` | Benkei | 9 | Corps à corps | Légende, Cor | 1 | 
-| `naginata.jpg` | Sōhei à naginata | 6 | Corps à corps | Lien | 3 | 
-| `tambour.jpg` | Joueur de tambour | 3 | Corps à corps | Porte-étendard | 1 | 
-| `archer_temple.jpg` | Archer du temple | 5 | Distance | — | 3 | 
-| `pretre.jpg` | Prêtre guérisseur | 3 | Siège | Médecin | 2 | 
-| `novices.jpg` | Novices | 4 | Corps à corps | Rassemblement | 3 | 
-| `arbalete.jpg` | Arbalète géante | 7 | Siège | — | 1 | 
-| `pelerin.jpg` | Pèlerin espion | 3 | Distance | Espion | 2 | 
-| `yamabushi.jpg` | Yamabushi | 7 | Corps à corps ou Distance | — | 1 | 
-| `lanternes.jpg` | Moine aux lanternes | 4 | Distance | Porte-étendard | 1 | 
-| `gardien_portail.jpg` | Gardien du portail | 6 | Corps à corps | — | 2 | 
-| `archer_cheval.jpg` | Moine archer à cheval | 5 | Distance | — | 1 | 
-| `bonze.jpg` | Bonze guérisseur | 3 | Distance | Médecin | 1 | 
-| `cloche.jpg` | Gardien de la cloche | 4 | Siège | — | 1 | 
-| `maitre_gong.jpg` | Maître du gong | 2 | Siège | Cor | 1 | 
-| `sutras.jpg` | Récitant de sutras | 3 | Siège | Porte-étendard | 1 | 
-| `frondeurs.jpg` | Frondeurs du temple | 3 | Distance | Rassemblement | 3 | 
-| `porteurs_belier.jpg` | Porteurs de bélier | 4 | Siège | Lien | 2 | 
-| `exorciste.jpg` | Exorciste | 4 | Distance | Brûlure | 1 | 
-| `nio.jpg` | Gardien Niō | 7 | Corps à corps | — | 1 | 
-| `moine_cimes.jpg` | Moine des cimes | 5 | Corps à corps ou Distance | — | 1 | 
-| `catapulte_monastere.jpg` | Catapulte du monastère | 6 | Siège | — | 1 | 
-| `nonne_guerriere.jpg` | Nonne guerrière | 5 | Corps à corps | — | 2 | 
+| `abbe.jpg` | Grand abbé | 11 | Siège | Légende, Médecin | 1 |
+| `colosse.jpg` | Moine colossal | 10 | Corps à corps | Légende, Brûlure | 1 |
+| `naginata.jpg` | Sōhei à naginata | 6 | Corps à corps | Lien | 3 |
+| `tambour.jpg` | Joueur de tambour | 3 | Corps à corps | Porte-étendard | 1 |
+| `archer_temple.jpg` | Archer du temple | 5 | Distance | — | 3 |
+| `pretre.jpg` | Prêtre guérisseur | 3 | Siège | Médecin | 2 |
+| `novices.jpg` | Novices | 4 | Corps à corps | Rassemblement | 3 |
+| `arbalete.jpg` | Arbalète géante | 7 | Siège | — | 1 |
+| `pelerin.jpg` | Pèlerin espion | 3 | Distance | Espion | 2 |
+| `yamabushi.jpg` | Yamabushi | 7 | Corps à corps ou Distance | Volonté de fer | 1 |
+| `lanternes.jpg` | Moine aux lanternes | 4 | Distance | Porte-étendard | 1 |
+| `gardien_portail.jpg` | Gardien du portail | 6 | Corps à corps | Volonté de fer | 2 |
+| `archer_cheval.jpg` | Moine archer à cheval | 5 | Distance | — | 1 |
+| `bonze.jpg` | Bonze guérisseur | 3 | Distance | Médecin | 1 |
+| `cloche.jpg` | Gardien de la cloche | 4 | Siège | Volonté de fer | 1 |
+| `benkei.jpg` | Benkei | 9 | Corps à corps | Légende, Cor | 1 |
+| `maitre_gong.jpg` | Maître du gong | 2 | Siège | Cor | 1 |
+| `sutras.jpg` | Récitant de sutras | 3 | Siège | Porte-étendard | 1 |
+| `frondeurs.jpg` | Frondeurs du temple | 3 | Distance | Rassemblement | 3 |
+| `porteurs_belier.jpg` | Porteurs de bélier | 4 | Siège | Lien | 2 |
+| `exorciste.jpg` | Exorciste | 4 | Distance | Brûlure | 1 |
+| `nio.jpg` | Gardien Niō | 7 | Corps à corps | Volonté de fer | 1 |
+| `moine_cimes.jpg` | Moine des cimes | 5 | Corps à corps ou Distance | Volonté de fer | 1 |
+| `catapulte_monastere.jpg` | Catapulte du monastère | 6 | Siège | — | 1 |
+| `nonne_guerriere.jpg` | Nonne guerrière | 5 | Corps à corps | Volonté de fer | 2 |
 
 ## Cartes neutres, utilisables par tous les clans (9 cartes)
 

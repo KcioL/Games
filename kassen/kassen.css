@@ -110,7 +110,7 @@ body.kassen {
 .carte .image-carte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .carte.image-pleine { background: #120A09; border-color: transparent; }
 .carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
-.carte.image-pleine > :not(.image-carte):not(.exemplaires) { display: none; }
+.carte.image-pleine > :not(.image-carte):not(.exemplaires):not(.btn-harakiri) { display: none; }
 /* …sauf sur le plateau quand la force a changé : un rond blanc recouvre le rond imprimé
    (centré sur lui : 13,7 % de la largeur, 9,8 % de la hauteur d'une carte 765 × 1024),
    avec la force actuelle en vert (en hausse) ou en rouge (en baisse) */
@@ -1096,3 +1096,19 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   body.en-bataille .commandes .btn { padding: 8px 6px; }
   body.en-bataille .commandes #btn-chef { padding: 5px 6px; font-size: .85rem; }
 }
+
+/* ---------- Capacités de clan ---------- */
+.carte .pouvoir-icone { right: auto; left: 5%; bottom: 14%; color: #F2A79A; }
+/* Harakiri : bouton 切 sur l'unité, cible chez l'adversaire */
+.btn-harakiri {
+  position: absolute; top: 3%; right: 4%; z-index: 3;
+  width: max(22px, calc(var(--l, 60px) * .42)); aspect-ratio: 1; border-radius: 50%;
+  border: 2px solid #FFD9A0; background: radial-gradient(circle at 35% 30%, #E0533D, #8E1B12);
+  color: #fff; font-family: "Shippori Mincho", serif; font-weight: 800; font-size: max(12px, calc(var(--l, 60px) * .24));
+  display: grid; place-items: center; padding: 0; line-height: 1; cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .6); animation: harakiri-pulse 1.6s ease-in-out infinite;
+}
+.btn-harakiri.actif { background: #2B1F1A; border-color: #E0533D; animation: none; }
+@keyframes harakiri-pulse { 50% { transform: scale(1.12); box-shadow: 0 0 10px rgba(224, 83, 61, .8); } }
+.carte.harakiri-pret { box-shadow: 0 0 0 3px #E0533D, 0 0 14px rgba(224, 83, 61, .7); }
+.carte.cible-harakiri { box-shadow: 0 0 0 3px #E0533D !important; cursor: crosshair; }
