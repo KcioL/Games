@@ -2,6 +2,7 @@ import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
 import { EDITIONS } from './editions.js'; // à importer en premier : charge les cartes du Gwynt et de Kassen
 import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES, COLLECTIONS, DECKS_DEFAUT, DECK_MIN_UNITES, DECK_MAX_SPECIALES, aPlat, erreurDeck } from './cartes.js';
 import * as M from './moteur.js';
+import { effetLegende, flashCapacite, volDepuis } from './effets.js';
 import {
   initCompte, compteActuel, enregistrerDeck, connexionEmail, motDePasseOublie, deconnexion, messageErreur,
   NB_DECKS, deckSauve, emplacementActif, choisirEmplacement,
@@ -103,7 +104,10 @@ function planifierBot() {
   const reflexion = etat.status === 'jeu' ? 1100 + Math.random() * 600 : 600;
   const attente = Math.max(0, finAnnonce - Date.now());
   const delai = attente + ((salon.estLocal() || maPlace === premierHumain) ? reflexion : 4000 + maPlace * 1500);
-  setTimeout(() => {
+  const jouer = () => {
+    // une animation a commencé entre-temps (légende, rassemblement…) : on attend qu'elle se termine
+    const reste = finAnnonce - Date.now();
+    if (reste > 60) { setTimeout(jouer, reste + 500); return; }
     agir((s) => {
       if (s.coup !== coup) return false;
       const j = botAJouer(s);
@@ -115,7 +119,8 @@ function planifierBot() {
       }
       return M.jouerAction(s, j, { type: 'passer' }) || M.jouerAction(s, j, { type: 'pret' });
     });
-  }, delai);
+  };
+  setTimeout(jouer, delai);
 }
 let dernierChangement = Date.now();
 let dernierCoupConnu = null;
@@ -150,7 +155,10 @@ function preparerAnimation(s, place) {
   const dansMain = dc.joueur === place && document.querySelector(`#main .carte[data-u="${dc.u}"]`);
   const panneau = dc.joueur === place ? $('info-moi') : $('info-adverse');
   const depart = (dansMain || (dc.joueur === place ? $('main') : panneau)).getBoundingClientRect();
-  return { ...dc, depart };
+  // cartes déjà sur le plateau avant ce coup (pour repérer celles qu'un rassemblement fait venir)
+  const avant = new Set();
+  if (etat) (etat.players || []).forEach((p) => RANGEES.forEach((r) => ((p.rangees || {})[r] || []).forEach((c) => avant.add(c.u))));
+  return { ...dc, depart, avant, place };
 }
 
 // ---------- Chef utilisé : sa carte s'affiche en grand au centre, avec ce qu'il fait ----------
@@ -391,6 +399,14 @@ function animerCoup(dc) {
   // carte arrivée sur le plateau (unité, y compris un espion chez l'adversaire)
   const arrivee = d.type === 'unite' ? document.querySelector(`.rangee-cartes .carte[data-u="${dc.u}"]`) : null;
   if (arrivee) arrivee.style.visibility = 'hidden';
+  // rassemblement : les copies venues de la pioche restent cachées jusqu'à leur arrivée
+  const appelees = d.type === 'unite' && d.capacite === 'rassemblement'
+    ? [...document.querySelectorAll('.rangee-cartes .carte[data-u]')].filter((e) => {
+      const u = Number(e.dataset.u);
+      const de = CARTES[e.dataset.c || ''];
+      return u !== dc.u && !dc.avant.has(u) && !!de && de.groupe === d.groupe;
+    }) : [];
+  appelees.forEach((e) => { e.style.visibility = 'hidden'; });
   // la carte en grand, posée au centre de l'écran
   const vol = carteEl({ c: dc.c, u: dc.u }, { taille: 'vol' });
   const hauteur = Math.min(window.innerHeight * (legende ? 0.55 : 0.38), legende ? 560 : 400);
@@ -411,17 +427,22 @@ function animerCoup(dc) {
   if (d.type === 'meteo') effet = { cac: 'neige', dist: 'brouillard', siege: 'pluie' }[String(d.meteo).split('+')[0]];
   if (d.type === 'eclaircie') effet = 'soleil';
   if (d.type === 'brasier') effet = 'feu';
-  const tenue = legende ? 900 : effet ? 1500 : 380;
-  const allerAuCentre = legende ? 650 : 420;
+  const tenue = effet ? 1500 : 380;
+  const allerAuCentre = 420;
   const seposer = 420;
-  const duree = allerAuCentre + tenue + seposer;
-  // les bots attendent la fin de l'animation (et des flammes d'une légende)
-  finAnnonce = Math.max(finAnnonce, Date.now() + duree + (legende ? 1800 : 300));
+  // légende : comme dans The Witcher 3, elle file directement à sa place et sort d'un nuage de fumée
+  const duree = legende ? 520 : allerAuCentre + tenue + seposer;
+  // les bots attendent la fin de l'animation (fumée d'une légende, cartes appelées par un rassemblement)
+  const suite = legende ? 2000 : appelees.length || d.capacite === 'rassemblement' ? 1500 + appelees.length * 220 : 300;
+  finAnnonce = Math.max(finAnnonce, Date.now() + duree + suite);
   if (effet) setTimeout(() => effetEcran(effet, tenue + seposer + 200), allerAuCentre * 0.6);
   const fin = arrivee ? vers(arrivee.getBoundingClientRect()) : `translate(0, -20px) scale(.85)`;
   const t1 = allerAuCentre / duree;
   const t2 = (allerAuCentre + tenue) / duree;
-  const anim = vol.animate([
+  const anim = legende ? vol.animate([
+    { transform: depart, opacity: 0.6 },
+    { transform: fin, opacity: 1 },
+  ], { duration: duree, easing: 'cubic-bezier(.3, .6, .3, 1)', fill: 'forwards' }) : vol.animate([
     { transform: depart, opacity: 0.6, offset: 0 },
     { transform: 'translate(0, 0) scale(1)', opacity: 1, offset: t1, easing: 'ease-in-out' },
     { transform: 'translate(0, 0) scale(1.03)', opacity: 1, offset: t2, easing: 'cubic-bezier(.5, 0, .75, 0)' },
@@ -437,7 +458,17 @@ function animerCoup(dc) {
       posee.style.visibility = '';
       posee.classList.add('vient-de-poser');
       setTimeout(() => posee.classList.remove('vient-de-poser'), 500);
-      if (legende) enflammer(posee);
+      if (legende) { posee.classList.remove('vient-de-poser'); effetLegende(posee); }
+      if (d.capacite === 'rassemblement') flashCapacite(posee, 'rassemblement');
+    }
+    // les copies appelées arrivent une à une depuis la pioche du joueur, et s'illuminent à leur tour
+    if (appelees.length) {
+      const pile = document.querySelector(`${dc.joueur === maPlace ? '#piles-moi' : '#piles-adverse'} .pioche .tas`);
+      const depart = pile ? pile.getBoundingClientRect() : null;
+      appelees.forEach((e, k) => {
+        const ici = document.querySelector(`.rangee-cartes .carte[data-u="${e.dataset.u}"]`) || e;
+        setTimeout(() => volDepuis(depart, ici).then((posee) => { if (posee) flashCapacite(posee, 'rassemblement', { duree: 1000 }); }), 450 + k * 220);
+      });
     }
   };
 }
@@ -505,6 +536,7 @@ function carteEl(carte, { force, taille = '' } = {}) {
   const d = def(carte);
   const e = el('div', `carte ${taille} type-${d.type}`);
   if (carte.u !== undefined) e.dataset.u = carte.u;
+  e.dataset.c = carte.c;
   // sur le plateau, la force actuelle reste affichée par-dessus l'image (elle change avec les effets)
   if (force !== undefined) e.classList.add('sur-plateau');
   appliquerFormat(e, d);
