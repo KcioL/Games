@@ -110,7 +110,8 @@ body.kassen {
 .carte .image-carte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .carte.image-pleine { background: #120A09; border-color: transparent; }
 .carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
-.carte.image-pleine > :not(.image-carte):not(.exemplaires):not(.btn-harakiri):not(.flash-capacite) { display: none; }
+/* (:where garde cette règle faible : la pastille de force modifiée, plus bas, doit toujours pouvoir s'afficher) */
+.carte.image-pleine > :where(:not(.image-carte, .exemplaires, .btn-harakiri, .flash-capacite)) { display: none; }
 /* …sauf sur le plateau quand la force a changé : un rond blanc recouvre le rond imprimé
    (centré sur lui : 13,7 % de la largeur, 9,8 % de la hauteur d'une carte 765 × 1024),
    avec la force actuelle en vert (en hausse) ou en rouge (en baisse) */

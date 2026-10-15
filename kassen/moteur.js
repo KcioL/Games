@@ -51,14 +51,15 @@ export function forceCarte(s, j, r, carte) {
   // mauvais temps : la force tombe à 1 (chef « météo à moitié » : elle n'est que divisée par deux)
   // (Volonté de fer : insensible aux météos)
   let f = !s.meteo[r] || d.pouvoir === 'volonte' ? base : effetActif(s, j, 'meteo-moitie') ? Math.max(1, Math.ceil(base / 2)) : 1;
+  // Malédiction : −1 par yōkai maudit dans la rangée adverse en face (jamais sous 1), appliquée avant
+  // les liens, porte-étendards et cors : un cor double donc toujours la force qui reste
+  const maudits = s.players[adversaire(j)].rangees[r].filter((x) => def(x).pouvoir === 'malediction').length;
+  if (maudits) f = Math.max(Math.min(f, 1), f - maudits);
   const rangee = s.players[j].rangees[r];
   if (d.capacite === 'lien') f *= rangee.filter((x) => def(x).capacite === 'lien' && def(x).groupe === d.groupe).length;
   f += rangee.filter((x) => x.u !== carte.u && def(x).capacite === 'moral').length;
   // cor : carte Taiko sur la rangée, ou une autre unité « Cor » dans la rangée (ne se cumulent pas)
   if (s.players[j].cors[r] || rangee.some((x) => x.u !== carte.u && def(x).capacite === 'cor')) f *= 2;
-  // Malédiction : −1 par yōkai maudit dans la rangée adverse en face (jamais sous 1)
-  const maudits = s.players[adversaire(j)].rangees[r].filter((x) => def(x).pouvoir === 'malediction').length;
-  if (maudits) f = Math.max(Math.min(f, 1), f - maudits);
   return f;
 }
 
