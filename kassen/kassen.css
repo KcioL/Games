@@ -110,21 +110,27 @@ body.kassen {
 .carte .image-carte { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .carte.image-pleine { background: #120A09; border-color: transparent; }
 .carte.legende.image-pleine { border-color: transparent; box-shadow: none; }
-/* (:where garde cette règle faible : la pastille de force modifiée, plus bas, doit toujours pouvoir s'afficher) */
-.carte.image-pleine > :where(:not(.image-carte, .exemplaires, .btn-harakiri, .flash-capacite)) { display: none; }
+/* (un seul :not avec une liste : la règle reste plus forte que les styles des cartes dessinées,
+   mais plus faible que la pastille de force modifiée du plateau, plus bas) */
+.carte.image-pleine > :not(.image-carte, .exemplaires, .btn-harakiri, .flash-capacite) { display: none; }
 /* …sauf sur le plateau quand la force a changé : un rond blanc recouvre le rond imprimé
    (centré sur lui : 13,7 % de la largeur, 9,8 % de la hauteur d'une carte 765 × 1024),
    avec la force actuelle en vert (en hausse) ou en rouge (en baisse) */
 .carte.image-pleine.sur-plateau > .force.hausse,
 .carte.image-pleine.sur-plateau > .force.baisse {
   display: grid;
-  left: var(--rond-x, 13.7%); top: var(--rond-y, 9.8%);
-  transform: translate(-50%, -50%);
-  min-width: 0; width: var(--rond-d, 24%);
-  font-size: calc(var(--l) * .13);
-  letter-spacing: -.03em;
-  border: 1px solid rgba(0, 0, 0, .35);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .5);
+  /* un peu plus grand que le rond imprimé (Kassen ou Gwynt), centré sur lui et sans dépasser de la carte :
+     lisible même sur un petit écran */
+  --pd: calc(var(--rond-d, 24%) + 8%);
+  left: max(.5%, calc(var(--rond-x, 13.7%) - var(--pd) / 2));
+  top: max(.4%, calc(var(--rond-y, 9.8%) - var(--pd) * .375 * var(--k, 1)));
+  transform: none;
+  min-width: 0; width: var(--pd); aspect-ratio: 1;
+  font-size: calc(var(--l) * var(--k, 1) * .22); font-weight: 800; line-height: 1;
+  letter-spacing: -.04em;
+  border: 1.5px solid rgba(0, 0, 0, .5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .65);
+  z-index: 2;
 }
 .carte.grande { --l: 72px; border-radius: 7px; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .carte.legende { border: 2px solid var(--kin); box-shadow: 0 0 8px rgba(201, 162, 74, .45); }
@@ -1130,3 +1136,32 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 
 /* Météo active sur le plateau (effets.js) : calque animé au-dessus des rangées, sous la main et les fenêtres */
 .meteo-plateau { position: fixed; left: 0; top: 0; z-index: 3; pointer-events: none; }
+
+/* Fiche du clan (nom ou logo d'un joueur) */
+.camp-nom.ouvre-clan { cursor: pointer; }
+.camp-nom.ouvre-clan .camp-clan::after { content: ' ⓘ'; opacity: .75; }
+#loupe .embleme.clan-loupe {
+  width: min(42vh, 46vw, 260px); height: min(42vh, 46vw, 260px); flex: none;
+  display: grid; place-items: center; border-radius: 50%; overflow: hidden;
+  font-size: min(20vh, 22vw, 130px); color: #E8C877; font-family: "Shippori Mincho", serif;
+  background: radial-gradient(circle, var(--clan, #555), #120A09 80%);
+  box-shadow: 0 0 0 4px rgba(232, 200, 119, .6), 0 18px 40px rgba(0, 0, 0, .6);
+}
+#loupe .embleme.clan-loupe .logo-clan { width: 100%; height: 100%; object-fit: cover; }
+@media (orientation: landscape) and (max-height: 599px) {
+  #loupe .embleme.clan-loupe { width: min(55vh, 34vw); height: min(55vh, 34vw); }
+  .loupe .loupe-texte { max-height: 88vh; overflow-y: auto; }
+}
+
+/* Chef utilisable : bouton doré qui pulse, carte du chef qui brille, bouton dans la loupe et la fiche du clan */
+#btn-chef.pret {
+  background: linear-gradient(180deg, #F3D27A, #C9962E); color: #2A1A08; opacity: 1;
+  box-shadow: 0 0 0 2px #FFE7A8, 0 0 14px rgba(255, 200, 80, .75);
+  animation: chef-pret 1.6s ease-in-out infinite;
+}
+#btn-chef.pret .chef-etiquette { opacity: 1; font-weight: 800; }
+@keyframes chef-pret { 50% { box-shadow: 0 0 0 2px #FFE7A8, 0 0 24px rgba(255, 200, 80, 1); } }
+.carte.chef-panneau.chef-pret { box-shadow: 0 0 0 2px #FFE7A8, 0 0 14px rgba(255, 200, 80, .85); animation: chef-pret 1.6s ease-in-out infinite; cursor: pointer; }
+.btn-utiliser-chef { justify-self: start; padding: 12px 18px; font-size: 1rem; background: linear-gradient(180deg, #F3D27A, #C9962E) !important; color: #2A1A08 !important; box-shadow: 0 0 14px rgba(255, 200, 80, .6); }
+.chef-pas-maintenant { font-size: .85rem; color: #F2C9A0; }
+@media (prefers-reduced-motion: reduce) { #btn-chef.pret, .carte.chef-panneau.chef-pret { animation: none; } }

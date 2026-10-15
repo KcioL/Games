@@ -223,8 +223,67 @@ function ouvrirLoupe(infos) {
   if (infos.force !== undefined && infos.d && infos.d.type === 'unite' && infos.force !== infos.d.force) {
     texte.appendChild(el('span', 'loupe-force ' + (infos.force > infos.d.force ? 'hausse' : 'baisse'), `Force actuelle sur le plateau : ${infos.force} (imprimée : ${infos.d.force})`));
   }
+  if (infos.chef && infos.place !== undefined) actionChef(texte, infos.place);
   texte.appendChild(el('span', 'loupe-fermer', 'Touche pour fermer'));
   zone.append(carte, texte);
+  zone.hidden = false;
+  loupeOuverteA = Date.now();
+}
+// Sous le texte du chef (loupe ou fiche du clan), pour MON chef : un gros bouton pour utiliser sa capacité,
+// ou la raison pour laquelle ce n'est pas possible maintenant
+function actionChef(texte, j) {
+  if (j !== maPlace || !pointDeVueJoueur() || !etat || etat.status !== 'jeu') return;
+  const moi = etat.players[maPlace];
+  if (!M.chefDe(moi) || moi.chefUtilise || M.chefPassif(moi)) return;
+  const raison = M.raisonChef(etat, maPlace);
+  const tour = monTour();
+  if (tour && !raison) {
+    const b = el('button', 'btn btn-principal btn-utiliser-chef', '♛ Utiliser la capacité du chef');
+    b.type = 'button';
+    b.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      $('loupe').hidden = true;
+      $('btn-chef').click();
+    });
+    texte.appendChild(b);
+  } else {
+    texte.appendChild(el('span', 'chef-pas-maintenant', tour ? raison : 'Tu pourras l\'utiliser à ton tour (une seule fois par partie).'));
+  }
+}
+
+// Fiche d'un clan (toucher ou cliquer sur le nom ou le logo d'un joueur) : sa capacité de clan, celle de ses cartes et son chef
+function ouvrirClan(j) {
+  const p = etat.players[j];
+  const clan = CLANS[p.clan];
+  if (!clan) return;
+  const zone = $('loupe');
+  zone.innerHTML = '';
+  const embleme = logoClan(clan, 'embleme clan-loupe');
+  embleme.style.setProperty('--clan', clan.couleur || '#555');
+  const texte = el('div', 'loupe-texte');
+  texte.appendChild(el('span', 'loupe-joueur', `Clan ${de(p.name)}`));
+  const corps = el('div', 'loupe-corps');
+  corps.appendChild(el('strong', 'bulle-nom', clan.nom));
+  const bloc = (kanji, titre, contenu) => {
+    const b = el('div', 'bulle-capacite');
+    const t = el('span', 'bulle-texte');
+    t.append(el('b', '', titre), document.createTextNode(` : ${contenu}`));
+    b.append(el('span', 'bulle-kanji', kanji), t);
+    corps.appendChild(b);
+  };
+  // capacité du clan (atout)
+  const [nomAtout, ...reste] = String(clan.atout || '').split(' : ');
+  bloc(clan.kanji || '✦', reste.length ? `Capacité du clan — ${nomAtout}` : 'Capacité du clan', reste.length ? reste.join(' : ') : nomAtout);
+  // capacité de clan que portent certaines de ses cartes (Camouflage, Harakiri…)
+  Object.values(CAPACITES).filter((c) => c.clan && c.clan === clan.nom && clan.edition !== 'gwynt')
+    .forEach((c) => bloc(c.kanji, `${c.nom} (certaines cartes)`, c.texte));
+  // chef
+  const chef = M.chefDe(p);
+  if (chef) bloc(clan.edition === 'gwynt' ? '♛' : '将', `Chef : ${chef.nom}${p.chefUtilise ? ' (déjà utilisé)' : ''}`, chef.texte);
+  texte.appendChild(corps);
+  actionChef(texte, j);
+  texte.appendChild(el('span', 'loupe-fermer', 'Touche pour fermer'));
+  zone.append(embleme, texte);
   zone.hidden = false;
   loupeOuverteA = Date.now();
 }
@@ -1211,7 +1270,10 @@ function infoCamp(zone, j) {
   const ident = el('span', 'camp-ident');
   ident.append(el('strong', '', p.name + (!salon.estLocal() && j === maPlace ? ' (toi)' : '')), el('span', 'camp-clan', clan.nom || ''));
   nom.append(embleme, ident);
-  nom.addEventListener('click', () => { const c = M.chefDe(p); if (c) ouvrirLoupe({ chef: c, couleur: clan.couleur, joueur: p.name, utilise: p.chefUtilise }); });
+  // nom ou logo : la fiche du clan (capacité du clan, capacité de ses cartes, chef)
+  nom.addEventListener('click', () => ouvrirClan(j));
+  nom.title = clan.atout ? `${clan.nom} — ${clan.atout} (cliquer pour le détail)` : '';
+  nom.classList.add('ouvre-clan');
   zone.appendChild(nom);
   const chefJ = M.chefDe(p);
   if (chefJ) {
@@ -1220,7 +1282,9 @@ function infoCamp(zone, j) {
     carteChef.classList.add('chef-panneau');
     if (p.chefUtilise) carteChef.classList.add('utilise');
     // écran tactile : toucher le chef l'ouvre en grand avec sa capacité
-    carteChef.addEventListener('click', () => ouvrirLoupe({ chef: chefJ, couleur: clan.couleur, joueur: p.name, utilise: p.chefUtilise }));
+    carteChef.addEventListener('click', () => ouvrirLoupe({ chef: chefJ, couleur: clan.couleur, joueur: p.name, utilise: p.chefUtilise, place: j }));
+    // mon chef utilisable : la carte brille, comme le bouton
+    if (j === maPlace && etat.status === 'jeu' && monTour() && !M.raisonChef(etat, maPlace) && !p.chefUtilise) carteChef.classList.add('chef-pret');
     zone.appendChild(carteChef);
   }
   const chef = el('span', 'camp-chef' + (p.chefUtilise ? ' utilise' : ''), chefJ ? `Chef : ${chefJ.nom}${etiquetteChef(j)}` : '');
@@ -1520,6 +1584,9 @@ function rendreCommandes() {
   chef.disabled = !tour && !raison;
   chef.classList.toggle('indispo', !!raison || !tour);
   chef.dataset.raison = raison;
+  const pret = !!chefMoi && tour && !raison;
+  chef.classList.toggle('pret', pret);
+  if (pret) chef.querySelector('.chef-etiquette').textContent = '♛ Utiliser le chef';
   if (raison) chef.title = raison;
   $('btn-passer').disabled = !tour;
   // « Jouer cette carte » quand la carte n'a pas besoin qu'on choisisse sa place
