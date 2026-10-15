@@ -1165,3 +1165,17 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 .btn-utiliser-chef { justify-self: start; padding: 12px 18px; font-size: 1rem; background: linear-gradient(180deg, #F3D27A, #C9962E) !important; color: #2A1A08 !important; box-shadow: 0 0 14px rgba(255, 200, 80, .6); }
 .chef-pas-maintenant { font-size: .85rem; color: #F2C9A0; }
 @media (prefers-reduced-motion: reduce) { #btn-chef.pret, .carte.chef-panneau.chef-pret { animation: none; } }
+
+/* Colère de Raijin / Brûlure sélectionnée : les unités qui seraient détruites */
+.rangee-cartes .carte.menacee { box-shadow: 0 0 0 2px #FF4D3A, 0 0 14px rgba(255, 60, 40, .85); animation: menacee 1s ease-in-out infinite; }
+.rangee-cartes .carte.menacee::after {
+  content: '☠'; position: absolute; inset: 0; z-index: 3; display: grid; place-items: center;
+  font-size: calc(var(--l, 40px) * .5); color: #fff; text-shadow: 0 0 6px #FF3A2A, 0 0 2px #000;
+  background: rgba(160, 20, 10, .35); border-radius: inherit; pointer-events: none;
+}
+@keyframes menacee { 50% { box-shadow: 0 0 0 2px #FF8A70, 0 0 22px rgba(255, 60, 40, 1); } }
+@media (prefers-reduced-motion: reduce) { .rangee-cartes .carte.menacee { animation: none; } }
+/* texte d'aide en bas à gauche : il reste dans sa zone (il défile s'il est long) */
+@media (min-width: 900px) and (min-height: 600px) {
+  body.en-bataille .bataille .detail { align-self: stretch; max-height: 100%; overflow-y: auto; min-height: 0; scrollbar-width: thin; }
+}

@@ -174,7 +174,7 @@ export const JEU = {
     { id: 'soleil', nom: 'Éclaircie', faction: 'neutre', type: 'eclaircie', symbole: '晴', texte: 'Dissipe toutes les météos.', exemplaires: 3 },
     { id: 'taiko', nom: 'Taiko de guerre', faction: 'neutre', type: 'cor', symbole: '鼓', texte: 'Double la force des unités d\'une de tes rangées (hors légendes).', exemplaires: 3 },
     { id: 'kagemusha', nom: 'Kagemusha', faction: 'neutre', type: 'leurre', symbole: '影', texte: 'Ce sosie prend la place d\'une de tes unités (hors légendes), qui revient dans ta main.', exemplaires: 3 },
-    { id: 'raijin', nom: 'Colère de Raijin', faction: 'neutre', type: 'brasier', symbole: '雷', texte: 'Détruit la ou les unités les plus fortes du plateau, dans les deux camps (hors légendes).', exemplaires: 3 },
+    { id: 'raijin', nom: 'Colère de Raijin', faction: 'neutre', type: 'brasier', symbole: '雷', texte: 'Détruit la ou les unités les plus fortes du plateau, dans les deux camps (hors légendes et unités camouflées).', exemplaires: 3 },
   ],
 
   decksParDefaut: {

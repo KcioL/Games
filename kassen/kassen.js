@@ -1343,9 +1343,28 @@ function rendrePiles(zone, j) {
   zone.append(pioche, defausse);
 }
 
+// Aperçu des destructions : avec une Colère de Raijin (ou une carte Brûlure qui n'a qu'une place possible)
+// en main sélectionnée, on simule le coup pour savoir quelles unités seraient détruites
+function cartesMenacees() {
+  const carte = selectionCarte();
+  if (!carte || !monTour()) return new Set();
+  const d = def(carte);
+  const cibles = ciblesSelection();
+  const brulure = d.type === 'unite' && d.capacite === 'brasier_rangee' && cibles.length === 1;
+  if (d.type !== 'brasier' && !brulure) return new Set();
+  const avant = new Set();
+  etat.players.forEach((p) => RANGEES.forEach((r) => p.rangees[r].forEach((c) => avant.add(c.u))));
+  const essai = JSON.parse(JSON.stringify(etat));
+  if (!M.jouerCarte(essai, maPlace, carte.u, cibles[0] || {})) return new Set();
+  const apres = new Set();
+  essai.players.forEach((p) => RANGEES.forEach((r) => p.rangees[r].forEach((c) => apres.add(c.u))));
+  return new Set([...avant].filter((u) => !apres.has(u)));
+}
+
 function rendreCamp(zone, j, ordre) {
   zone.innerHTML = '';
   const cibles = ciblesSelection();
+  const menacees = cartesMenacees();
   ordre.forEach((r) => {
     const ligne = el('div', `rangee r-${r}`);
     ligne.dataset.rangee = r;
@@ -1361,6 +1380,7 @@ function rendreCamp(zone, j, ordre) {
     const cartes = el('div', 'rangee-cartes');
     etat.players[j].rangees[r].forEach((carte) => {
       const e = carteEl(carte, { force: M.forceCarte(etat, j, r, carte), taille: 'mini' });
+      if (menacees.has(carte.u)) { e.classList.add('menacee'); e.title = 'Sera détruite si tu joues cette carte'; }
       // écran tactile : toucher une carte du plateau l'ouvre en grand (sauf si c'est une cible du kagemusha)
       e.addEventListener('click', (ev) => {
         if (e.classList.contains('cible') || survolPossible) return;
@@ -1601,6 +1621,16 @@ function rendreCommandes() {
     let aide = '';
     if (tour && def(carte).type === 'leurre') aide = cibles.length ? ' Touche l\'unité à reprendre.' : ' Aucune unité à reprendre.';
     else if (tour && (def(carte).type === 'cor' || (def(carte).type === 'unite' && def(carte).rangees.length > 1))) aide = ' Touche la rangée où la jouer.';
+    // Colère de Raijin / Brûlure : qui serait détruit (les légendes et les unités camouflées sont épargnées)
+    const menacees = cartesMenacees();
+    const dd = def(carte);
+    if (tour && (dd.type === 'brasier' || dd.capacite === 'brasier_rangee')) {
+      const noms = [];
+      etat.players.forEach((p) => RANGEES.forEach((r) => p.rangees[r].forEach((c) => { if (menacees.has(c.u)) noms.push(def(c).nom); })));
+      if (dd.type === 'brasier' || ciblesSelection().length === 1) {
+        aide += noms.length ? ` Détruira : ${noms.join(', ')} (en rouge sur le plateau).` : ' Ne détruira aucune carte maintenant.';
+      }
+    }
     detail.textContent = description(carte) + aide;
   } else {
     detail.textContent = tour ? 'Touche une carte de ta main pour la voir et la jouer.' : '';
