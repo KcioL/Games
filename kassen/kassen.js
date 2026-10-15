@@ -2,7 +2,7 @@ import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
 import { EDITIONS } from './editions.js'; // à importer en premier : charge les cartes du Gwynt et de Kassen
 import { CARTES, CLANS, CAPACITES, RANGEES, NOMS_RANGEES, KANJI_RANGEES, COLLECTIONS, DECKS_DEFAUT, DECK_MIN_UNITES, DECK_MAX_SPECIALES, aPlat, erreurDeck } from './cartes.js';
 import * as M from './moteur.js';
-import { effetLegende, flashCapacite, volDepuis } from './effets.js';
+import { effetLegende, flashCapacite, volDepuis, majMeteoPlateau } from './effets.js';
 import {
   initCompte, compteActuel, enregistrerDeck, connexionEmail, motDePasseOublie, deconnexion, messageErreur,
   NB_DECKS, deckSauve, emplacementActif, choisirEmplacement,
@@ -1753,4 +1753,5 @@ function rendre() {
   }
   if (etat.status !== 'jeu') fermerFenetreChef();
   rendreFin();
+  majMeteoPlateau(); // gel, brume, pluie ou typhon sur les rangées touchées par une météo
 }

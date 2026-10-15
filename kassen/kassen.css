@@ -1126,3 +1126,6 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 .flash-reflet { position: absolute; top: -10%; bottom: -10%; width: 35%; left: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .85), transparent); }
 .carte-en-vol { position: fixed; z-index: 58; pointer-events: none; margin: 0; box-shadow: 0 10px 24px rgba(0, 0, 0, .55); }
 @media (prefers-reduced-motion: reduce) { .effet-canvas, .flash-capacite, .carte-en-vol { display: none; } }
+
+/* Météo active sur le plateau (effets.js) : calque animé au-dessus des rangées, sous la main et les fenêtres */
+.meteo-plateau { position: fixed; left: 0; top: 0; z-index: 3; pointer-events: none; }
