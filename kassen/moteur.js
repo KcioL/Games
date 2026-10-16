@@ -121,6 +121,8 @@ export const clansDeLEdition = (s) => Object.keys(CLANS).filter((c) => CLANS[c].
 // Changer de jeu (Gwynt ou Kassen) : seulement pendant le choix des clans, tant que personne n'a choisi
 export function changerEdition(s, i, edition) {
   if (s.status !== 'clans' || s.players.some((p) => p.clan)) return false;
+  // en ligne, seul l'hôte (celui qui a créé le salon, place 0) choisit entre Kassen et Gwynt
+  if (i !== 0 && !s.local) return false;
   if (!Object.values(CLANS).some((c) => c.edition === edition) || editionDe(s) === edition) return false;
   s.edition = edition;
   s.coup = (s.coup || 0) + 1;

@@ -20,6 +20,7 @@ const salon = initSalon({
   jeu: 'kassen',
   etatInitial: (nom, nb, { local }) => ({
     edition: jeuPrefere(),
+    local: !!local, // sur un seul téléphone, n'importe qui peut changer de jeu ; en ligne, seulement l'hôte
     players: [
       { name: nom, joined: true, bot: false },
       local && nb === 1 ? { name: 'Bot', joined: true, bot: true } : { name: 'En attente', joined: false, bot: false },
@@ -786,9 +787,11 @@ $('btn-plein-ecran').addEventListener('click', () => {
 });
 
 // Interrupteur Gwynt / Kassen (sur l'écran des clans)
+// en ligne, seul l'hôte (place 0, celui qui a créé le salon) choisit le jeu
+const hoteSeulement = () => !salon.estLocal() && maPlace !== 0;
 function rendreInterrupteur() {
   const jeu = M.editionDe(etat);
-  const verrou = etat.players.some((p) => p.clan);
+  const verrou = etat.players.some((p) => p.clan) || hoteSeulement();
   const b = $('interrupteur');
   b.dataset.jeu = jeu;
   b.setAttribute('aria-checked', String(jeu === 'gwynt'));
@@ -796,12 +799,14 @@ function rendreInterrupteur() {
   b.classList.toggle('verrouille', verrou);
   const autre = jeu === 'gwynt' ? 'kassen' : 'gwynt';
   b.classList.toggle('autre-indisponible', !EDITIONS[autre].pret);
-  b.title = verrou ? 'Le jeu est fixé : un joueur a déjà choisi son clan.' : `Passer à ${EDITIONS[autre].nom}`;
+  b.title = hoteSeulement() ? `Seul l'hôte (${etat.players[0].name}) choisit le jeu.`
+    : verrou ? 'Le jeu est fixé : un joueur a déjà choisi son clan.' : `Passer à ${EDITIONS[autre].nom}`;
 }
 $('interrupteur').addEventListener('click', () => {
   if (!etat || etat.status !== 'clans') return;
   const aide = $('interrupteur-aide');
   aide.innerHTML = '';
+  if (hoteSeulement()) { aide.textContent = `Seul l'hôte de la partie (${etat.players[0].name}) peut choisir entre Kassen et Gwynt.`; return; }
   if (etat.players.some((p) => p.clan)) { aide.textContent = 'Le jeu est fixé : un joueur a déjà choisi son clan.'; return; }
   const autre = M.editionDe(etat) === 'gwynt' ? 'kassen' : 'gwynt';
   const e = EDITIONS[autre];
@@ -814,7 +819,9 @@ $('interrupteur').addEventListener('click', () => {
     return;
   }
   try { localStorage.setItem(CLE_JEU, autre); } catch (err) { /* stockage indisponible */ }
-  action({ type: 'edition', edition: autre });
+  // sur un seul téléphone, n'importe qui change de jeu (au nom de l'hôte) ; en ligne, seulement l'hôte
+  if (salon.estLocal()) agir((s) => { s.local = true; return M.jouerAction(s, 0, { type: 'edition', edition: autre }); });
+  else action({ type: 'edition', edition: autre });
 });
 
 // Logo du clan (image), ou son symbole si l'image manque
