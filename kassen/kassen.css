@@ -277,6 +277,7 @@ body.kassen {
 .pile-titre { font-size: .7rem; color: var(--brume); }
 .embleme { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--clan); color: var(--kin-clair); font-family: var(--titre); font-weight: 800; flex: none; border: 1px solid var(--kin); }
 .vies { display: flex; gap: 4px; }
+.camp-compteurs { display: contents; }
 .vie { width: 12px; height: 12px; border-radius: 50%; background: var(--shu); box-shadow: 0 0 6px rgba(181, 48, 29, .8); }
 .vie.perdue { background: #3A2422; box-shadow: none; }
 .nb-main { font-size: .8rem; color: var(--brume); }
@@ -752,12 +753,21 @@ body.en-bataille .piles { gap: clamp(14px, 3vh, 30px); }
 .score-total {
   display: inline-grid; place-items: center; min-width: 0;
   width: 1.9em; height: 2.15em; padding-bottom: .15em;
-  background: linear-gradient(180deg, #E8C877, #9A7426);
-  clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
   position: relative;
 }
-.score-total::before { content: ''; position: absolute; inset: 3px 3px 4px; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); background: linear-gradient(180deg, #3A2A1E, #120A07); z-index: 0; }
+/* bordure dorée puis fond sombre, découpés en écusson (sur des pseudo-éléments, pour que le bandeau « a passé » déborde) */
+.score-total::before, .score-total::after { content: ''; position: absolute; clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); z-index: 0; }
+.score-total::before { inset: 0; background: linear-gradient(180deg, #E8C877, #9A7426); }
+.score-total::after { inset: 3px 3px 4px; background: linear-gradient(180deg, #3A2A1E, #120A07); }
 .score-nombre { position: relative; z-index: 1; font-size: .62em; color: var(--kin-clair); }
+/* a passé : bandeau rouge en travers de la pointe de l'écusson */
+.score-total .badge-passe {
+  position: absolute; z-index: 2; left: 50%; bottom: 6%; transform: translateX(-50%) rotate(-4deg);
+  font-family: "Fredoka", system-ui, sans-serif; font-size: max(8px, .3em); line-height: 1.25; font-weight: 800; letter-spacing: .03em; white-space: nowrap;
+  padding: 0 .55em; border-radius: 3px; color: #FFF3DC; background: linear-gradient(180deg, #B3261E, #7A1410);
+  border: 1px solid #E8C877; box-shadow: 0 2px 4px rgba(0, 0, 0, .6); text-transform: uppercase; pointer-events: none;
+}
+.score-total.a-passe .score-nombre { transform: translateY(-.22em); }
 .camp-info .score-total { align-self: center; }
 /* nombre de cartes en main : petite icône de cartes */
 .nb-main { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--washi); }
@@ -894,9 +904,16 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   body.en-bataille .camp-info .camp-nom { gap: 4px; }
   body.en-bataille .camp-ident strong { font-size: .8rem; max-width: 100%; }
   body.en-bataille .embleme { width: 22px; height: 22px; }
-  body.en-bataille .camp-info .score-total { font-size: 1.55rem; }
+  body.en-bataille .camp-info .score-total { font-size: clamp(16px, calc(20vh - 56px), 1.55rem); }
+  body.en-bataille .camp-info .score-nombre { font-size: .78em; }
   body.en-bataille .nb-main { font-size: .95rem; }
   body.en-bataille .camp-info .vie { width: 12px; height: 12px; }
+  /* vies et cartes en main sur une même ligne ; l'écusson du score n'est jamais écrasé */
+  body.en-bataille .camp-info .camp-compteurs { display: flex; align-items: center; justify-content: center; gap: 7px; flex: none; }
+  body.en-bataille .camp-info.adverse .camp-compteurs { order: 2; }
+  body.en-bataille .camp-info.moi .camp-compteurs { order: 3; }
+  body.en-bataille .camp-info .camp-compteurs .vies { gap: 3px; }
+  body.en-bataille .camp-info .camp-nom, body.en-bataille .camp-info .score-total { flex-shrink: 0; }
   /* ronds de puissance des rangées */
   body.en-bataille .rangee { grid-template-columns: 40px 18px minmax(0, 1fr); }
   body.en-bataille .rangee-total { min-width: 32px; height: 32px; font-size: 1.05rem; border-width: 2px; }

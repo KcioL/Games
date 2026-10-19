@@ -1299,16 +1299,18 @@ function infoCamp(zone, j) {
   zone.appendChild(chef);
   const vies = el('span', 'vies');
   for (let k = 0; k < 2; k++) vies.appendChild(el('span', k < p.vies ? 'vie' : 'vie perdue'));
-  zone.appendChild(vies);
   const nbMain = el('span', 'nb-main');
   nbMain.append(el('span', 'icone-main', ''), document.createTextNode(String(p.main.length)));
   nbMain.title = `${p.main.length} carte${p.main.length > 1 ? 's' : ''} en main`;
-  zone.appendChild(nbMain);
-  if (p.passe) zone.appendChild(el('span', 'badge-passe', 'a passé'));
-  // score : en grand, dans un écusson
-  const score = el('span', 'score-total');
+  // vies et cartes en main : groupées (sur une seule ligne sur téléphone, sans effet ailleurs)
+  const compteurs = el('span', 'camp-compteurs');
+  compteurs.append(vies, nbMain);
+  zone.appendChild(compteurs);
+  // score : en grand, dans un écusson ; « a passé » est un bandeau noué sur l'écusson (ne prend pas de place en plus)
+  const score = el('span', 'score-total' + (p.passe ? ' a-passe' : ''));
   score.appendChild(el('span', 'score-nombre', String(M.total(etat, j))));
-  score.title = 'Force totale';
+  if (p.passe) score.appendChild(el('span', 'badge-passe', 'a passé'));
+  score.title = p.passe ? 'Force totale (a passé)' : 'Force totale';
   zone.appendChild(score);
   zone.classList.toggle('actif', etat.status === 'jeu' && etat.active === j);
 }
