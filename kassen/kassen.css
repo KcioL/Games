@@ -961,9 +961,14 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
   body.en-bataille .bataille .statut, body.en-bataille .ciel { min-height: 0; }
   body.en-bataille .bataille .main { overflow: visible; align-items: flex-start; padding: 4px 6px 0; container-type: normal; }
   body.en-bataille .main .carte.grande { --l: calc(var(--h-carte-main) * .75); transition: transform .18s ease-out; }
-  /* carte touchée (ou survolée) : elle remonte en entier */
-  body.en-bataille .main .carte.grande:hover,
-  body.en-bataille .main .carte.grande.choisie { transform: translateY(calc(var(--h-main) - var(--h-carte-main) - 10px)); z-index: 6; }
+  /* carte choisie : elle remonte à peine (pour ne pas cacher les rangées du bas) ; on la voit en grand en haut à droite */
+  body.en-bataille .main .carte.grande.choisie { transform: translateY(-10px); z-index: 6; box-shadow: 0 0 0 3px var(--kin-clair), 0 0 16px 4px rgba(255, 200, 90, .65); }
+  .carte.apercu-choisie {
+    position: fixed; z-index: 30; margin: 0; cursor: zoom-in;
+    box-shadow: 0 0 0 3px var(--kin-clair), 0 0 18px 4px rgba(255, 200, 90, .55), 0 10px 24px rgba(0, 0, 0, .7);
+    animation: apercu-entre .16s ease-out;
+  }
+  body.glisse-en-cours .carte.apercu-choisie, body:not(.en-bataille) .carte.apercu-choisie { display: none; }
   /* cartes du plateau : la force toujours dans un grand rond lisible, posé sur le rond imprimé */
   body.en-bataille .rangee-cartes .carte.sur-plateau > .force,
   body.en-bataille .rangee-cartes .carte.image-pleine.sur-plateau > .force {
@@ -1196,3 +1201,8 @@ body.en-bataille .piles { gap: clamp(10px, 2.4vh, 30px); }
 @media (min-width: 900px) and (min-height: 600px) {
   body.en-bataille .bataille .detail { align-self: stretch; max-height: 100%; overflow-y: auto; min-height: 0; scrollbar-width: thin; }
 }
+/* à la souris seulement (téléphone en paysage avec souris, rare) : la carte survolée remonte en entier */
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 599px) and (hover: hover) and (pointer: fine) {
+  body.en-bataille .main .carte.grande:hover { transform: translateY(calc(var(--h-main) - var(--h-carte-main) - 10px)); z-index: 6; }
+}
+@keyframes apercu-entre { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }

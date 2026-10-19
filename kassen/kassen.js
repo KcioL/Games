@@ -1488,7 +1488,41 @@ function rendreMain() {
   });
   if (!moi.main.length) zone.appendChild(el('p', 'vide', 'Plus de cartes en main.'));
   serrerMain();
+  majApercuChoisie();
 }
+
+// Téléphone en paysage : la carte choisie ne remonte plus sur le plateau (elle cachait les rangées du bas,
+// et donc les unités à reprendre avec un kagemusha) ; on la montre en grand en haut à droite, sur les tas adverses
+const telephonePaysage = window.matchMedia('(orientation: landscape) and (min-width: 560px) and (max-height: 599px)');
+function majApercuChoisie() {
+  let ap = document.getElementById('apercu-choisie');
+  const carte = etat && etat.status === 'jeu' && selection !== null ? selectionCarte() : null;
+  const zone = $('piles-adverse');
+  const r = zone ? zone.getBoundingClientRect() : null;
+  if (!carte || !telephonePaysage.matches || !r || !r.width || !r.height) { if (ap) ap.remove(); return; }
+  if (!ap || ap.dataset.u !== String(carte.u)) {
+    if (ap) ap.remove();
+    ap = carteEl(carte, { taille: 'grande' });
+    ap.id = 'apercu-choisie';
+    ap.classList.add('apercu-choisie');
+    ap.dataset.u = String(carte.u);
+    ap.title = 'Voir la carte en grand';
+    // la toucher : la carte en grand avec tout son texte
+    ap.addEventListener('click', () => ouvrirLoupe({ d: CARTES[carte.c], carte, forcer: true }));
+    document.body.appendChild(ap);
+  }
+  // le plus grand possible dans la case des tas adverses (en tenant compte des cartes plus étroites du Gwynt)
+  let l = r.width - 6;
+  ap.style.setProperty('--l', `${l}px`);
+  // offsetWidth/offsetHeight : tailles sans l'animation d'apparition (scale)
+  const echelle = Math.min((r.width - 6) / ap.offsetWidth, (r.height - 6) / ap.offsetHeight);
+  l = Math.max(40, l * echelle);
+  ap.style.setProperty('--l', `${l}px`);
+  ap.style.left = `${r.left + (r.width - ap.offsetWidth) / 2}px`;
+  ap.style.top = `${r.top + (r.height - ap.offsetHeight) / 2}px`;
+}
+telephonePaysage.addEventListener('change', () => { if (etat && etat.status === 'jeu') majApercuChoisie(); });
+window.addEventListener('resize', () => { if (etat && etat.status === 'jeu') majApercuChoisie(); });
 // ---------- Glisser-déposer : on prend une carte de la main et on la lâche sur sa rangée ----------
 let glisse = null;      // { u, c, x0, y0, depart, parti, fantome, fleche }
 let clicIgnore = false;
@@ -1860,4 +1894,5 @@ function rendre() {
   if (etat.status !== 'jeu') fermerFenetreChef();
   rendreFin();
   majMeteoPlateau(); // gel, brume, pluie ou typhon sur les rangées touchées par une météo
+  majApercuChoisie();
 }
