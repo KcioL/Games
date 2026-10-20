@@ -154,3 +154,66 @@
   .commandes .btn { padding: 10px 12px; }
   .jeton { width: 48px; height: 48px; font-size: .85rem; }
 }
+
+/* ---------- Grand écran (ordinateur, tablette) : la table occupe toute la place disponible ---------- */
+@media (min-width: 1000px) and (min-height: 561px) {
+  #jeu:not([hidden]) {
+    --carte-bj: clamp(84px, 13vh, 150px);            /* cartes du croupier et de mes mains */
+    --carte-bj-autres: clamp(46px, 6.5vh, 76px);     /* cartes des autres joueurs */
+    /* table à gauche sur toute la hauteur, commandes à droite */
+    max-width: min(1700px, 100%);
+    height: calc(100dvh - var(--h-barre, 57px));
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 22vw, 360px);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch;
+    padding: 14px clamp(14px, 2.5vw, 40px);
+    gap: clamp(14px, 2vw, 30px);
+  }
+  /* avec d'autres joueurs, il y a une rangée de plus sur la table : cartes un peu plus petites */
+  #jeu:not([hidden]):has(.autres:not(:empty)) { --carte-bj: clamp(50px, 9.2vh, 132px); --carte-bj-autres: clamp(34px, 5.6vh, 72px); }
+  #jeu > .commandes { align-self: center; }
+  .table-bj {
+    min-height: 0; overflow: auto;
+    align-content: space-between;
+    padding: clamp(10px, 2.2vh, 34px) clamp(18px, 3vw, 44px);
+    gap: clamp(6px, 1.6vh, 24px);
+    /* le message se met à droite du croupier (une rangée de gagnée) */
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-areas: "gauche croupier message" "autres autres autres" "moi moi moi";
+    border-radius: 36px;
+    border-width: 6px;
+    box-shadow: inset 0 0 70px rgba(0, 0, 0, .4), 0 12px 30px rgba(0, 0, 0, .35);
+  }
+  .table-bj .carte-jeu.grande { --l: var(--carte-bj); }
+  .table-bj .carte-jeu.petite { --l: var(--carte-bj-autres); }
+  .table-bj .croupier .main-cartes,
+  .table-bj .mes-mains:not(:empty) .main-cartes { min-height: calc(var(--carte-bj) * 1.4); }
+  .table-bj .siege .main-cartes { min-height: calc(var(--carte-bj-autres) * 1.4); }
+  .croupier { gap: 10px; grid-area: croupier; }
+  .table-bj > .message { grid-area: message; justify-self: start; align-self: center; margin-left: clamp(12px, 2vw, 40px); text-wrap: balance; border-radius: 22px; }
+  .table-bj > .autres { grid-area: autres; }
+  .table-bj > .moi { grid-area: moi; }
+  .etiquette { font-size: 1.25rem; }
+  .score { font-size: 1.1rem; padding: 2px 12px; }
+  .message { font-size: 1.2rem; padding: 10px 22px; }
+  .autres { gap: 14px; overflow: visible; flex-wrap: wrap; justify-content: center; }
+  .siege { min-width: 180px; padding: 8px 14px; gap: 4px; border-radius: 16px; }
+  .siege .main-bj { padding: 4px; }
+  .siege-tete { font-size: 1.05rem; }
+  .siege .attente, .recharges { font-size: .9rem; }
+  .moi { padding: clamp(6px, 1.4vh, 14px) 16px; gap: clamp(4px, 1vh, 12px); border-radius: 20px; }
+  .moi-tete { font-size: 1.25rem; }
+  .mes-mains { gap: 28px; }
+  .main-bj { padding: 10px; gap: 8px; border-radius: 14px; }
+  .main-info { font-size: 1.05rem; }
+  .badge { font-size: 1rem; padding: 3px 14px; }
+  /* commandes plus grandes, sous la table */
+  .commandes { width: 100%; gap: 12px; }
+  .commandes .btn { padding: 16px 20px; font-size: 1.15rem; }
+  .rangee { gap: 12px; }
+  .mise-montant { font-size: 1.15rem; }
+  .mise-montant .jetons { font-size: 1.6rem; }
+  .jetons-boutons { gap: 16px; }
+  .jeton { width: clamp(52px, 4.4vw, 74px); height: auto; aspect-ratio: 1; font-size: clamp(.9rem, 1vw, 1.15rem); border-width: 4px; }
+  .jetons-boutons { flex-wrap: nowrap; }
+}
