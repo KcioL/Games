@@ -44,19 +44,38 @@ function tirerCarte(s) {
 
 function nouvelleManche(s) {
   s.status = 'mises';
-  s.active = 0;
   s.croupier = [];
   s.players.forEach((p) => { p.mains = []; p.mainActive = 0; });
   // Nouveau sabot (2 paquets mélangés) quand il en reste peu
   if (!s.sabot || s.sabot.length < 40) s.sabot = nouveauPaquet(2);
+  // les spectateurs (joueurs à sec qui n'ont pas voulu recharger) ne misent plus
+  const premier = s.players.findIndex((p) => !p.spectateur);
+  if (premier < 0) terminerPartie(s);
+  else s.active = premier;
+}
+
+// Plus personne à la table : la partie est finie (le dernier éliminé a tenu le plus longtemps)
+function terminerPartie(s) {
+  s.status = 'termine';
+  s.active = -1;
+  s.croupier = [];
+}
+
+// Après la mise (ou le passage en spectateur) du joueur actif : au suivant, ou on distribue
+function avancerMises(s) {
+  const suivant = s.players.findIndex((q, k) => k > s.active && !q.spectateur);
+  if (suivant >= 0) { s.active = suivant; return; }
+  if (s.players.some((q) => q.mains.length)) distribuer(s);
+  else terminerPartie(s);
 }
 
 function distribuer(s) {
+  const assis = s.players.filter((p) => p.mains.length);
   for (let tour = 0; tour < 2; tour++) {
-    s.players.forEach((p) => p.mains[0].cartes.push(tirerCarte(s)));
+    assis.forEach((p) => p.mains[0].cartes.push(tirerCarte(s)));
     s.croupier.push(tirerCarte(s));
   }
-  s.players.forEach((p) => {
+  assis.forEach((p) => {
     if (valeur(p.mains[0].cartes) === 21) p.mains[0].etat = 'bj';
   });
   s.status = 'jeu';
@@ -161,10 +180,33 @@ function miser() {
     p.derniereMise = montant;
     p.mains = [{ mise: montant, cartes: [], etat: 'jeu', double: false }];
     p.mainActive = 0;
-    if (s.active + 1 < s.players.length) s.active += 1;
-    else distribuer(s);
+    avancerMises(s);
   });
   miseChoisie = 0;
+}
+
+// À sec : plutôt que recharger, on passe spectateur (on regarde la fin de la partie)
+function devenirSpectateur() {
+  agir((s) => {
+    if (!monTour(s, 'mises')) return false;
+    const p = s.players[maPlace];
+    if (p.chips >= MISE_MIN) return false;
+    p.spectateur = true;
+    p.elimine = s.manche || 1;
+    p.mains = [];
+    avancerMises(s);
+  });
+}
+
+function nouvellePartie() {
+  agir((s) => {
+    if (s.status !== 'termine') return false;
+    s.players.forEach((p) => {
+      Object.assign(p, { chips: JETONS_DEPART, reloads: 0, spectateur: false, elimine: null, derniereMise: 100 });
+    });
+    s.manche = 1;
+    nouvelleManche(s);
+  });
 }
 
 function recharger() {
@@ -251,6 +293,8 @@ $('btn-effacer').addEventListener('click', () => {
 });
 $('btn-miser').addEventListener('click', miser);
 $('btn-recharger').addEventListener('click', recharger);
+$('btn-spectateur').addEventListener('click', devenirSpectateur);
+$('btn-nouvelle-partie').addEventListener('click', nouvellePartie);
 $('btn-tirer').addEventListener('click', tirer);
 $('btn-rester').addEventListener('click', rester);
 $('btn-doubler').addEventListener('click', doubler);
@@ -446,13 +490,13 @@ function rendreSieges() {
   etat.players.forEach((p, i) => {
     const moi = i === maPlace;
     const actif = (etat.status === 'mises' || etat.status === 'jeu') && etat.active === i;
-    const siege = el('div', 'siege' + (moi ? ' moi' : '') + (actif ? ' actif' : ''));
+    const siege = el('div', 'siege' + (moi ? ' moi' : '') + (actif ? ' actif' : '') + (p.spectateur ? ' spectateur' : ''));
     // position le long de l'arc de la table : -1 (à gauche) … 1 (à droite)
     const d = n > 1 ? (i - (n - 1) / 2) / ((n - 1) / 2) : 0;
     siege.style.setProperty('--d', d.toFixed(3));
     siege.style.setProperty('--d2', Math.abs(d).toFixed(3));
     const mains = el('div', 'mains' + (p.mains.length > 2 ? ' serrees' : ''));
-    if (!p.mains.length) {
+    if (!p.mains.length && !p.spectateur) {
       const attente = el('div', 'main-bj attente');
       const apercu = moi && monTour(etat, 'mises');
       attente.appendChild(zoneMise(apercu ? miseChoisie : 0, { id: apercu ? 'apercu-mise' : null }));
@@ -474,7 +518,8 @@ function rendreSieges() {
       A.soldes.push({ e: solde, de: avant, a: p.chips });
     }
     soldesAffiches[i] = p.chips;
-    if (!fin && !p.mains.length && etat.status === 'mises' && !moi) plaque.appendChild(el('span', 'attente', actif ? 'mise…' : 'pas encore misé'));
+    if (p.spectateur) plaque.appendChild(el('span', 'statut-spectateur', '👁 spectateur'));
+    else if (!fin && !p.mains.length && etat.status === 'mises' && !moi) plaque.appendChild(el('span', 'attente', actif ? 'mise…' : 'pas encore misé'));
     siege.appendChild(plaque);
     zone.appendChild(siege);
   });
@@ -486,8 +531,9 @@ function rendreMessage() {
   const actif = etat.players[etat.active];
   let texte = '';
   if (etat.status === 'mises') {
+    const qui = salon.estLocal() && etat.players.length > 1 ? `${p.name}, ` : '';
     texte = monTour(etat, 'mises')
-      ? (salon.estLocal() && etat.players.length > 1 ? `${p.name}, à toi de miser` : 'Faites vos jeux')
+      ? (p.chips < MISE_MIN ? `${qui}plus d'argent : recharger, ou passer spectateur ?` : (qui ? `${qui}à toi de miser` : 'Faites vos jeux'))
       : `${actif.name} choisit sa mise…`;
   } else if (etat.status === 'jeu') {
     if (monTour(etat, 'jeu')) {
@@ -496,6 +542,14 @@ function rendreMessage() {
     } else {
       texte = `Au tour ${de(actif.name)}…`;
     }
+  } else if (etat.status === 'termine') {
+    const max = Math.max(...etat.players.map((q) => q.elimine || 0));
+    const derniers = etat.players.filter((q) => (q.elimine || 0) === max).map((q) => q.name);
+    texte = etat.players.length > 1
+      ? `Partie terminée ! ${derniers.join(' et ')} ${derniers.length > 1 ? 'ont' : 'a'} tenu le plus longtemps.`
+      : 'Partie terminée : plus un sou !';
+  } else if (etat.status === 'fin' && p.spectateur && !p.mains.length) {
+    texte = 'Tu regardes la partie (spectateur).';
   } else if (etat.status === 'fin') {
     const total = p.mains.reduce((a, m) => a + (m.gain || 0), 0);
     const qui = salon.estLocal() && etat.players.length > 1 ? `${p.name} : ` : '';
@@ -538,7 +592,7 @@ function rendreCommandes(apercu = true) {
   const p = etat.players[maPlace];
   const miseTour = monTour(etat, 'mises');
   const jeuTour = monTour(etat, 'jeu');
-  const panneaux = { 'panneau-mise': miseTour, 'panneau-actions': jeuTour, 'panneau-fin': etat.status === 'fin' };
+  const panneaux = { 'panneau-mise': miseTour, 'panneau-actions': jeuTour, 'panneau-fin': etat.status === 'fin', 'panneau-termine': etat.status === 'termine' };
   Object.entries(panneaux).forEach(([id, visible]) => {
     const e = $(id);
     if (e.hidden === visible) {
@@ -549,8 +603,8 @@ function rendreCommandes(apercu = true) {
 
   if (miseTour) {
     const fauche = p.chips < MISE_MIN;
-    $('btn-recharger').hidden = !fauche;
-    document.querySelectorAll('#panneau-mise .jetons-boutons, #panneau-mise .rangee').forEach((e) => { e.hidden = fauche; });
+    $('a-sec').hidden = !fauche;
+    document.querySelectorAll('#panneau-mise .jetons-boutons, #panneau-mise .rangee:not(.a-sec)').forEach((e) => { e.hidden = fauche; });
     document.querySelectorAll('.jeton').forEach((b) => {
       b.disabled = miseChoisie + parseInt(b.dataset.ajout, 10) > p.chips;
     });

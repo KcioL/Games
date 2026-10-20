@@ -413,6 +413,10 @@
 .solde.baisse { color: #FFB199; }
 .recharges { font-size: .78em; color: #CFE3D8; }
 .plaque .attente { font-size: .78em; color: #CFE3D8; font-style: italic; }
+/* joueur éliminé (spectateur) : sa place est grisée */
+.siege.spectateur .plaque { opacity: .6; border-style: dashed; }
+.statut-spectateur { font-size: .78em; color: #CFE3D8; }
+.rangee.a-sec { flex-wrap: wrap; justify-content: center; }
 
 /* ---------- Commandes, posées sur le tapis ---------- */
 .commandes-table { grid-area: commandes; width: 100%; display: flex; justify-content: center; z-index: 3; }
@@ -548,6 +552,7 @@
   .btn-table.principal { padding: 9px 16px; min-width: 0; }
   .btn-table.action { min-width: 74px; padding: 5px 8px 6px; }
   .btn-effacer { width: 38px; height: 38px; font-size: 1.1rem; }
+  .rangee.a-sec { flex-direction: column; align-items: stretch; }
   .message { padding: 4px 14px; font-size: .82rem; }
   .inscription { width: 62%; --ins-haut: 34%; }
   .plaque .attente { display: none; }

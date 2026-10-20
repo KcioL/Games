@@ -169,6 +169,8 @@
   50% { box-shadow: 0 0 22px rgba(255, 217, 102, .9), 0 6px 16px rgba(0, 0, 0, .6); }
 }
 .siege-pk.couche .plaque-pk { opacity: .55; }
+.siege-pk.spectateur .plaque-pk { opacity: .55; border-style: dashed; filter: grayscale(.5); }
+.a-sec-texte { justify-self: end; padding: 3px 12px; border-radius: 999px; background: rgba(120, 20, 20, .75); color: #FFE3DC; font-weight: 700; font-size: .9rem; }
 .siege-pk.gagnant .plaque-pk { border-color: #7CF0A2; box-shadow: 0 0 18px rgba(124, 240, 162, .6), 0 6px 16px rgba(0, 0, 0, .6); }
 .bulle {
   position: absolute; top: calc(100% + 4px); left: 50%; translate: -50% 0;
@@ -380,6 +382,7 @@
   .relance { position: absolute; bottom: calc(100% + 8px); left: 50%; translate: -50% 0; }
   .paquet { width: calc(var(--carte) * .6); }
   .commandes { justify-items: center; }
+  .a-sec-texte { justify-self: center; }
   .btn-table.action { min-width: 0; padding: 8px 10px; font-size: .84rem; }
   .relance { width: min(330px, 92vw); }
   .mise-pk.moi { left: 50% !important; top: calc(100% - var(--carte-moi) * 1.45 - var(--j) * 1.6) !important; }
@@ -409,6 +412,8 @@
   .commandes { justify-items: stretch; }
   #panneau-actions .rangee.trois { display: grid; grid-template-columns: 1fr; gap: 7px; }
   #panneau-actions.relance-ouverte .rangee.trois { display: none; }
+  #panneau-recave .rangee { display: grid; gap: 7px; }
+  .a-sec-texte { justify-self: stretch; text-align: center; font-size: .78rem; }
   .relance { position: absolute; right: 0; top: 50%; translate: 0 -50%; }
   .centre-pk { top: 41%; }
   .commandes-pk .btn-table.principal { min-width: 0; padding: 8px 10px; white-space: normal; }

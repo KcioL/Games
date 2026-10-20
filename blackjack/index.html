@@ -126,7 +126,10 @@
               <button class="btn-table btn-effacer" id="btn-effacer" aria-label="Reprendre les jetons">↺</button>
               <button class="btn-table principal" id="btn-miser">Miser</button>
             </div>
-            <button class="btn-table principal" id="btn-recharger" hidden>Recharger (+1000 €)</button>
+            <div class="rangee a-sec" id="a-sec" hidden>
+              <button class="btn-table principal" id="btn-recharger">Recharger (+1000 €)</button>
+              <button class="btn-table" id="btn-spectateur">Spectateur</button>
+            </div>
           </div>
 
           <div class="commandes" id="panneau-actions" hidden>
@@ -138,6 +141,10 @@
 
           <div class="commandes" id="panneau-fin" hidden>
             <button class="btn-table principal" id="btn-suivante">Main suivante</button>
+          </div>
+
+          <div class="commandes" id="panneau-termine" hidden>
+            <button class="btn-table principal" id="btn-nouvelle-partie">Nouvelle partie</button>
           </div>
         </div>
       </div>
@@ -167,6 +174,7 @@
       <li>Blackjack (21 avec les 2 premières cartes) : mise × 2,5.</li>
       <li>Égalité : mise rendue. Un blackjack du croupier bat un 21 en plus de 2 cartes.</li>
       <li>Plus d'argent ? « Recharger » donne 1000 € ; le compteur ♻ indique combien de fois.</li>
+      <li>Ou bien « Spectateur » : on ne recharge pas, on est éliminé et on regarde la suite. Quand tout le monde est éliminé, la partie est finie : celui qui a tenu le plus longtemps gagne.</li>
     </ul>
     <button class="btn fermer">Fermer</button>
   </dialog>

@@ -126,19 +126,41 @@ function poser(p, montant) {
   return m;
 }
 
+// Joueur humain à sec qui doit choisir : recaver ou passer spectateur
+const aSec = (p) => !p.bot && !p.spectateur && p.chips < GROSSE_BLINDE;
+const enJeu = (p) => p.etat !== 'couche' && p.etat !== 'spectateur';
+
+// Moins de deux joueurs encore assis (ou plus aucun humain) : la partie est finie
+function verifierFinPartie(s) {
+  const restants = s.players.filter((p) => !p.spectateur);
+  if (restants.length >= 2 && restants.some((p) => !p.bot)) return false;
+  s.status = 'termine';
+  s.montrer = false;
+  const classement = [...restants].sort((a, b) => b.chips - a.chips);
+  if (classement.length === 1) s.resultat = { texte: `${classement[0].name} remporte la partie !` };
+  else if (classement.length) s.resultat = { texte: `Partie terminée ! ${classement[0].name} finit en tête avec ${euros(classement[0].chips)}.` };
+  else s.resultat = { texte: 'Partie terminée !' };
+  return true;
+}
+
 function nouvelleMain(s) {
   const n = s.players.length;
   s.mainNo = (s.mainNo || 0) + 1;
-  s.donneur = s.mainNo === 1 ? Math.floor(Math.random() * n) : (s.donneur + 1) % n;
   const recaves = [];
   s.players.forEach((p) => {
-    if (p.chips < GROSSE_BLINDE) {
+    // les bots à sec sont recavés ; les humains ont choisi (recaver ou spectateur) à la fin de la main
+    if (!p.spectateur && p.chips < GROSSE_BLINDE) {
       p.chips += RECAVE;
       p.reloads += 1;
       recaves.push(p.name);
     }
-    Object.assign(p, { cartes: [], etat: 'actif', mise: 0, engage: 0, aAgi: false, derniere: '', main: '', gain: 0 });
+    Object.assign(p, { cartes: [], etat: p.spectateur ? 'spectateur' : 'actif', mise: 0, engage: 0, aAgi: false, derniere: '', main: '', gain: 0 });
   });
+  if (verifierFinPartie(s)) return;
+  // joueurs encore assis, dans l'ordre de la table
+  const assis = s.players.map((p, i) => i).filter((i) => !s.players[i].spectateur);
+  const apres = (i) => assis.find((k) => k > i) ?? assis[0];
+  s.donneur = s.mainNo === 1 || s.donneur === undefined ? assis[Math.floor(Math.random() * assis.length)] : apres(s.donneur);
   s.deck = nouveauPaquet(1);
   s.board = [];
   s.street = 0;
@@ -146,11 +168,11 @@ function nouvelleMain(s) {
   s.resultat = null;
   s.coup = 0;
   s.status = 'jeu';
-  for (let tour = 0; tour < 2; tour++) s.players.forEach((p) => p.cartes.push(s.deck.pop()));
+  for (let tour = 0; tour < 2; tour++) assis.forEach((i) => s.players[i].cartes.push(s.deck.pop()));
 
   // Blindes (à deux, le donneur pose la petite blinde)
-  const pb = n === 2 ? s.donneur : (s.donneur + 1) % n;
-  const gb = (pb + 1) % n;
+  const pb = assis.length === 2 ? s.donneur : apres(s.donneur);
+  const gb = apres(pb);
   poser(s.players[pb], PETITE_BLINDE);
   s.players[pb].derniere = 'Petite blinde';
   poser(s.players[gb], GROSSE_BLINDE);
@@ -168,7 +190,7 @@ const doitAgir = (s, p) => p.etat === 'actif' && (!p.aAgi || p.mise < s.miseMax)
 // Passe la main au prochain joueur qui doit parler, ou clôt le tour d'enchères
 function continuer(s, depuis) {
   const n = s.players.length;
-  const vivants = s.players.filter((p) => p.etat !== 'couche');
+  const vivants = s.players.filter(enJeu);
   if (vivants.length === 1) { gagnerSansAbattage(s, vivants[0]); return; }
   const actifs = s.players.filter((p) => p.etat === 'actif');
   // Un seul joueur peut encore miser et il a suivi : plus rien à décider
@@ -215,7 +237,7 @@ function abattage(s) {
   const n = s.players.length;
   const vivants = [];
   s.players.forEach((p, i) => {
-    if (p.etat !== 'couche') {
+    if (enJeu(p)) {
       p.score = meilleureMain([...p.cartes, ...s.board]);
       p.main = nomMain(p.score);
       vivants.push(i);
@@ -412,6 +434,11 @@ const salon = initSalon({
   quiDoitJouer: (s) => {
     const humains = (s.players || []).filter((p) => !p.bot);
     if (humains.length <= 1) return -1;
+    // fin de main : le téléphone va au joueur à sec, qui doit choisir (recaver ou spectateur)
+    if (s.status === 'fin') {
+      const k = s.players.findIndex(aSec);
+      if (k >= 0) return k;
+    }
     if (s.status === 'jeu' && s.players[s.active] && !s.players[s.active].bot) return s.active;
     return -1;
   },
@@ -510,7 +537,33 @@ document.querySelectorAll('.raccourci').forEach((b) => b.addEventListener('click
   rendreRelance();
 }));
 $('btn-suivante').addEventListener('click', () => {
-  agir((s) => { if (s.status !== 'fin') return false; nouvelleMain(s); });
+  agir((s) => { if (s.status !== 'fin' || s.players.some(aSec)) return false; nouvelleMain(s); });
+});
+// À sec : recaver, ou passer spectateur (éliminé : on regarde la suite, ça met la pression !)
+$('btn-recaver').addEventListener('click', () => {
+  agir((s) => {
+    const p = s.players[maPlace];
+    if (s.status !== 'fin' || !aSec(p)) return false;
+    p.chips += RECAVE;
+    p.reloads += 1;
+  });
+});
+$('btn-spectateur').addEventListener('click', () => {
+  agir((s) => {
+    const p = s.players[maPlace];
+    if (s.status !== 'fin' || !aSec(p)) return false;
+    p.spectateur = true;
+    p.elimine = s.mainNo;
+    verifierFinPartie(s);
+  });
+});
+$('btn-nouvelle-partie').addEventListener('click', () => {
+  agir((s) => {
+    if (s.status !== 'termine') return false;
+    s.players.forEach((p) => Object.assign(p, { chips: JETONS_DEPART, reloads: 0, spectateur: false, elimine: null }));
+    s.mainNo = 0;
+    nouvelleMain(s);
+  });
 });
 
 function bornesRelance() {
@@ -637,6 +690,8 @@ function plusTard(fn, t) { minuteries.push(setTimeout(fn, t)); }
 function annulerMinuteries() { minuteries.forEach(clearTimeout); minuteries = []; }
 
 function texteBulle(p, i) {
+  if (p.spectateur) return '👁 spectateur';
+  if (etat.status === 'fin' && aSec(p) && p.gain <= 0) return 'À sec !';
   const fin = etat.status === 'fin';
   const devoile = etat.montrer && p.etat !== 'couche';
   if (fin) {
@@ -673,6 +728,7 @@ function rendrePlaces() {
     if (pos.x > 82) siege.classList.add('bord-d');
     if (actif) siege.classList.add('actif');
     if (p.etat === 'couche') siege.classList.add('couche');
+    if (p.spectateur) siege.classList.add('spectateur');
     if (fin && p.gain > 0) siege.classList.add('gagnant');
     siege.dataset.i = String(i);
     siege.style.left = `${pos.x}%`;
@@ -680,7 +736,7 @@ function rendrePlaces() {
 
     // ses deux cartes (les miennes face visible ; celles des autres à l'abattage)
     const cartes = el('div', 'siege-cartes');
-    if (p.cartes.length && (moi || p.etat !== 'couche')) {
+    if (p.cartes.length && !p.spectateur && (moi || p.etat !== 'couche')) {
       const devoiler = moi || (etat.montrer && p.etat !== 'couche');
       p.cartes.forEach((c, j) => {
         const e = carteEl(c, { cachee: !devoiler });
@@ -748,20 +804,21 @@ function rendreCentre() {
     zone.appendChild(c ? carteEl(c) : el('div', 'emplacement'));
   }
   const total = potTotal(etat);
-  const auCentre = total - etat.players.reduce((a, p) => a + (etat.status === 'jeu' ? p.mise : 0), 0);
+  const auCentre = etat.status === 'termine' ? 0 : total - etat.players.reduce((a, p) => a + (etat.status === 'jeu' ? p.mise : 0), 0);
   $('pot').textContent = euros(total);
   const tas = $('pot-tas');
   tas.innerHTML = '';
   tas.classList.toggle('emporte', etat.status === 'fin' && potEmporte === etat.mainNo);
   if (auCentre > 0) tas.appendChild(pileEl(auCentre));
-  $('pot-zone').classList.toggle('vide', total <= 0);
-  $('etape').textContent = etat.status === 'fin' ? (etat.montrer ? 'Abattage' : '') : (ETAPES[etat.street] || '');
+  $('etape').textContent = etat.status === 'termine' ? 'Fin de partie'
+    : etat.status === 'fin' ? (etat.montrer ? 'Abattage' : '') : (ETAPES[etat.street] || '');
+  $('pot-zone').classList.toggle('vide', total <= 0 || etat.status === 'termine');
 }
 
 function rendreMessage() {
   const msg = $('message');
   let texte = '';
-  if (etat.status === 'fin') texte = (etat.resultat && etat.resultat.texte) || '';
+  if (etat.status === 'fin' || etat.status === 'termine') texte = (etat.resultat && etat.resultat.texte) || '';
   else {
     const actif = etat.players[etat.active];
     if (monTour()) {
@@ -793,7 +850,17 @@ function rendreCommandes() {
     }
   };
   montrer('panneau-actions', tour);
-  montrer('panneau-fin', etat.status === 'fin');
+  const moiASec = etat.status === 'fin' && aSec(etat.players[maPlace]);
+  montrer('panneau-recave', moiASec);
+  montrer('panneau-fin', etat.status === 'fin' && !moiASec);
+  montrer('panneau-termine', etat.status === 'termine');
+  if (etat.status === 'fin') {
+    // tant qu'un joueur à sec n'a pas choisi, on l'attend
+    const attendu = etat.players.find(aSec);
+    const suivante = $('btn-suivante');
+    suivante.disabled = !!attendu;
+    suivante.textContent = attendu ? `En attente ${de(attendu.name)}…` : 'Main suivante';
+  }
   if (!tour) { ouvrirRelance(false); return; }
   const p = etat.players[maPlace];
   const aSuivre = etat.miseMax - p.mise;
