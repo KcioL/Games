@@ -13,7 +13,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../commun/commun.css">
   <link rel="stylesheet" href="../commun/relais.css">
   <link rel="stylesheet" href="../commun/cartes.css">
@@ -82,59 +82,68 @@
     </div>
   </section>
 
-  <!-- Jeu -->
-  <main id="jeu" hidden>
-    <section class="tapis table-bj">
-      <div class="croupier">
-        <div class="etiquette">Croupier <span class="score" id="score-croupier"></span></div>
-        <div class="main-cartes" id="cartes-croupier"></div>
-      </div>
-
-      <p class="message" id="message" aria-live="polite"></p>
-
-      <div class="autres" id="autres"></div>
-
-      <div class="moi" id="moi">
-        <div class="moi-tete">
-          <strong id="moi-nom"></strong>
-          <span><span class="jetons" id="moi-jetons"></span> <span class="recharges" id="moi-recharges"></span></span>
+  <!-- Jeu : une vraie table de casino, tout se passe sur le tapis -->
+  <main id="jeu" class="salle" hidden>
+    <section class="table-bj" id="table">
+      <div class="feutre" id="feutre">
+        <!-- côté croupier : défausse, plateau de jetons de la banque, sabot -->
+        <div class="banque" aria-hidden="true">
+          <div class="defausse" id="defausse"></div>
+          <div class="plateau" id="plateau">
+            <i class="tube t1000"></i><i class="tube t500"></i><i class="tube t100"></i><i class="tube t50"></i><i class="tube t10"></i><i class="tube t5"></i>
+          </div>
+          <div class="sabot" id="sabot"><span class="sabot-carte"></span></div>
         </div>
-        <div class="mes-mains" id="mes-mains"></div>
+
+        <div class="croupier">
+          <div class="main-cartes" id="cartes-croupier"></div>
+          <span class="score score-croupier" id="score-croupier"></span>
+        </div>
+
+        <!-- inscriptions imprimées sur le tapis -->
+        <svg class="inscription" viewBox="0 0 1000 260" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <defs>
+            <path id="arc-haut" d="M 20 20 Q 500 230 980 20" />
+            <path id="arc-bas" d="M 120 92 Q 500 292 880 92" />
+          </defs>
+          <text class="ins-grande"><textPath href="#arc-haut" startOffset="50%" text-anchor="middle">LE BLACKJACK PAIE 3 CONTRE 2</textPath></text>
+          <text class="ins-petite"><textPath href="#arc-bas" startOffset="50%" text-anchor="middle">LA BANQUE TIRE JUSQU'À 16 ET RESTE À 17</textPath></text>
+        </svg>
+
+        <p class="message" id="message" aria-live="polite"></p>
+
+        <!-- places des joueurs, en arc de cercle -->
+        <div class="sieges" id="sieges"></div>
+
+        <!-- commandes, posées sur le tapis devant le joueur -->
+        <div class="commandes-table">
+          <div class="commandes" id="panneau-mise" hidden>
+            <div class="jetons-boutons" role="group" aria-label="Ajouter des jetons">
+              <button class="jeton" data-ajout="10" aria-label="Ajouter 10 €"><span>10</span></button>
+              <button class="jeton" data-ajout="50" aria-label="Ajouter 50 €"><span>50</span></button>
+              <button class="jeton" data-ajout="100" aria-label="Ajouter 100 €"><span>100</span></button>
+              <button class="jeton" data-ajout="500" aria-label="Ajouter 500 €"><span>500</span></button>
+            </div>
+            <div class="rangee">
+              <button class="btn-table btn-effacer" id="btn-effacer" aria-label="Reprendre les jetons">↺</button>
+              <button class="btn-table principal" id="btn-miser">Miser</button>
+            </div>
+            <button class="btn-table principal" id="btn-recharger" hidden>Recharger (+1000 €)</button>
+          </div>
+
+          <div class="commandes" id="panneau-actions" hidden>
+            <button class="btn-table action" id="btn-tirer"><b>＋</b>Tirer</button>
+            <button class="btn-table action" id="btn-rester"><b>✋</b>Rester</button>
+            <button class="btn-table action" id="btn-doubler"><b>×2</b>Doubler</button>
+            <button class="btn-table action" id="btn-separer"><b>⇆</b>Séparer</button>
+          </div>
+
+          <div class="commandes" id="panneau-fin" hidden>
+            <button class="btn-table principal" id="btn-suivante">Main suivante</button>
+          </div>
+        </div>
       </div>
     </section>
-
-    <!-- Mise -->
-    <div class="commandes" id="panneau-mise" hidden>
-      <div class="mise-montant">Mise : <span class="jetons" id="mise-choisie">0 €</span></div>
-      <div class="jetons-boutons">
-        <button class="jeton" data-ajout="10">10</button>
-        <button class="jeton" data-ajout="50">50</button>
-        <button class="jeton" data-ajout="100">100</button>
-        <button class="jeton" data-ajout="500">500</button>
-      </div>
-      <div class="rangee">
-        <button class="btn" id="btn-effacer">Effacer</button>
-        <button class="btn btn-principal" id="btn-miser">Miser</button>
-      </div>
-      <button class="btn btn-recharger" id="btn-recharger" hidden>Recharger (+1000 €)</button>
-    </div>
-
-    <!-- Actions -->
-    <div class="commandes" id="panneau-actions" hidden>
-      <div class="rangee">
-        <button class="btn btn-principal" id="btn-tirer">Tirer</button>
-        <button class="btn" id="btn-rester">Rester</button>
-      </div>
-      <div class="rangee">
-        <button class="btn btn-secondaire" id="btn-doubler">Doubler</button>
-        <button class="btn btn-secondaire" id="btn-separer">Séparer</button>
-      </div>
-    </div>
-
-    <!-- Fin de la main -->
-    <div class="commandes" id="panneau-fin" hidden>
-      <button class="btn btn-principal" id="btn-suivante">Main suivante</button>
-    </div>
   </main>
 
   <dialog class="regles" id="regles">
