@@ -1,5 +1,5 @@
 import { $, el, toast, initSalon, initRegles, de } from '../commun/salon.js';
-import { nouveauPaquet, afficherCartes } from '../commun/cartes.js';
+import { nouveauPaquet } from '../commun/cartes.js';
 
 const PETITE_BLINDE = 10;
 const GROSSE_BLINDE = 20;
@@ -381,7 +381,6 @@ let relanceCible = 0;
 let botPrevu = '';
 let dernierTs = null;
 let premiereSynchro = true;
-const cartesVues = { tableau: 0, moi: 0, main: 0 };
 
 const salon = initSalon({
   jeu: 'poker',
@@ -402,7 +401,7 @@ const salon = initSalon({
   },
   demarrer: (s) => { normaliser(s); nouvelleMain(s); },
   afficher: (s, place) => {
-    if (place !== maPlace) { relanceCible = 0; cartesVues.moi = 0; }
+    if (place !== maPlace) relanceCible = 0;
     etat = normaliser(s);
     maPlace = place;
     noterChangement();
@@ -473,12 +472,11 @@ setInterval(() => {
 // ---------- Actions du joueur ----------
 const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && etat.players[maPlace].etat === 'actif';
 
-// Relance ouverte : les boutons « Se coucher » et « Parole/Suivre » sont masqués (pas de clic par erreur)
-// et le panneau est fixé en bas de l'écran, bouton de confirmation toujours visible.
+// Relance ouverte : un panneau posé sur le tapis, au-dessus des boutons (« Se coucher » et « Suivre » masqués :
+// pas de clic par erreur)
 function ouvrirRelance(ouvert) {
   $('relance').hidden = !ouvert;
   $('panneau-actions').classList.toggle('relance-ouverte', ouvert);
-  document.body.classList.toggle('relance-ouverte', ouvert);
 }
 
 function action(a) {
@@ -492,12 +490,6 @@ $('btn-ouvrir-relance').addEventListener('click', () => {
   relanceCible = bornesRelance().min;
   ouvrirRelance(true);
   rendreRelance();
-  // mes cartes restent visibles juste au-dessus du panneau de relance
-  requestAnimationFrame(() => {
-    const cartes = $('moi').getBoundingClientRect();
-    const haut = window.innerHeight - $('relance').offsetHeight; // position finale (le panneau est encore en train de monter)
-    if (cartes.bottom > haut - 8) window.scrollBy({ top: cartes.bottom - haut + 12, behavior: 'smooth' });
-  });
 });
 $('btn-annuler-relance').addEventListener('click', () => ouvrirRelance(false));
 $('btn-relancer').addEventListener('click', () => {
@@ -544,118 +536,264 @@ function rendreRelance(depuisCurseur = false) {
   $('btn-relancer').textContent = relanceCible >= max ? `Tapis (${euros(max)})` : `${verbe} ${euros(relanceCible)}`;
 }
 
-function badgeDonneur(i) {
-  return i === etat.donneur ? el('span', 'donneur', 'D') : null;
+
+// hauteur de la barre du haut : la salle prend tout le reste de l'écran
+function majHauteurBarre() {
+  const b = document.querySelector('.barre');
+  if (b) document.documentElement.style.setProperty('--h-barre', `${b.offsetHeight}px`);
 }
+window.addEventListener('resize', majHauteurBarre);
+majHauteurBarre();
 
-function rendreAdversaires() {
-  const zone = $('adversaires');
-  zone.innerHTML = '';
-  const n = etat.players.length;
-  for (let k = 1; k < n; k++) {
-    const i = (maPlace + k) % n;
-    const p = etat.players[i];
-    const siege = el('div', 'siege');
-    if (etat.status === 'jeu' && etat.active === i) siege.classList.add('actif');
-    if (p.etat === 'couche') siege.classList.add('couche');
-    if (etat.status === 'fin' && p.gain > 0) siege.classList.add('gagnant');
+const sansAnimation = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ETAPES = ['Pré-flop', 'Flop', 'Turn', 'River'];
 
-    const tete = el('div', 'siege-tete');
-    tete.appendChild(el('strong', '', p.name));
-    const d = badgeDonneur(i);
-    if (d) tete.appendChild(d);
-    siege.appendChild(tete);
-    const argent = el('div', 'siege-argent');
-    argent.appendChild(el('span', 'jetons', euros(p.chips)));
-    if (p.reloads) argent.appendChild(el('span', 'recharges', `♻ ${p.reloads}`));
-    siege.appendChild(argent);
-
-    const cartes = el('div', 'main-cartes');
-    const devoiler = etat.montrer && p.etat !== 'couche';
-    if (p.etat !== 'couche') afficherCartes(cartes, p.cartes, { taille: 'petite', cachee: !devoiler }, p.cartes.length);
-    siege.appendChild(cartes);
-
-    let info = p.derniere;
-    if (etat.status === 'fin') info = p.gain > 0 ? `+${euros(p.gain)}` : (devoiler ? p.main : p.derniere);
-    else if (etat.status === 'jeu' && etat.active === i && p.bot) info = 'Réfléchit…';
-    if (etat.status === 'fin' && p.gain > 0 && devoiler) info = `${p.main}, +${euros(p.gain)}`;
-    siege.appendChild(el('span', 'siege-info', info || ' '));
-    if (p.mise > 0 && etat.status === 'jeu') siege.appendChild(el('span', 'mise-tour', euros(p.mise)));
-    zone.appendChild(siege);
+// ---------- Cartes et jetons dessinés comme au casino ----------
+const FIGURES = { J: 'V', Q: 'D', K: 'R' };
+const PIPS = {
+  2: [[50, 0], [50, 100]],
+  3: [[50, 0], [50, 50], [50, 100]],
+  4: [[15, 0], [85, 0], [15, 100], [85, 100]],
+  5: [[15, 0], [85, 0], [50, 50], [15, 100], [85, 100]],
+  6: [[15, 0], [85, 0], [15, 50], [85, 50], [15, 100], [85, 100]],
+  7: [[15, 0], [85, 0], [50, 25], [15, 50], [85, 50], [15, 100], [85, 100]],
+  8: [[15, 0], [85, 0], [50, 25], [15, 50], [85, 50], [50, 75], [15, 100], [85, 100]],
+  9: [[15, 0], [85, 0], [15, 33.3], [85, 33.3], [50, 50], [15, 66.7], [85, 66.7], [15, 100], [85, 100]],
+  10: [[15, 0], [85, 0], [50, 16.7], [15, 33.3], [85, 33.3], [15, 66.7], [85, 66.7], [50, 83.3], [15, 100], [85, 100]],
+};
+function carteEl(c, { cachee = false } = {}) {
+  const e = el('div', 'carte-pk');
+  if (!c || cachee) {
+    e.classList.add('dos');
+    e.setAttribute('aria-label', 'Carte cachée');
+    return e;
   }
-}
-
-function rendreTableau() {
-  const zone = $('tableau');
-  const avant = cartesVues.tableau;
-  zone.innerHTML = '';
-  for (let k = 0; k < 5; k++) {
-    const c = etat.board[k];
-    if (c) {
-      const tmp = el('div');
-      afficherCartes(tmp, [c], { taille: 'grande' }, k < avant ? 1 : 0);
-      const carte = tmp.firstChild;
-      if (k >= avant) carte.style.animationDelay = `${(k - avant) * 120}ms`;
-      zone.appendChild(carte);
-    } else {
-      zone.appendChild(el('div', 'emplacement'));
-    }
+  if (c.s === '♥' || c.s === '♦') e.classList.add('rouge');
+  const v = FIGURES[c.v] || c.v;
+  const indice = (bas) => {
+    const i = el('span', 'indice' + (bas ? ' bas' : ''));
+    i.append(el('b', '', v), el('i', '', c.s));
+    return i;
+  };
+  const face = el('span', 'face');
+  if (FIGURES[c.v]) {
+    e.classList.add('figure');
+    const cadre = el('span', 'cadre');
+    cadre.append(el('b', '', v), el('i', '', c.s));
+    face.appendChild(cadre);
+  } else if (c.v === 'A') {
+    e.classList.add('as');
+    face.appendChild(el('i', 'pip', c.s));
+  } else {
+    PIPS[c.v].forEach(([x, y]) => {
+      const p = el('i', 'pip' + (y > 50 ? ' renverse' : ''), c.s);
+      p.style.left = `${x}%`;
+      p.style.top = `${y}%`;
+      face.appendChild(p);
+    });
   }
-  cartesVues.tableau = etat.board.length;
-  $('pot').textContent = euros(potTotal(etat));
+  e.append(indice(false), face, indice(true));
+  e.setAttribute('aria-label', `${v} ${c.s}`);
+  return e;
+}
+const VALEURS_JETONS = [1000, 500, 100, 50, 10, 5];
+function pileEl(montant) {
+  const pile = el('div', 'pile');
+  let reste = Math.round(montant);
+  VALEURS_JETONS.forEach((d) => {
+    const n = Math.floor(reste / d);
+    reste -= n * d;
+    if (!n) return;
+    const col = el('span', 'colonne');
+    for (let k = 0; k < Math.min(n, 9); k++) col.appendChild(el('i', `j j${d}`));
+    pile.appendChild(col);
+  });
+  return pile;
 }
 
-function rendreMoi() {
-  const p = etat.players[maPlace];
-  const zone = $('moi');
-  zone.classList.toggle('actif', monTour());
-  zone.classList.toggle('couche', p.etat === 'couche');
-  zone.classList.toggle('gagnant', etat.status === 'fin' && p.gain > 0);
-  const nom = $('moi-nom');
-  nom.textContent = salon.estLocal() ? p.name : `${p.name} (toi)`;
-  const d = badgeDonneur(maPlace);
-  if (d) nom.appendChild(d);
-  $('moi-jetons').textContent = euros(p.chips);
-  $('moi-recharges').textContent = p.reloads ? `♻ ${p.reloads}` : '';
-  const cle = `${etat.mainNo}-${maPlace}`;
-  afficherCartes($('mes-cartes'), p.cartes, { taille: 'grande' }, cartesVues.main === cle ? p.cartes.length : 0);
-  cartesVues.main = cle;
-  $('moi-mise').textContent = p.mise > 0 && etat.status === 'jeu' ? `Mise : ${euros(p.mise)}` : '';
-  let info = p.derniere;
-  if (etat.status === 'fin') {
-    if (p.gain > 0) info = etat.montrer ? `${p.main}, +${euros(p.gain)}` : `+${euros(p.gain)}`;
-    else info = etat.montrer && p.etat !== 'couche' ? p.main : p.derniere;
-  } else if (etat.board.length >= 3 && p.etat !== 'couche') {
-    // Aide : la combinaison actuelle du joueur
-    info = [p.derniere, meilleureMainNom(p)].filter(Boolean).join(', ');
+// ---------- Places autour de la table ----------
+// moi en bas au centre ; les autres répartis le long du bord, dans l'ordre du jeu (sens des aiguilles d'une montre)
+function anglePlace(k, n) {
+  if (k === 0) return 90;
+  const m = n - 1;
+  if (m === 1) return 270;
+  const ecart = Math.min(240, 60 * m);
+  return 270 - ecart / 2 + (ecart * (k - 1)) / (m - 1);
+}
+// point du bord de la table (forme de pilule : super-ellipse), en % de la table
+function pointBord(angle, r = 1) {
+  const a = (angle * Math.PI) / 180;
+  const c = Math.cos(a); const s = Math.sin(a);
+  const e = 2 / 2.7;
+  return { x: 50 + 50 * r * Math.sign(c) * Math.abs(c) ** e, y: 50 + 50 * r * Math.sign(s) * Math.abs(s) ** e };
+}
+
+const soldesAffiches = [];
+let potEmporte = null;     // main dont le pot est déjà parti chez le gagnant
+let precedent = null;
+let A = null;
+let minuteries = [];
+function plusTard(fn, t) { minuteries.push(setTimeout(fn, t)); }
+function annulerMinuteries() { minuteries.forEach(clearTimeout); minuteries = []; }
+
+function texteBulle(p, i) {
+  const fin = etat.status === 'fin';
+  const devoile = etat.montrer && p.etat !== 'couche';
+  if (fin) {
+    if (p.gain > 0) return devoile ? `${p.main} · +${euros(p.gain)}` : `+${euros(p.gain)}`;
+    return devoile ? p.main : p.derniere;
   }
-  $('moi-derniere').textContent = info || '';
+  if (etat.status === 'jeu' && etat.active === i && p.bot) return 'Réfléchit…';
+  if (i === maPlace && etat.board.length >= 3 && p.etat !== 'couche') {
+    return [p.derniere, meilleureMainNom(p)].filter(Boolean).join(' · ');
+  }
+  return p.derniere;
 }
-
 function meilleureMainNom(p) {
   const cartes = [...p.cartes, ...etat.board];
   return cartes.length >= 5 ? nomMain(meilleureMain(cartes)) : '';
 }
 
+function rendrePlaces() {
+  const zone = $('places');
+  zone.innerHTML = '';
+  const n = etat.players.length;
+  const fin = etat.status === 'fin';
+  for (let k = 0; k < n; k++) {
+    const i = (maPlace + k) % n;
+    const p = etat.players[i];
+    const moi = k === 0;
+    const angle = anglePlace(k, n);
+    const pos = pointBord(angle);
+    const actif = etat.status === 'jeu' && etat.active === i;
+    const siege = el('div', 'siege-pk');
+    if (moi) siege.classList.add('moi');
+    if (pos.y < 32 && !moi) siege.classList.add('haut');
+    if (pos.x < 18) siege.classList.add('bord-g');
+    if (pos.x > 82) siege.classList.add('bord-d');
+    if (actif) siege.classList.add('actif');
+    if (p.etat === 'couche') siege.classList.add('couche');
+    if (fin && p.gain > 0) siege.classList.add('gagnant');
+    siege.dataset.i = String(i);
+    siege.style.left = `${pos.x}%`;
+    siege.style.top = `${pos.y}%`;
+
+    // ses deux cartes (les miennes face visible ; celles des autres à l'abattage)
+    const cartes = el('div', 'siege-cartes');
+    if (p.cartes.length && (moi || p.etat !== 'couche')) {
+      const devoiler = moi || (etat.montrer && p.etat !== 'couche');
+      p.cartes.forEach((c, j) => {
+        const e = carteEl(c, { cachee: !devoiler });
+        e.dataset.j = String(j);
+        cartes.appendChild(e);
+      });
+    }
+    siege.appendChild(cartes);
+
+    // plaque : avatar, nom, argent
+    const plaque = el('div', 'plaque-pk');
+    const avatar = el('span', 'avatar', p.bot ? '🤖' : (p.name || '?').trim().charAt(0).toUpperCase());
+    avatar.style.setProperty('--teinte', String((i * 67 + 200) % 360));
+    const txt = el('span', 'plaque-txt');
+    txt.appendChild(el('strong', 'nom', p.name + (moi && !salon.estLocal() ? ' (toi)' : '')));
+    const solde = el('span', 'jetons solde', euros(p.chips));
+    const ligne = el('span', 'plaque-ligne');
+    ligne.appendChild(solde);
+    if (p.reloads) ligne.appendChild(el('span', 'recharges', `♻ ${p.reloads}`));
+    txt.appendChild(ligne);
+    plaque.append(avatar, txt);
+    siege.appendChild(plaque);
+    const avant = soldesAffiches[i];
+    if (avant !== undefined && avant !== p.chips) {
+      solde.textContent = euros(avant);
+      A.soldes.push({ e: solde, de: avant, a: p.chips, gain: p.chips > avant });
+    }
+    soldesAffiches[i] = p.chips;
+
+    const info = texteBulle(p, i);
+    if (info) {
+      const b = el('span', 'bulle' + (fin && p.gain > 0 ? ' gain' : ''), info);
+      siege.appendChild(b);
+      if (A.fin && fin && (p.gain > 0 || etat.montrer)) A.retardes.push(b);
+    }
+    zone.appendChild(siege);
+
+    // sa mise du tour, posée devant lui
+    if (etat.status === 'jeu' && p.mise > 0) {
+      const m = el('div', 'mise-pk' + (moi ? ' moi' : ''));
+      m.dataset.i = String(i);
+      const pm = pointBord(angle, 0.56);
+      if (pos.y < 32 && !moi) pm.x += 8;   // place du haut : à côté de ses cartes, pas sur le pot
+      m.style.left = `${pm.x}%`;
+      m.style.top = `${pm.y}%`;
+      m.append(pileEl(p.mise), el('span', 'montant', euros(p.mise)));
+      zone.appendChild(m);
+    }
+    // bouton du donneur, un peu à côté de sa place
+    if (i === etat.donneur) {
+      const pd = pointBord(angle + (moi ? 16 : 13), moi ? 0.8 : 0.82);
+      const d = el('div', 'bouton-d' + (moi ? ' moi' : ''), 'D');
+      d.style.left = `${pd.x}%`;
+      d.style.top = `${pd.y}%`;
+      zone.appendChild(d);
+    }
+  }
+}
+
+function rendreCentre() {
+  const zone = $('tableau');
+  zone.innerHTML = '';
+  for (let k = 0; k < 5; k++) {
+    const c = etat.board[k];
+    zone.appendChild(c ? carteEl(c) : el('div', 'emplacement'));
+  }
+  const total = potTotal(etat);
+  const auCentre = total - etat.players.reduce((a, p) => a + (etat.status === 'jeu' ? p.mise : 0), 0);
+  $('pot').textContent = euros(total);
+  const tas = $('pot-tas');
+  tas.innerHTML = '';
+  tas.classList.toggle('emporte', etat.status === 'fin' && potEmporte === etat.mainNo);
+  if (auCentre > 0) tas.appendChild(pileEl(auCentre));
+  $('pot-zone').classList.toggle('vide', total <= 0);
+  $('etape').textContent = etat.status === 'fin' ? (etat.montrer ? 'Abattage' : '') : (ETAPES[etat.street] || '');
+}
+
 function rendreMessage() {
   const msg = $('message');
-  if (etat.status === 'fin') { msg.textContent = (etat.resultat && etat.resultat.texte) || ''; return; }
-  const actif = etat.players[etat.active];
-  const etapes = ['Avant le flop', 'Flop', 'Turn', 'River'];
-  if (monTour()) {
-    const p = etat.players[maPlace];
-    const aSuivre = etat.miseMax - p.mise;
-    msg.textContent = aSuivre > 0 ? `À toi : ${euros(aSuivre)} pour suivre` : 'À toi de parler';
-  } else if (actif) {
-    msg.textContent = actif.bot ? `${actif.name} réfléchit…` : `Au tour ${de(actif.name)}`;
+  let texte = '';
+  if (etat.status === 'fin') texte = (etat.resultat && etat.resultat.texte) || '';
+  else {
+    const actif = etat.players[etat.active];
+    if (monTour()) {
+      const p = etat.players[maPlace];
+      const aSuivre = etat.miseMax - p.mise;
+      texte = aSuivre > 0 ? `À toi : ${euros(aSuivre)} pour suivre` : 'À toi de parler';
+      if (salon.estLocal() && etat.players.filter((q) => !q.bot).length > 1) texte = `${p.name}, ${texte.charAt(0).toLowerCase()}${texte.slice(1)}`;
+    } else if (actif) {
+      texte = actif.bot ? `${actif.name} réfléchit…` : `Au tour ${de(actif.name)}`;
+    }
   }
-  msg.dataset.etape = etapes[etat.street] || '';
+  if (A.fin) {
+    msg.textContent = etat.montrer ? 'Abattage…' : '';
+    A.fins.push(() => { msg.textContent = texte; pop(msg); });
+  } else if (msg.textContent !== texte) {
+    msg.textContent = texte;
+    if (texte) pop(msg);
+  }
+  msg.classList.toggle('vide', !msg.textContent);
 }
 
 function rendreCommandes() {
   const tour = monTour();
-  $('panneau-actions').hidden = !tour;
-  $('panneau-fin').hidden = etat.status !== 'fin';
+  const montrer = (id, visible) => {
+    const e = $(id);
+    if (e.hidden === visible) {
+      e.hidden = !visible;
+      if (visible && !sansAnimation()) e.animate([{ opacity: 0, transform: 'translateY(12px)' }, { opacity: 1, transform: 'none' }], { duration: 240, easing: 'ease-out' });
+    }
+  };
+  montrer('panneau-actions', tour);
+  montrer('panneau-fin', etat.status === 'fin');
   if (!tour) { ouvrirRelance(false); return; }
   const p = etat.players[maPlace];
   const aSuivre = etat.miseMax - p.mise;
@@ -671,6 +809,231 @@ function rendreCommandes() {
   if (!$('relance').hidden) rendreRelance();
 }
 
+// ---------- Animations ----------
+const centre = (r) => [r.left + r.width / 2, r.top + r.height / 2];
+function pop(e) {
+  if (sansAnimation()) return;
+  e.animate([{ transform: 'scale(.8)', opacity: 0 }, { transform: 'scale(1.06)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }], { duration: 300, easing: 'ease-out' });
+}
+function apparaitre(e, delai) {
+  e.animate([{ opacity: 0, transform: 'scale(.6)' }, { opacity: 1, transform: 'scale(1.1)', offset: 0.7 }, { opacity: 1, transform: 'none' }], { duration: 380, delay: delai, fill: 'backwards', easing: 'ease-out' });
+}
+// un élément du nouveau dessin arrive depuis un point (paquet, plaque…)
+function arriver(e, depuis, delai, { rotation = 0, echelle = 0.55, duree = 460 } = {}) {
+  const [cx, cy] = centre(e.getBoundingClientRect());
+  const [dx, dy] = centre(depuis);
+  const finale = getComputedStyle(e).transform;
+  const debut = `translate(${dx - cx}px, ${dy - cy}px) rotate(${rotation}deg) scale(${echelle})`;
+  e.animate([
+    { transform: debut, opacity: 0 },
+    { transform: debut, opacity: 1, offset: 0.02 },
+    { transform: finale === 'none' ? 'none' : finale, opacity: 1 },
+  ], { duration: duree, delay: delai, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'backwards' });
+}
+// carte qui se retourne : le dos la cache jusqu'à mi-course
+function retourner(e, delai) {
+  const dos = el('span', 'dos-retourne');
+  e.appendChild(dos);
+  e.animate([{ transform: 'rotateY(0)' }, { transform: 'rotateY(90deg)', offset: 0.5 }, { transform: 'rotateY(0)' }], { duration: 480, delay: delai, easing: 'ease-in-out' });
+  dos.animate([{ opacity: 1 }, { opacity: 1, offset: 0.5 }, { opacity: 0, offset: 0.5 }, { opacity: 0 }], { duration: 480, delay: delai, fill: 'forwards' })
+    .finished.then(() => dos.remove()).catch(() => {});
+}
+// copie figée d'un élément (avant qu'il soit redessiné), pour le faire partir quelque part
+function figer(e) {
+  const r = e.getBoundingClientRect();
+  const w = e.offsetWidth; const h = e.offsetHeight;
+  const j = e.querySelector('.j');
+  return { node: e.cloneNode(true), r, w, h, l: w, jt: j ? j.offsetWidth : 0, transform: getComputedStyle(e).transform };
+}
+function envoyer(f, cible, delai, { duree = 520, disparaitre = true, echelle = 0.6 } = {}) {
+  const c = f.node.cloneNode(true);
+  const [cx, cy] = centre(f.r);
+  Object.assign(c.style, { left: `${cx - f.w / 2}px`, top: `${cy - f.h / 2}px`, width: `${f.w}px`, height: `${f.h}px` });
+  c.classList.add('volant');
+  if (c.classList.contains('carte-pk')) c.style.setProperty('--l', `${f.l}px`);
+  if (f.jt) c.style.setProperty('--jt', `${f.jt}px`);
+  document.body.appendChild(c);
+  const [tx, ty] = centre(cible);
+  const t0 = f.transform && f.transform !== 'none' ? f.transform : 'none';
+  c.animate([
+    { transform: t0, opacity: 1 },
+    { transform: `translate(${tx - cx}px, ${ty - cy}px) scale(${echelle})`, opacity: disparaitre ? 0.15 : 1 },
+  ], { duration: duree, delay: delai, easing: 'cubic-bezier(.45,0,.55,1)', fill: 'both' })
+    .finished.then(() => c.remove()).catch(() => c.remove());
+}
+// jetons tout neufs qui partent d'une plaque (mise qui clôt le tour : ils filent directement au pot)
+function jetonsVolants(montant, depuis, cible, delai) {
+  const pile = pileEl(montant);
+  pile.classList.add('volant');
+  const ref = document.querySelector('#places .j, #pot-tas .j');
+  pile.style.setProperty('--jt', `${ref ? ref.offsetWidth : 24}px`);
+  document.body.appendChild(pile);
+  const [dx, dy] = centre(depuis);
+  const r = pile.getBoundingClientRect();
+  Object.assign(pile.style, { left: `${dx - r.width / 2}px`, top: `${dy - r.height / 2}px` });
+  const [tx, ty] = centre(cible);
+  pile.animate([{ transform: 'scale(.6)', opacity: 0 }, { transform: 'none', opacity: 1, offset: 0.25 }, { transform: `translate(${tx - dx}px, ${ty - dy}px) scale(.7)`, opacity: 0.2 }],
+    { duration: 650, delay: delai, easing: 'ease-in-out', fill: 'both' })
+    .finished.then(() => pile.remove()).catch(() => pile.remove());
+}
+function compter(e, de, a, delai) {
+  if (sansAnimation()) { e.textContent = euros(a); return; }
+  plusTard(() => {
+    const t0 = performance.now();
+    const pas = (t) => {
+      const k = Math.min(1, (t - t0) / 700);
+      e.textContent = euros(de + (a - de) * (1 - (1 - k) ** 3));
+      if (k < 1 && e.isConnected) requestAnimationFrame(pas);
+    };
+    requestAnimationFrame(pas);
+    e.classList.add(a > de ? 'monte' : 'baisse');
+    setTimeout(() => e.classList.remove('monte', 'baisse'), 1200);
+  }, delai);
+}
+
+// ce qui est à l'écran juste avant de redessiner
+function instantane() {
+  const r = { plaques: {}, cartes: {}, mises: {}, pot: null, bouton: null };
+  document.querySelectorAll('#places .siege-pk').forEach((s) => {
+    const i = Number(s.dataset.i);
+    r.cartes[i] = [...s.querySelectorAll('.siege-cartes .carte-pk')].map(figer);
+  });
+  document.querySelectorAll('#places .mise-pk').forEach((m) => {
+    const pile = m.querySelector('.pile');
+    if (pile) r.mises[Number(m.dataset.i)] = figer(pile);
+  });
+  const potPile = document.querySelector('#pot-tas .pile');
+  if (potPile && !$('pot-tas').classList.contains('emporte')) r.pot = figer(potPile);
+  const b = document.querySelector('#places .bouton-d');
+  if (b) r.bouton = b.getBoundingClientRect();
+  return r;
+}
+const etatLogique = () => ({
+  place: maPlace,
+  n: etat.players.length,
+  mainNo: etat.mainNo,
+  board: etat.board.length,
+  status: etat.status,
+  montrer: !!etat.montrer,
+  mises: etat.players.map((p) => p.mise),
+  engages: etat.players.map((p) => p.engage),
+  etats: etat.players.map((p) => p.etat),
+});
+const plaqueDe = (i) => {
+  const s = document.querySelector(`#places .siege-pk[data-i="${i}"] .plaque-pk`);
+  return s ? s.getBoundingClientRect() : $('pot-zone').getBoundingClientRect();
+};
+
+function animer(prev, avant) {
+  const finImmediate = () => {
+    A.fins.forEach((f) => f());
+    A.soldes.forEach(({ e, a }) => { e.textContent = euros(a); });
+    if (etat.status === 'fin') { potEmporte = etat.mainNo; $('pot-tas').classList.add('emporte'); }
+  };
+  if (sansAnimation() || !prev || prev.place !== maPlace || prev.n !== etat.players.length) { finImmediate(); return; }
+  const paquet = $('paquet').getBoundingClientRect();
+  const pot = $('pot-zone').getBoundingClientRect();
+  const n = etat.players.length;
+  let t = 0;
+
+  // dealer : le bouton glisse jusqu'à sa nouvelle place
+  const bouton = document.querySelector('#places .bouton-d');
+  if (bouton && avant.bouton && prev.mainNo !== etat.mainNo) {
+    const [nx, ny] = centre(bouton.getBoundingClientRect());
+    const [ox, oy] = centre(avant.bouton);
+    if (Math.hypot(nx - ox, ny - oy) > 4) bouton.animate([{ transform: `translate(${ox - nx}px, ${oy - ny}px)` }, { transform: 'none' }], { duration: 600, easing: 'ease-in-out' });
+  }
+
+  // nouvelle main : les cartes partent du paquet, une par une, en commençant après le donneur
+  if (prev.mainNo !== etat.mainNo) {
+    let k = 0;
+    for (let tour = 0; tour < 2; tour++) {
+      for (let o = 1; o <= n; o++) {
+        const i = (etat.donneur + o) % n;
+        const c = document.querySelector(`#places .siege-pk[data-i="${i}"] .carte-pk[data-j="${tour}"]`);
+        if (c) { arriver(c, paquet, 250 + k * 120, { rotation: -60 }); k++; }
+      }
+    }
+    t = 250 + k * 120 + 250;
+    document.querySelectorAll('#places .mise-pk').forEach((m) => {
+      const pile = m.querySelector('.pile');
+      arriver(pile, plaqueDe(Number(m.dataset.i)), 0, { echelle: 0.7, duree: 420 });
+    });
+    A.soldes.forEach(({ e, de, a }) => compter(e, de, a, 0));
+    return;
+  }
+
+  // un joueur se couche : ses cartes partent vers le paquet
+  etat.players.forEach((p, i) => {
+    if (i !== maPlace && prev.etats[i] !== 'couche' && p.etat === 'couche' && avant.cartes[i]) {
+      avant.cartes[i].forEach((f, j) => envoyer(f, paquet, j * 70, { duree: 480, echelle: 0.5 }));
+    }
+  });
+
+  const memeTour = etat.board.length === prev.board && etat.status === 'jeu' && prev.status === 'jeu';
+  if (memeTour) {
+    // nouvelle mise : les jetons glissent de la plaque jusque devant le joueur
+    etat.players.forEach((p, i) => {
+      if (p.mise > prev.mises[i]) {
+        const pile = document.querySelector(`#places .mise-pk[data-i="${i}"] .pile`);
+        if (pile) arriver(pile, plaqueDe(i), 0, { echelle: 0.7, duree: 420 });
+      }
+    });
+  } else {
+    // fin du tour d'enchères : toutes les mises rejoignent le pot
+    let mouvement = false;
+    Object.values(avant.mises).forEach((f) => { envoyer(f, pot, 0, { duree: 480, echelle: 0.8, disparaitre: true }); mouvement = true; });
+    etat.players.forEach((p, i) => {
+      const ajout = (p.engage || 0) - (prev.engages[i] || 0);
+      if (ajout > 0 && etat.mainNo === prev.mainNo) { jetonsVolants(ajout, plaqueDe(i), pot, 0); mouvement = true; }
+    });
+    if (mouvement) {
+      t = 520;
+      const tas = $('pot-tas');
+      tas.animate([{ opacity: 0 }, { opacity: 0, offset: 0.99 }, { opacity: 1 }], { duration: t, fill: 'backwards' });
+    }
+  }
+
+  // cartes communes : elles glissent du paquet puis se retournent
+  const nouvelles = [...document.querySelectorAll('#tableau .carte-pk')].slice(prev.board);
+  nouvelles.forEach((c, k) => {
+    const d = t + k * 160;
+    arriver(c, paquet, d, { rotation: -20, echelle: 0.7, duree: 380 });
+    retourner(c, d + 330);
+  });
+  if (nouvelles.length) t += (nouvelles.length - 1) * 160 + 330 + 520;
+
+  // abattage : les cartes des autres se retournent
+  if (etat.montrer && !prev.montrer) {
+    let k = 0;
+    etat.players.forEach((p, i) => {
+      if (i === maPlace || p.etat === 'couche') return;
+      document.querySelectorAll(`#places .siege-pk[data-i="${i}"] .carte-pk`).forEach((c) => { retourner(c, t + k * 110); k++; });
+    });
+    t += k * 110 + 500;
+  }
+
+  // fin de la main : le pot part chez le (ou les) gagnant(s)
+  if (A.fin) {
+    const potPile = document.querySelector('#pot-tas .pile');
+    const gagnants = etat.players.map((p, i) => [p, i]).filter(([p]) => p.gain > 0).map(([, i]) => i);
+    if (potPile && gagnants.length) {
+      const f = figer(potPile);
+      const tas = $('pot-tas');
+      potEmporte = etat.mainNo;
+      plusTard(() => tas.classList.add('emporte'), t);
+      gagnants.forEach((i, k) => envoyer(f, plaqueDe(i), t + k * 80, { duree: 700, echelle: 0.7 }));
+    }
+    const tFin = t + 350;
+    const fins = A.fins;
+    plusTard(() => fins.forEach((fn) => fn()), tFin);
+    A.retardes.forEach((e) => apparaitre(e, tFin));
+    A.soldes.forEach(({ e, de, a }) => compter(e, de, a, a > de ? t + 600 : 0));
+    return;
+  }
+  A.soldes.forEach(({ e, de, a }) => compter(e, de, a, 0));
+}
+
 function rendre() {
   if (!etat) return;
   const ev = etat.lastEvent || null;
@@ -681,11 +1044,17 @@ function rendre() {
     dernierTs = ev.ts;
     (ev.textes || []).forEach((t, k) => setTimeout(() => toast(t), k * 1800));
   }
-  if (etat.board.length < cartesVues.tableau) cartesVues.tableau = 0;
-  rendreAdversaires();
-  rendreTableau();
-  rendreMoi();
+  const prev = precedent;
+  const avant = instantane();
+  if (prev && prev.mainNo !== etat.mainNo) annulerMinuteries();
+  A = {
+    soldes: [], retardes: [], fins: [],
+    fin: !!prev && prev.place === maPlace && prev.status !== 'fin' && etat.status === 'fin',
+  };
+  rendrePlaces();
+  rendreCentre();
   rendreMessage();
   rendreCommandes();
+  animer(prev, avant);
+  precedent = etatLogique();
 }
-

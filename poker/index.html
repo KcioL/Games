@@ -13,7 +13,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../commun/commun.css">
   <link rel="stylesheet" href="../commun/relais.css">
   <link rel="stylesheet" href="../commun/cartes.css">
@@ -99,60 +99,64 @@
     </div>
   </section>
 
-  <!-- Jeu -->
-  <main id="jeu" hidden>
-    <div class="adversaires" id="adversaires"></div>
-
-    <section class="tapis table-poker">
-      <div class="pot">Pot <span class="jetons" id="pot">0 €</span></div>
-      <div class="tableau" id="tableau"></div>
-      <p class="message" id="message" aria-live="polite"></p>
-    </section>
-
-    <section class="moi" id="moi">
-      <div class="moi-tete">
-        <strong id="moi-nom"></strong>
-        <span class="jetons" id="moi-jetons"></span>
-        <span class="recharges" id="moi-recharges"></span>
-      </div>
-      <div class="moi-milieu">
-        <div class="main-cartes espacees" id="mes-cartes"></div>
-        <div class="moi-etat">
-          <span class="mise-tour" id="moi-mise"></span>
-          <span class="derniere" id="moi-derniere"></span>
+  <!-- Jeu : une table de poker de casino, tout se passe sur le tapis -->
+  <main id="jeu" class="salle" hidden>
+    <div class="scene" id="scene">
+      <section class="table-pk" id="table">
+        <div class="feutre-pk" id="feutre">
+          <svg class="inscription" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs><path id="arc-pk" d="M 60 40 Q 500 210 940 40" /></defs>
+            <text class="ins-grande"><textPath href="#arc-pk" startOffset="50%" text-anchor="middle">TEXAS HOLD'EM</textPath></text>
+          </svg>
+          <div class="centre-pk">
+            <div class="pot-pk" id="pot-zone">
+              <div class="tas" id="pot-tas"></div>
+              <span class="pot-montant">Pot <b class="jetons" id="pot">0 €</b></span>
+            </div>
+            <div class="tableau-pk">
+              <div class="paquet" id="paquet" aria-hidden="true"></div>
+              <div class="tableau" id="tableau"></div>
+            </div>
+            <p class="etape" id="etape"></p>
+            <p class="message" id="message" aria-live="polite"></p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <!-- Actions -->
-    <div class="commandes" id="panneau-actions" hidden>
-      <div class="rangee trois">
-        <button class="btn btn-danger" id="btn-coucher">Se coucher</button>
-        <button class="btn btn-principal" id="btn-suivre">Parole</button>
-        <button class="btn btn-secondaire" id="btn-ouvrir-relance">Relancer</button>
-      </div>
-      <div class="relance" id="relance" role="dialog" aria-label="Relancer" hidden>
-        <div class="relance-montant">
-          <button class="btn pas" id="btn-moins" aria-label="Diminuer">−</button>
-          <div><small>Relancer à</small><span class="jetons" id="relance-valeur"></span></div>
-          <button class="btn pas" id="btn-plus" aria-label="Augmenter">+</button>
-        </div>
-        <input type="range" id="relance-curseur" aria-label="Montant de la relance">
-        <div class="rangee quatre">
-          <button class="btn raccourci" data-rel="min">Min</button>
-          <button class="btn raccourci" data-rel="demi">½ pot</button>
-          <button class="btn raccourci" data-rel="pot">Pot</button>
-          <button class="btn raccourci" data-rel="tapis">Tapis</button>
-        </div>
-        <div class="rangee deux">
-          <button class="btn" id="btn-annuler-relance">Annuler</button>
-          <button class="btn btn-principal" id="btn-relancer">Relancer</button>
-        </div>
-      </div>
-    </div>
+        <!-- places, mises et bouton du donneur, posés sur la table -->
+        <div class="places" id="places"></div>
 
-    <div class="commandes" id="panneau-fin" hidden>
-      <button class="btn btn-principal" id="btn-suivante">Main suivante</button>
+        <!-- commandes, posées sur le tapis -->
+        <div class="commandes-pk">
+          <div class="commandes" id="panneau-actions" hidden>
+            <div class="relance" id="relance" role="dialog" aria-label="Relancer" hidden>
+              <div class="relance-montant">
+                <button class="btn-table pas" id="btn-moins" aria-label="Diminuer">−</button>
+                <div><small>Relancer à</small><span class="jetons" id="relance-valeur"></span></div>
+                <button class="btn-table pas" id="btn-plus" aria-label="Augmenter">+</button>
+              </div>
+              <input type="range" id="relance-curseur" aria-label="Montant de la relance">
+              <div class="rangee quatre">
+                <button class="btn-table raccourci" data-rel="min">Min</button>
+                <button class="btn-table raccourci" data-rel="demi">½ pot</button>
+                <button class="btn-table raccourci" data-rel="pot">Pot</button>
+                <button class="btn-table raccourci" data-rel="tapis">Tapis</button>
+              </div>
+              <div class="rangee deux">
+                <button class="btn-table" id="btn-annuler-relance">Annuler</button>
+                <button class="btn-table principal" id="btn-relancer">Relancer</button>
+              </div>
+            </div>
+            <div class="rangee trois">
+              <button class="btn-table action coucher" id="btn-coucher">Se coucher</button>
+              <button class="btn-table action suivre" id="btn-suivre">Parole</button>
+              <button class="btn-table action principal" id="btn-ouvrir-relance">Relancer</button>
+            </div>
+          </div>
+          <div class="commandes" id="panneau-fin" hidden>
+            <button class="btn-table principal" id="btn-suivante">Main suivante</button>
+          </div>
+        </div>
+      </section>
     </div>
   </main>
 
