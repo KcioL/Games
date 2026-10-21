@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le Roi des Crânes</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☠</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Pirata+One&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="cranes.css">
+  <script type="module" src="cranes.js"></script>
+</head>
+<body>
+  <!-- icônes des couleurs (dessinées pour le jeu) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="ico-coffre" viewBox="0 0 64 64">
+        <path d="M9 29C9 15 55 15 55 29Z" fill="currentColor"/>
+        <path d="M9 31h46v21a4 4 0 0 1-4 4H13a4 4 0 0 1-4-4Z" fill="currentColor"/>
+        <path d="M17 19h6v37h-6zM41 19h6v37h-6z" style="fill: var(--detail, #fff)" opacity=".35"/>
+        <path d="M9 29h46v3H9z" style="fill: var(--detail, #fff)" opacity=".5"/>
+        <rect x="27" y="29" width="10" height="12" rx="2" style="fill: var(--detail, #fff)"/>
+        <circle cx="32" cy="34" r="2" fill="currentColor"/><path d="M31 35h2v4h-2z" fill="currentColor"/>
+      </symbol>
+      <symbol id="ico-carte" viewBox="0 0 64 64">
+        <path d="M6 14 22 8l20 6 16-6v42l-16 6-20-6-16 6Z" fill="currentColor"/>
+        <path d="M22 8v42M42 14v42" style="stroke: var(--detail, #fff)" stroke-width="1.5" opacity=".45"/>
+        <path d="M13 44c6-8 13-9 18-5s10 1 13-6" fill="none" style="stroke: var(--detail, #fff)" stroke-width="2.4" stroke-dasharray="3 3" stroke-linecap="round"/>
+        <path d="M44 22l8 8M52 22l-8 8" style="stroke: var(--detail, #fff)" stroke-width="3.4" stroke-linecap="round"/>
+      </symbol>
+      <symbol id="ico-perroquet" viewBox="0 0 64 64">
+        <path d="M35 6c-10 0-17 8-17 18 0 4 1 7 3 10L12 58c5 0 10-3 13-8 2 5 6 8 10 10-1-5-1-10 1-15 8-4 12-11 12-20C48 13 43 6 35 6Z" fill="currentColor"/>
+        <path d="M45 11c8 0 13 5 13 12 0 4-2 7-5 8 0-5-2-9-7-11Z" style="fill: var(--detail, #fff)" opacity=".9"/>
+        <path d="M30 30c4 4 9 5 14 3-2 6-8 9-14 8-3-3-3-7 0-11Z" style="fill: var(--detail, #fff)" opacity=".3"/>
+        <circle cx="38" cy="16" r="4.2" style="fill: var(--detail, #fff)"/><circle cx="39" cy="16" r="2" fill="currentColor"/>
+      </symbol>
+      <symbol id="ico-pavillon" viewBox="0 0 64 64">
+        <path d="M10 46 54 62M54 46 10 62" style="stroke: currentColor" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="9" cy="44" r="4" fill="currentColor"/><circle cx="55" cy="44" r="4" fill="currentColor"/><circle cx="9" cy="62" r="4" fill="currentColor"/><circle cx="55" cy="62" r="4" fill="currentColor"/>
+        <path d="M32 4C20 4 12 12 12 23c0 7 3 11 8 13v8h24v-8c5-2 8-6 8-13C52 12 44 4 32 4Z" fill="currentColor"/>
+        <circle cx="24" cy="24" r="5.5" style="fill: var(--detail, #111)"/><circle cx="40" cy="24" r="5.5" style="fill: var(--detail, #111)"/>
+        <path d="M32 29l-3.5 6h7Z" style="fill: var(--detail, #111)"/>
+        <path d="M25 38v6M30 38v6M35 38v6M40 38v6" style="stroke: var(--detail, #111)" stroke-width="2"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Le Roi des Crânes</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Jeu de plis à annonces, de 2 à 8 pirates. Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter la table.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Bots en plus
+            <select id="ligne-bots">
+              <option value="0" selected>Aucun</option><option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (8 places au total). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+            </select>
+          </label>
+        </div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu : la table, tout se passe dessus -->
+  <main id="jeu" class="salle" hidden>
+    <div class="scene" id="scene">
+      <div class="zone-table">
+      <section class="table-rc" id="table">
+        <div class="feutre-rc" id="feutre">
+          <!-- la carte au trésor étalée sur la table : îles, route en pointillés, la croix, la rose des vents -->
+          <svg class="carte-tresor" viewBox="0 0 1000 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <g class="quadrillage">
+              <path d="M100 0V460M200 0V460M300 0V460M400 0V460M500 0V460M600 0V460M700 0V460M800 0V460M900 0V460M0 92H1000M0 184H1000M0 276H1000M0 368H1000"/>
+            </g>
+            <path class="ile" d="M55 125C80 70 165 55 215 88S300 78 322 128 292 222 232 232 118 256 88 212 28 168 55 125Z"/>
+            <path class="rivage" d="M40 128C65 58 170 38 222 74S318 66 340 126 302 240 236 250 108 274 74 222 12 172 40 128Z"/>
+            <path class="ile" d="M700 300C742 258 832 252 882 290S962 332 932 382 832 422 760 406 670 352 700 300Z"/>
+            <path class="rivage" d="M684 298C730 240 840 236 896 278S982 330 948 392 834 440 752 422 652 356 684 298Z"/>
+            <path class="ile" d="M812 86C832 64 878 66 890 90S880 128 846 128 798 108 812 86Z"/>
+            <path class="ile" d="M120 360C136 344 168 346 176 362S166 392 142 392 108 378 120 360Z"/>
+            <g class="palmier"><path d="M150 150V112"/><path d="M150 112C140 100 124 100 116 106M150 112C160 98 178 98 186 106M150 112C146 96 150 88 160 84"/></g>
+            <g class="palmier"><path d="M812 340V302"/><path d="M812 302C802 290 786 290 778 296M812 302C822 288 840 288 848 296M812 302C808 286 812 278 822 274"/></g>
+            <path class="route" d="M232 170C360 120 470 250 590 214S752 290 790 318"/>
+            <path class="croix" d="M776 304l32 32M808 304l-32 32"/>
+            <g class="vagues">
+              <path d="M410 70q10-9 20 0t20 0 20 0"/><path d="M560 120q10-9 20 0t20 0 20 0"/><path d="M380 380q10-9 20 0t20 0 20 0"/>
+              <path d="M520 420q10-9 20 0t20 0 20 0"/><path d="M620 60q10-9 20 0t20 0 20 0"/><path d="M260 320q10-9 20 0t20 0 20 0"/>
+              <path d="M920 200q10-9 20 0t20 0 20 0"/><path d="M40 300q10-9 20 0t20 0 20 0"/>
+            </g>
+          </svg>
+          <svg class="rose" viewBox="0 0 200 200" aria-hidden="true">
+            <circle cx="100" cy="100" r="92" fill="none" stroke="currentColor" stroke-width="1.5"/>
+            <circle cx="100" cy="100" r="80" fill="none" stroke="currentColor" stroke-width=".8" stroke-dasharray="2 4"/>
+            <path d="M100 6 112 88 194 100 112 112 100 194 88 112 6 100 88 88Z" fill="currentColor" opacity=".55"/>
+            <path d="M100 34 106 94 166 100 106 106 100 166 94 106 34 100 94 94Z" fill="currentColor" opacity=".35" transform="rotate(45 100 100)"/>
+            <circle cx="100" cy="100" r="7" fill="currentColor"/>
+            <text x="100" y="24" text-anchor="middle" font-size="20" fill="currentColor" font-family="Pirata One, Georgia, serif">N</text>
+          </svg>
+          <svg class="inscription" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs><path id="arc-rc" d="M 60 40 Q 500 210 940 40" /></defs>
+            <text class="ins-grande"><textPath href="#arc-rc" startOffset="50%" text-anchor="middle">LE ROI DES CRÂNES</textPath></text>
+          </svg>
+          <div class="centre-rc">
+            <p class="manche-info" id="manche-info"></p>
+            <p class="message" id="message" aria-live="polite"></p>
+          </div>
+        </div>
+
+        <!-- places des joueurs et cartes du pli, posées sur la table -->
+        <div class="places" id="places"></div>
+        <div class="pli" id="pli"></div>
+        <p class="bandeau-pli" id="bandeau-pli" hidden></p>
+
+        <!-- annonce -->
+        <div class="panneau-rc" id="panneau-annonce" hidden>
+          <p class="panneau-titre">Combien de plis vas-tu faire ?</p>
+          <div class="choix-annonce" id="choix-annonce"></div>
+          <button class="btn-table principal" id="btn-annoncer" disabled>Annoncer</button>
+        </div>
+        <!-- Tigresse : pirate ou drapeau blanc -->
+        <div class="panneau-rc" id="panneau-tigresse" hidden>
+          <p class="panneau-titre">La Tigresse joue…</p>
+          <div class="rangee">
+            <button class="btn-table principal" id="btn-tigresse-pirate">en Pirate</button>
+            <button class="btn-table" id="btn-tigresse-fuite">en Drapeau blanc</button>
+          </div>
+          <button class="btn-table discret" id="btn-tigresse-annuler">Annuler</button>
+        </div>
+        <!-- bilan de la manche -->
+        <div class="panneau-rc bilan" id="panneau-bilan" hidden>
+          <p class="panneau-titre" id="bilan-titre"></p>
+          <table class="table-bilan" id="table-bilan"></table>
+          <button class="btn-table principal" id="btn-manche-suivante">Manche suivante</button>
+        </div>
+        <!-- fin de partie -->
+        <div class="panneau-rc bilan" id="panneau-fin" hidden>
+          <p class="panneau-titre" id="fin-titre"></p>
+          <ol class="podium" id="podium"></ol>
+          <button class="btn-table principal" id="btn-nouvelle-partie">Nouvelle partie</button>
+        </div>
+
+      </section>
+      </div>
+
+      <!-- devant moi : ma plaque et ma main en éventail -->
+      <div class="bas">
+        <div class="bas-haut">
+          <button class="btn-scores" id="btn-scores" type="button" aria-label="Tableau des scores">🏆<span> Scores</span></button>
+          <div class="moi-rc" id="moi"></div>
+          <button class="btn-table principal btn-jouer" id="btn-jouer" hidden>Jouer cette carte</button>
+        </div>
+        <div class="main-rc" id="main"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- carte en grand -->
+  <div class="loupe" id="loupe" hidden></div>
+
+  <dialog class="regles" id="dialog-scores">
+    <h2>Tableau des scores</h2>
+    <div class="scores-defile"><table class="table-scores" id="table-scores"></table></div>
+    <button class="btn fermer" id="fermer-scores" type="button">Fermer</button>
+  </dialog>
+
+  <dialog class="regles" id="regles">
+    <h2>Le Roi des Crânes</h2>
+    <p>Un jeu de plis à annonces, en 10 manches. À la manche 1 chacun reçoit 1 carte, à la manche 2 deux cartes… jusqu'à 10. À chaque manche, il faut annoncer exactement combien de plis on va remporter.</p>
+    <h3>Les cartes</h3>
+    <ul>
+      <li>Trois couleurs, de 1 à 14 : <strong>Perroquet</strong> (vert), <strong>Coffre</strong> (jaune), <strong>Carte au trésor</strong> (violet).</li>
+      <li><strong>Pavillon noir</strong> (1 à 14) : l'atout, il bat les trois autres couleurs.</li>
+      <li><strong>Drapeau blanc</strong> (×5) : perd toujours (sauf si tout le monde en joue : le premier gagne).</li>
+      <li><strong>Pirates</strong> (×5) : battent toutes les cartes numérotées et les Sirènes.</li>
+      <li><strong>La Tigresse</strong> : au moment de la jouer, on choisit : Pirate ou Drapeau blanc.</li>
+      <li><strong>Sirènes</strong> (×2) : battent les cartes numérotées, perdent contre les Pirates… mais capturent le Roi des Crânes.</li>
+      <li><strong>Le Roi des Crânes</strong> : bat tout, Pirates compris, sauf une Sirène.</li>
+      <li><strong>Le Kraken</strong> : le pli est englouti, personne ne le gagne. Celui qui l'aurait remporté ouvre le pli suivant.</li>
+      <li><strong>La Baleine blanche</strong> : toutes les cartes spéciales perdent leur pouvoir, le plus gros chiffre gagne, quelle que soit sa couleur. S'il n'y a aucun chiffre, le pli est perdu et celui qui a joué la Baleine ouvre le suivant. Kraken et Baleine dans le même pli : c'est la dernière jouée des deux qui agit.</li>
+      <li><strong>Butin</strong> (×2) : compte comme un Drapeau blanc, et fait alliance avec celui qui remporte le pli : si les deux réussissent leur annonce, chacun gagne 20 points.</li>
+    </ul>
+    <h3>Jouer un pli</h3>
+    <ul>
+      <li>Il faut suivre la couleur demandée (celle de la première carte numérotée) si on peut. Les cartes spéciales peuvent toujours être jouées.</li>
+      <li>Si un personnage (Pirate, Sirène, Roi) ouvre le pli, il n'y a pas de couleur à suivre.</li>
+      <li>À égalité entre cartes spéciales identiques, la première jouée gagne. Le gagnant du pli ouvre le suivant.</li>
+    </ul>
+    <h3>Points</h3>
+    <ul>
+      <li>Annonce réussie : 20 points par pli annoncé, plus les bonus.</li>
+      <li>Annonce ratée : −10 points par pli d'écart (aucun bonus).</li>
+      <li>Annonce de zéro pli : réussie, 10 × le nombre de cartes de la manche ; ratée, −10 × ce nombre.</li>
+      <li>Bonus (annonce réussie) : chaque 14 de couleur remporté +10, le 14 noir +20, Sirène capturée par un Pirate +20, Pirate capturé par le Roi +30, Roi capturé par une Sirène +40, alliance du Butin +20.</li>
+    </ul>
+    <p>À 8 joueurs, la dernière manche se joue avec 9 cartes (il n'y en a pas assez pour 10).</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

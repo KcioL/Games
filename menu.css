@@ -120,6 +120,7 @@ h1 {
 .skyjo .pastille { background: linear-gradient(135deg, #3C3F9E 0 20%, #56B4E6 0 40%, #4FAE5A 0 60%, #F2C230 0 80%, #E0453A 0); }
 .blackjack .pastille { background: #1B5646; color: var(--papier); }
 .poker .pastille { background: #D7263D; color: #fff; outline: 3px dashed rgba(255, 255, 255, .85); outline-offset: -8px; }
+.cranes .pastille { background: radial-gradient(circle at 40% 35%, #1C6A78, #0A3340); color: #E6C46C; font-size: 1.9rem; outline: 3px solid rgba(230, 196, 108, .7); outline-offset: -6px; }
 .chevaux .pastille {
   background: radial-gradient(circle, var(--nuit) 0 62%, transparent 63%), conic-gradient(#3FA56B 0 25%, #F2C230 0 50%, #3F6FD8 0 75%, #D7263D 0);
   color: var(--papier);

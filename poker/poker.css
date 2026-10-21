@@ -124,7 +124,7 @@
 /* ---------- Places autour de la table ---------- */
 .places { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
 .places > * { pointer-events: auto; }
-.siege-pk { position: absolute; translate: -50% -50%; display: grid; justify-items: center; z-index: 2; }
+.siege-pk { position: absolute; translate: -50% -50%; display: grid; justify-items: center; z-index: 2; width: max-content; }
 .siege-cartes {
   position: absolute; left: 50%; bottom: 58%; translate: -50% 0;
   display: flex; justify-content: center; perspective: 700px; z-index: -1;
