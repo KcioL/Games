@@ -113,8 +113,10 @@ export function couleurDemandee(pli) {
   return null;
 }
 
-export function jouable(main, carte, pli) {
+// atoutLibre (variante, choisie par l'hôte) : le Pavillon noir peut couper à tout moment, comme une carte spéciale
+export function jouable(main, carte, pli, atoutLibre = false) {
   if (estSpeciale(carte)) return true;
+  if (atoutLibre && carte.s === 'pavillon') return true;
   const couleur = couleurDemandee(pli);
   if (!couleur || carte.s === couleur) return true;
   return !main.some((c) => c.t === 'n' && c.s === couleur);
@@ -185,7 +187,7 @@ export function jouer(s, i, id, choix) {
   const k = p.main.findIndex((c) => c.id === id);
   if (k < 0) return false;
   const carte = p.main[k];
-  if (!jouable(p.main, carte, s.pli)) return false;
+  if (!jouable(p.main, carte, s.pli, !!s.atoutLibre)) return false;
   if (carte.t === 'tigresse' && choix !== 'pirate' && choix !== 'fuite') return false;
   p.main.splice(k, 1);
   const e = { j: i, c: carte };
@@ -301,7 +303,7 @@ export function coupBot(s, i) {
   const pli = s.pli;
   const besoin = p.annonce - p.plis;
   const options = [];
-  p.main.filter((c) => jouable(p.main, c, pli)).forEach((c) => {
+  p.main.filter((c) => jouable(p.main, c, pli, !!s.atoutLibre)).forEach((c) => {
     if (c.t === 'tigresse') { options.push({ c, choix: 'pirate' }); options.push({ c, choix: 'fuite' }); } else options.push({ c });
   });
   const valeur = (o) => (o.c.t === 'tigresse' ? (o.choix === 'pirate' ? 88 : 0) : force(o.c));

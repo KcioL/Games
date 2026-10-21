@@ -114,6 +114,14 @@
         <div class="local-noms" id="local-noms"></div>
         <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
       </div>
+      <!-- Variante : choisie par celui qui crée la partie (en ligne : l'hôte) -->
+      <fieldset class="reglages" id="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <label class="option">
+          <input type="checkbox" id="reglage-atout">
+          <span><strong>Atout libre</strong><small>Le Pavillon noir peut couper à tout moment, même quand on a la couleur demandée. Règle officielle : décoché.</small></span>
+        </label>
+      </fieldset>
       <button class="btn" id="btn-reprendre" hidden></button>
     </div>
   </section>
@@ -249,6 +257,7 @@
     <h3>Jouer un pli</h3>
     <ul>
       <li>Il faut suivre la couleur demandée (celle de la première carte numérotée) si on peut. Les cartes spéciales peuvent toujours être jouées.</li>
+      <li>Le Pavillon noir est une couleur comme les autres : on ne coupe que si on n'a pas la couleur demandée. Variante « Atout libre » (choisie par celui qui crée la partie) : le Pavillon noir peut se jouer à tout moment.</li>
       <li>Si un personnage (Pirate, Sirène, Roi) ouvre le pli, il n'y a pas de couleur à suivre.</li>
       <li>À égalité entre cartes spéciales identiques, la première jouée gagne. Le gagnant du pli ouvre le suivant.</li>
     </ul>

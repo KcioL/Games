@@ -19,7 +19,8 @@ const salon = initSalon({
     const joueurs = Array.from({ length: nb }, (_, i) => joueur(i === 0 ? nom : 'En attente', i === 0));
     const bots = parseInt($(local ? 'local-bots' : 'ligne-bots').value, 10) || 0;
     melanger(NOMS_BOTS).slice(0, bots).forEach((n) => joueurs.push(joueur(n, true, true)));
-    return { players: joueurs };
+    // variante choisie par celui qui crée la partie (les autres la voient, sans pouvoir la changer)
+    return { players: joueurs, atoutLibre: $('reglage-atout').checked };
   },
   validerLocal: () => {
     const total = parseInt($('local-nb').value, 10) + parseInt($('local-bots').value, 10);
@@ -87,7 +88,7 @@ function planifierBot() {
       if (ok) return true;
       // en dernier recours : la première carte jouable (la partie ne bloque jamais)
       const p = s.players[i];
-      const c = p.main.find((x) => R.jouable(p.main, x, s.pli));
+      const c = p.main.find((x) => R.jouable(p.main, x, s.pli, !!s.atoutLibre));
       return c ? R.jouer(s, i, c.id, 'pirate') : false;
     });
   }, delai);
@@ -124,7 +125,7 @@ function jouerCarte(c, choix) {
 function clicCarte(c) {
   if (pliFini) return;
   if (!monTour()) { toast(etat.status === 'annonces' ? 'Annonce d\'abord tes plis.' : 'Ce n\'est pas ton tour.'); return; }
-  if (!R.jouable(moi().main, c, etat.pli)) {
+  if (!R.jouable(moi().main, c, etat.pli, !!etat.atoutLibre)) {
     toast(`Tu dois suivre la couleur demandée (${R.NOMS_COULEURS[R.couleurDemandee(etat.pli)]}).`);
     return;
   }
@@ -418,7 +419,7 @@ function rendreMain() {
   if (selection && !p.main.some((c) => c.id === selection)) selection = null;
   trier(p.main).forEach((c) => {
     const e = carteEl(c);
-    const ok = R.jouable(p.main, c, etat.pli);
+    const ok = R.jouable(p.main, c, etat.pli, !!etat.atoutLibre);
     if (tour) e.classList.add(ok ? 'jouable' : 'interdite');
     if (c.id === selection) e.classList.add('choisie');
     e.addEventListener('click', () => {
@@ -539,7 +540,7 @@ function rendreScores() {
 
 function rendreCentre() {
   $('manche-info').textContent = etat.status === 'termine' ? 'Partie terminée'
-    : `Manche ${etat.manche} / ${R.NB_MANCHES} · ${etat.cartesManche} carte${etat.cartesManche > 1 ? 's' : ''}`;
+    : `Manche ${etat.manche} / ${R.NB_MANCHES} · ${etat.cartesManche} carte${etat.cartesManche > 1 ? 's' : ''}${etat.atoutLibre ? ' · atout libre' : ''}`;
   let texte = '';
   if (etat.status === 'annonces') {
     const attendus = etat.players.filter((p) => p.annonce < 0).map((p) => p.name);
