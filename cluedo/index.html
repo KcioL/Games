@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cluedo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="cluedo.css">
+  <script type="module" src="cluedo.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Cluedo</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Un meurtre a été commis au manoir. Qui ? Avec quelle arme ? Dans quelle pièce ? Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter l'enquête.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots en plus
+            <select id="ligne-bots">
+              <option value="0" selected>Aucun</option><option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (de 2 à 6 enquêteurs en tout). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option><option value="1">1</option><option value="2" selected>2</option>
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            </select>
+          </label>
+        </div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer l'enquête</button>
+      </div>
+
+      <fieldset class="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <label class="option-ligne">Déplacements
+          <select id="opt-des">
+            <option value="1" selected>1 dé</option>
+            <option value="2">2 dés (plus rapide)</option>
+          </select>
+        </label>
+      </fieldset>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des enquêteurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="manoir" hidden>
+    <div class="disposition">
+      <section class="zone-plateau">
+        <div class="plateau" id="plateau">
+          <div class="calque" id="calque-pieces"></div>
+          <div class="calque" id="calque-cases"></div>
+          <div class="calque" id="calque-objets"></div>
+          <div class="bandeau-cl" id="bandeau" hidden></div>
+          <!-- fin de partie : l'enveloppe est ouverte -->
+          <div class="fin-cl" id="fin" hidden>
+            <div class="enveloppe">
+              <p class="fin-titre" id="fin-titre"></p>
+              <p class="fin-sous" id="fin-sous"></p>
+              <div class="trio" id="fin-trio"></div>
+              <button class="btn-cl principal" id="btn-nouvelle">Nouvelle enquête</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="cote">
+        <div class="enqueteurs" id="enqueteurs"></div>
+        <div class="tour-cl" id="tour">
+          <div class="tour-haut">
+            <p class="consigne" id="consigne" aria-live="polite"></p>
+            <div class="des" id="des" aria-hidden="true"></div>
+          </div>
+          <div class="info-suggestion" id="info-suggestion" hidden></div>
+          <div class="actions" id="actions"></div>
+        </div>
+        <nav class="onglets-cote" role="tablist">
+          <button role="tab" aria-selected="true" data-vue="vue-cartes">Mes cartes</button>
+          <button role="tab" aria-selected="false" data-vue="vue-fiche">Fiche</button>
+          <button role="tab" aria-selected="false" data-vue="vue-journal">Journal</button>
+        </nav>
+        <div class="vue" id="vue-cartes"><div class="main-cl" id="main"></div></div>
+        <div class="vue fiche" id="vue-fiche" hidden></div>
+        <div class="vue" id="vue-journal" hidden><ol class="journal-cl" id="journal"></ol></div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- choisir une suggestion ou une accusation -->
+  <dialog class="regles dlg-cl" id="dlg-choix">
+    <h2 id="choix-titre"></h2>
+    <p class="choix-texte" id="choix-texte"></p>
+    <div id="choix-contenu"></div>
+    <div class="choix-boutons">
+      <button class="btn-cl" type="button" id="choix-annuler">Annuler</button>
+      <button class="btn-cl principal" type="button" id="choix-valider" disabled></button>
+    </div>
+  </dialog>
+
+  <!-- montrer une carte -->
+  <dialog class="regles dlg-cl" id="dlg-refuter">
+    <h2>Montre une carte</h2>
+    <p class="choix-texte" id="refuter-texte"></p>
+    <div class="rangee-cartes" id="refuter-cartes"></div>
+  </dialog>
+
+  <dialog class="regles" id="regles">
+    <h2>Cluedo</h2>
+    <p>Un crime a été commis au manoir. Trois cartes ont été glissées en secret dans une enveloppe : <strong>le coupable</strong>, <strong>l'arme</strong> et <strong>la pièce</strong>. Les autres cartes sont distribuées. Le premier qui découvre le contenu de l'enveloppe gagne.</p>
+    <h3>À ton tour</h3>
+    <ul>
+      <li>Lance le dé et avance ton pion case par case dans les couloirs (jamais en diagonale, ni à travers un autre pion). Tu peux faire moins de pas que le dé.</li>
+      <li>Pour entrer dans une pièce, passe par une de ses portes (les flèches dorées) : pas besoin du compte exact.</li>
+      <li>Dans un coin du manoir, un <strong>passage secret</strong> mène à la pièce du coin opposé : tu peux le prendre au lieu de lancer le dé.</li>
+      <li>Tu ne peux pas ressortir et revenir dans la même pièce pendant le même tour.</li>
+    </ul>
+    <h3>Les suggestions</h3>
+    <ul>
+      <li>Quand tu entres dans une pièce, tu peux faire une suggestion : « C'était <em>tel personnage</em>, avec <em>telle arme</em>, dans <em>cette pièce</em> ». Le personnage et l'arme sont amenés dans la pièce.</li>
+      <li>Le joueur suivant doit te montrer, en secret, une de ces trois cartes s'il en a une (il choisit laquelle). S'il n'en a aucune, on passe au suivant, et ainsi de suite.</li>
+      <li>Si ton pion a été amené dans une pièce par la suggestion de quelqu'un, tu peux, à ton tour, faire une suggestion sur place sans bouger.</li>
+    </ul>
+    <h3>L'accusation</h3>
+    <ul>
+      <li>À ton tour, quand tu penses avoir trouvé, accuse : coupable, arme et pièce (n'importe laquelle).</li>
+      <li>Si c'est juste, tu gagnes. Sinon, tu es éliminé : tu ne joues plus, mais tu continues à montrer tes cartes aux autres.</li>
+    </ul>
+    <h3>La fiche d'enquête</h3>
+    <p>Ta fiche coche toute seule tes cartes et celles qu'on t'a montrées. Touche une ligne pour ajouter tes propres notes (✗ innocent, ? doute, ★ suspect).</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v105';
+const VERSION = 'jeux-vol-v106';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'manifest.webmanifest',
@@ -17,6 +17,7 @@ const FICHIERS = [
   'kassen/', 'kassen/index.html', 'kassen/kassen.js', 'kassen/kassen.css', 'kassen/moteur.js', 'kassen/cartes.js', 'kassen/editions.js', 'kassen/compte.js', 'kassen/effets.js', 'kassen/kassen/fond.jpg', 'kassen/gwynt/fond.jpg', 'kassen/kassen/jeu.js', 'kassen/gwynt/jeu.js',
   'president/', 'president/index.html', 'president/president.js', 'president/president.css', 'president/regles.js',
   'cranes/', 'cranes/index.html', 'cranes/cranes.js', 'cranes/cranes.css', 'cranes/regles.js',
+  'cluedo/', 'cluedo/index.html', 'cluedo/cluedo.js', 'cluedo/cluedo.css', 'cluedo/regles.js', 'cluedo/donnees.js', 'cluedo/plateau.jpg',
   'loupgarou/', 'loupgarou/index.html', 'loupgarou/loupgarou.js', 'loupgarou/loupgarou.css', 'loupgarou/regles.js',
   'undercover/', 'undercover/index.html', 'undercover/undercover.js', 'undercover/undercover.css', 'undercover/mots.js',
   'tokyo/', 'tokyo/index.html', 'tokyo/tokyo.js', 'tokyo/tokyo.css', 'tokyo/moteur.js', 'tokyo/plateau.js',

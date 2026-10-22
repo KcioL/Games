@@ -149,6 +149,7 @@ h1 {
   font-weight: 800;
 }
 
+.cluedo .pastille { background: radial-gradient(circle at 35% 30%, #6B2230, #3A0F18 70%); box-shadow: inset 0 0 0 3px #C9A15C; font-size: 1.7rem; }
 .loupgarou .pastille { background: radial-gradient(circle at 70% 30%, #FFFBE8 0 14%, transparent 15%), linear-gradient(180deg, #0F1840, #1B2350); font-size: 1.8rem; }
 .undercover .pastille {
   background: radial-gradient(circle at 50% 120%, #F4F1E8 0 34%, transparent 35%), radial-gradient(circle, #2B1F4F 0 70%, #E0445A 71%);
