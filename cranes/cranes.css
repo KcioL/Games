@@ -267,6 +267,7 @@
   --carte-main: clamp(54px, min(13.5vh, 11vw), 136px);
   position: relative; z-index: 4;
   display: grid; justify-items: center;
+  grid-template-columns: minmax(0, 1fr); /* la main ne s'élargit pas au-delà de l'écran */
   padding: 0 12px max(8px, env(safe-area-inset-bottom));
   margin-top: calc(var(--carte-main) * -.55);
 }

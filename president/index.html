@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le Président</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="president.css">
+  <script type="module" src="president.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Le Président</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne</button>
+        <button role="tab" aria-selected="false" data-volet="volet-local">Sur ce téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Le premier qui se débarrasse de ses cartes devient Président, le dernier… Trou du cul. Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter la table.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Bots en plus
+            <select id="ligne-bots">
+              <option value="0" selected>Aucun</option><option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <div class="volet" id="volet-local" hidden>
+        <p>Contre des bots, ou à plusieurs en se passant le téléphone (de 3 à 8 joueurs en tout). Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option>
+              <option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option>
+            </select>
+          </label>
+        </div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+
+      <!-- Variantes : choisies par celui qui crée la partie -->
+      <fieldset class="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <label class="option">
+          <input type="checkbox" id="opt-revolution-trou" checked>
+          <span><strong>Révolution du Trou du cul</strong><small>Si le Trou du cul finit Président à la manche suivante, le nouveau Trou du cul lui donne ses 4 meilleures cartes (au lieu de 2), et le Président lui en rend 4 de son choix.</small></span>
+        </label>
+        <label class="option">
+          <input type="checkbox" id="opt-revolution" checked>
+          <span><strong>Carré qui inverse l'ordre</strong><small>Poser un carré inverse l'ordre des cartes : le 3 devient la plus forte, le 2 la plus faible.</small></span>
+        </label>
+        <label class="option">
+          <input type="checkbox" id="opt-ourien">
+          <span><strong>« … ou rien »</strong><small>Si on pose la même valeur que le joueur précédent, le suivant doit poser cette valeur ou passer.</small></span>
+        </label>
+        <label class="option-ligne">Nombre de manches
+          <select id="opt-manches">
+            <option value="0" selected>Sans fin</option><option value="5">5</option><option value="10">10</option><option value="15">15</option>
+          </select>
+        </label>
+      </fieldset>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu : une table de bistrot, avec le tapis de cartes -->
+  <main id="jeu" class="salle" hidden>
+    <div class="scene">
+      <div class="zone-table">
+        <section class="table-pr" id="table">
+          <div class="tapis-pr" id="tapis">
+            <p class="inscription">Président</p>
+            <div class="centre-pr">
+              <p class="manche-info" id="manche-info"></p>
+              <div class="tas" id="tas"></div>
+              <p class="message" id="message" aria-live="polite"></p>
+            </div>
+          </div>
+          <!-- sur la table : une tasse de café et une assiette de biscuits -->
+          <div class="deco" aria-hidden="true">
+            <svg class="tasse" viewBox="0 0 80 80">
+              <ellipse cx="40" cy="44" rx="36" ry="30" fill="#F6EFE4" stroke="#D8CBB8" stroke-width="2"/>
+              <ellipse cx="40" cy="44" rx="25" ry="20" fill="#E9DFD0"/>
+              <path d="M62 34c10-4 16 2 13 9s-10 7-14 4" fill="none" stroke="#C0453A" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="38" cy="40" r="22" fill="#C0453A"/>
+              <circle cx="38" cy="40" r="17" fill="#5B3418"/>
+              <ellipse cx="33" cy="35" rx="7" ry="4" fill="#8A5A30" opacity=".6"/>
+              <g class="vapeur" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".7">
+                <path d="M32 26c-4-5 4-8 0-14"/><path d="M42 26c-4-5 4-8 0-14"/>
+              </g>
+            </svg>
+            <svg class="biscuits" viewBox="0 0 110 90">
+              <ellipse cx="55" cy="47" rx="52" ry="40" fill="#FBFAF6" stroke="#D8CBB8" stroke-width="2"/>
+              <ellipse cx="55" cy="47" rx="38" ry="28" fill="none" stroke="#7FA6C9" stroke-width="2" stroke-dasharray="5 4"/>
+              <g fill="#D9A15A" stroke="#B9803E" stroke-width="1.5">
+                <circle cx="40" cy="40" r="15"/><circle cx="66" cy="38" r="14"/><circle cx="54" cy="58" r="15"/>
+              </g>
+              <g fill="#5B3418">
+                <circle cx="35" cy="36" r="2.2"/><circle cx="44" cy="44" r="2"/><circle cx="40" cy="47" r="1.6"/>
+                <circle cx="62" cy="34" r="2"/><circle cx="70" cy="42" r="2.2"/><circle cx="50" cy="56" r="2"/><circle cx="58" cy="62" r="2.2"/><circle cx="56" cy="52" r="1.6"/>
+              </g>
+            </svg>
+          </div>
+          <div class="places" id="places"></div>
+          <p class="bandeau" id="bandeau" hidden></p>
+
+          <!-- bilan de la manche -->
+          <div class="panneau-pr" id="panneau-bilan" hidden>
+            <p class="panneau-titre" id="bilan-titre"></p>
+            <ol class="podium" id="bilan-liste"></ol>
+            <button class="btn-table principal" id="btn-manche-suivante">Manche suivante</button>
+          </div>
+          <!-- fin de partie -->
+          <div class="panneau-pr" id="panneau-fin" hidden>
+            <p class="panneau-titre" id="fin-titre"></p>
+            <ol class="podium" id="fin-liste"></ol>
+            <button class="btn-table principal" id="btn-nouvelle-partie">Nouvelle partie</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- devant moi : ma plaque, les boutons et ma main -->
+      <div class="bas">
+        <div class="bas-haut">
+          <button class="btn-scores" id="btn-scores" type="button" aria-label="Tableau des scores">🏆<span> Scores</span></button>
+          <div class="moi-pr" id="moi"></div>
+          <button class="btn-table" id="btn-passer" hidden>Passer</button>
+          <button class="btn-table principal" id="btn-jouer" hidden disabled>Jouer</button>
+        </div>
+        <div class="main-pr" id="main"></div>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="dialog-scores">
+    <h2>Tableau des scores</h2>
+    <div class="scores-defile"><table class="table-scores" id="table-scores"></table></div>
+    <button class="btn fermer" id="fermer-scores" type="button">Fermer</button>
+  </dialog>
+
+  <dialog class="regles" id="regles">
+    <h2>Le Président</h2>
+    <p>Toutes les cartes sont distribuées. Le but : s'en débarrasser le premier. Le premier à finir devient <strong>Président</strong>, le dernier <strong>Trou du cul</strong>.</p>
+    <h3>Ordre des cartes</h3>
+    <p>3, 4, 5, 6, 7, 8, 9, 10, Valet, Dame, Roi, As, et le <strong>2</strong>, la plus forte. Les couleurs ne comptent pas.</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Celui qui ouvre pose une carte, une paire, un brelan ou un carré.</li>
+      <li>Les suivants posent le même nombre de cartes, d'une valeur égale ou plus forte, ou passent. On peut rejouer plus tard dans le même pli après avoir passé.</li>
+      <li>Quand tout le monde passe, le pli est ramassé : celui qui a posé en dernier rejoue ce qu'il veut.</li>
+      <li>Poser un 2 (ou un carré) ferme le pli tout de suite : on rejoue.</li>
+      <li>1re manche : la Dame de cœur commence. Ensuite, c'est le Trou du cul.</li>
+    </ul>
+    <h3>Rôles et échanges</h3>
+    <ul>
+      <li>À partir de 4 joueurs : Président, Vice-président, Neutres, Vice-trou du cul, Trou du cul. À 3 : Président, Neutre, Trou du cul.</li>
+      <li>Au début de la manche suivante, le Trou du cul donne ses 2 meilleures cartes au Président, qui lui rend 2 cartes de son choix. Le Vice-trou du cul et le Vice-président échangent 1 carte de la même façon.</li>
+      <li>Points à chaque manche : le Président en gagne autant qu'il y a de joueurs moins un, puis un de moins à chaque place ; le Trou du cul n'en gagne aucun.</li>
+    </ul>
+    <h3>Variantes (choisies par celui qui crée la partie)</h3>
+    <ul>
+      <li><strong>Révolution du Trou du cul</strong> : si le Trou du cul de la manche précédente finit Président, l'échange suivant se fait à 4 cartes : le nouveau Trou du cul donne ses 4 meilleures cartes, le Président lui en rend 4 de son choix (le Vice-trou du cul n'est pas concerné).</li>
+      <li><strong>Carré qui inverse l'ordre</strong> : un carré inverse l'ordre des cartes jusqu'au prochain carré (le 3 devient la plus forte).</li>
+      <li><strong>« … ou rien »</strong> : si on pose la même valeur que le joueur précédent, le suivant doit poser cette valeur ou passer.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

@@ -1,0 +1,661 @@
+import { $, el, toast, initSalon, initRegles, de } from '../commun/salon.js';
+import * as R from './regles.js';
+
+const NOMS_BOTS = ['Gégé', 'Josiane', 'Le Baron', 'Mamie Lulu', 'Bébert', 'La Comtesse', 'Tonton Raoul'];
+const MAX_JOUEURS = 8;
+
+let etat = null;
+let maPlace = 0;
+let selection = [];   // cartes choisies dans ma main
+
+const melanger = (t) => { const a = [...t]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+const salon = initSalon({
+  jeu: 'president',
+  etatInitial: (nom, nb, { local }) => {
+    const joueur = (name, joined, bot = false) => ({ name, joined, bot, score: 0 });
+    const joueurs = Array.from({ length: nb }, (_, i) => joueur(i === 0 ? nom : 'En attente', i === 0));
+    const bots = parseInt($(local ? 'local-bots' : 'ligne-bots').value, 10) || 0;
+    melanger(NOMS_BOTS).slice(0, bots).forEach((n) => joueurs.push(joueur(n, true, true)));
+    // variantes choisies par celui qui crée la partie
+    const options = {
+      revolution: $('opt-revolution').checked,
+      revolutionTrou: $('opt-revolution-trou').checked,
+      ouRien: $('opt-ourien').checked,
+      manches: parseInt($('opt-manches').value, 10) || 0,
+    };
+    return { players: joueurs, options };
+  },
+  validerLocal: () => {
+    const total = parseInt($('local-nb').value, 10) + parseInt($('local-bots').value, 10);
+    if (total < 3) return 'Il faut au moins 3 joueurs : ajoute des bots ou des joueurs.';
+    if (total > MAX_JOUEURS) return `${MAX_JOUEURS} places maximum autour de la table.`;
+    return '';
+  },
+  validerEnLigne: () => {
+    const total = parseInt($('nb-joueurs').value, 10) + parseInt($('ligne-bots').value, 10);
+    if (total < 3) return 'Il faut au moins 3 joueurs : ajoute un bot.';
+    if (total > MAX_JOUEURS) return `${MAX_JOUEURS} places maximum : enlève des bots.`;
+    return '';
+  },
+  demarrer: (s) => R.nouvellePartie(s),
+  afficher: (s, place) => {
+    if (place !== maPlace) selection = [];
+    etat = R.normaliser(s);
+    maPlace = place;
+    noterChangement();
+    rendre();
+    planifierBot();
+  },
+  // Sur un seul téléphone : on le passe au joueur humain qui doit jouer (ou rendre ses cartes)
+  quiDoitJouer: (s) => {
+    const joueurs = s.players || [];
+    if (joueurs.filter((p) => !p.bot).length <= 1) return -1;
+    if (s.status === 'echange') {
+      const d = (s.dons || []).find((x) => !x.fait && joueurs[x.de] && !joueurs[x.de].bot);
+      return d ? d.de : -1;
+    }
+    if (s.status === 'jeu' && joueurs[s.active] && !joueurs[s.active].bot) return s.active;
+    return -1;
+  },
+  secret: true,
+});
+initRegles();
+const agir = (fn) => salon.agir((s) => fn(R.normaliser(s)));
+
+// ---------- Bots ----------
+let botPrevu = '';
+function botAttendu(s) {
+  if (s.status === 'echange') {
+    const d = s.dons.find((x) => !x.fait && s.players[x.de].bot);
+    return d ? d.de : -1;
+  }
+  if (s.status === 'jeu' && s.players[s.active] && s.players[s.active].bot) return s.active;
+  return -1;
+}
+function planifierBot() {
+  if (!etat || botAttendu(etat) < 0) return;
+  const cle = `${etat.partie}-${etat.manche}-${etat.coup}`;
+  if (botPrevu === cle) return;
+  botPrevu = cle;
+  const coup = etat.coup;
+  let delai = 800 + Math.random() * 600;
+  if (etat.status === 'jeu' && !etat.tas.length && etat.dernierPli) delai = 1700 + Math.random() * 400; // on laisse voir le pli
+  if (etat.evenement && etat.evenement.type === 'revolution') delai += 1200;
+  setTimeout(() => {
+    agir((s) => {
+      if (s.coup !== coup) return false;
+      const i = botAttendu(s);
+      if (i < 0) return false;
+      if (s.status === 'echange') return R.donner(s, i, R.donBot(s, i));
+      let ok = false;
+      try {
+        const c = R.coupBot(s, i);
+        ok = c.type === 'jouer' ? R.jouer(s, i, c.ids) : R.passer(s, i);
+      } catch (err) { console.error('Bot : erreur', err); }
+      // en dernier recours : passer, ou poser sa plus petite carte (la partie ne bloque jamais)
+      return ok || R.passer(s, i) || R.jouer(s, i, [R.trierMain(s.players[i].main, s.revolution)[0]]);
+    });
+  }, delai);
+}
+let dernierChangement = Date.now();
+let dernierCoupConnu = null;
+function noterChangement() {
+  const cle = `${etat.partie}-${etat.manche}-${etat.coup}-${etat.status}`;
+  if (cle !== dernierCoupConnu) { dernierCoupConnu = cle; dernierChangement = Date.now(); }
+}
+setInterval(() => {
+  if (!etat || botAttendu(etat) < 0 || Date.now() - dernierChangement < 4500) return;
+  dernierChangement = Date.now();
+  botPrevu = '';
+  planifierBot();
+}, 1500);
+
+// ---------- Actions ----------
+const moi = () => etat.players[maPlace];
+const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && !pliAffiche;
+const monDon = () => etat && etat.status === 'echange' && etat.dons.find((d) => d.de === maPlace && !d.fait);
+
+function clicCarte(c) {
+  if (pliAffiche) return;
+  const don = monDon();
+  if (don) {
+    // choix des cartes à rendre : n'importe lesquelles
+    if (selection.includes(c)) selection = selection.filter((x) => x !== c);
+    else if (selection.length < don.nb) selection = [...selection, c];
+    else selection = [...selection.slice(1), c];
+    rendreMain(); rendreBoutons();
+    return;
+  }
+  if (!monTour()) {
+    toast(etat.status === 'echange' ? 'Attends la fin de l\'échange des cartes.' : 'Ce n\'est pas ton tour.');
+    return;
+  }
+  const v = R.valeurDe(c);
+  const memes = R.trierMain(moi().main.filter((x) => R.valeurDe(x) === v));
+  const b = R.aBattre(etat);
+  if (selection.includes(c)) {
+    selection = selection.filter((x) => x !== c);
+  } else if (selection.length && R.valeurDe(selection[0]) === v) {
+    selection = [...selection, c];
+  } else {
+    // on touche une valeur : la combinaison demandée est choisie d'un coup (ou toutes ces cartes, si on ouvre)
+    selection = b ? [c, ...memes.filter((x) => x !== c)].slice(0, b.nb) : memes;
+  }
+  if (b && selection.length > b.nb) selection = selection.slice(-b.nb);
+  rendreMain(); rendreBoutons();
+}
+$('btn-jouer').addEventListener('click', () => {
+  const don = monDon();
+  const ids = [...selection];
+  if (don) {
+    if (ids.length !== don.nb) return;
+    selection = [];
+    agir((s) => R.donner(s, maPlace, ids));
+    return;
+  }
+  if (!monTour() || !R.coupValide(etat, maPlace, ids)) return;
+  selection = [];
+  agir((s) => R.jouer(s, maPlace, ids));
+});
+$('btn-passer').addEventListener('click', () => {
+  if (!monTour()) return;
+  selection = [];
+  agir((s) => R.passer(s, maPlace));
+});
+$('btn-manche-suivante').addEventListener('click', () => agir((s) => R.mancheSuivante(s)));
+$('btn-nouvelle-partie').addEventListener('click', () => agir((s) => {
+  if (s.status !== 'termine') return false;
+  R.nouvellePartie(s);
+  return true;
+}));
+$('btn-scores').addEventListener('click', () => { rendreScores(); $('dialog-scores').showModal(); });
+$('fermer-scores').addEventListener('click', () => $('dialog-scores').close());
+
+function majHauteurBarre() {
+  const b = document.querySelector('.barre');
+  if (b) document.documentElement.style.setProperty('--h-barre', `${b.offsetHeight}px`);
+}
+window.addEventListener('resize', () => { majHauteurBarre(); if (etat) serrerMain(); });
+majHauteurBarre();
+
+// ---------- Cartes ----------
+const FIGURES = { J: 'V', Q: 'D', K: 'R' };
+const PIPS = {
+  2: [[50, 0], [50, 100]],
+  3: [[50, 0], [50, 50], [50, 100]],
+  4: [[15, 0], [85, 0], [15, 100], [85, 100]],
+  5: [[15, 0], [85, 0], [50, 50], [15, 100], [85, 100]],
+  6: [[15, 0], [85, 0], [15, 50], [85, 50], [15, 100], [85, 100]],
+  7: [[15, 0], [85, 0], [50, 25], [15, 50], [85, 50], [15, 100], [85, 100]],
+  8: [[15, 0], [85, 0], [50, 25], [15, 50], [85, 50], [50, 75], [15, 100], [85, 100]],
+  9: [[15, 0], [85, 0], [15, 33.3], [85, 33.3], [50, 50], [15, 66.7], [85, 66.7], [15, 100], [85, 100]],
+  10: [[15, 0], [85, 0], [50, 16.7], [15, 33.3], [85, 33.3], [15, 66.7], [85, 66.7], [50, 83.3], [15, 100], [85, 100]],
+};
+function carteEl(id) {
+  const e = el('div', 'carte-pr');
+  const v = R.valeurDe(id); const s = R.couleurDe(id);
+  e.dataset.id = id;
+  if (s === '♥' || s === '♦') e.classList.add('rouge');
+  const nom = FIGURES[v] || v;
+  const indice = (bas) => {
+    const i = el('span', 'indice' + (bas ? ' bas' : ''));
+    i.append(el('b', '', nom), el('i', '', s));
+    return i;
+  };
+  const face = el('span', 'face');
+  if (FIGURES[v]) {
+    e.classList.add('figure');
+    const cadre = el('span', 'cadre');
+    cadre.append(el('b', '', nom), el('i', '', s));
+    face.appendChild(cadre);
+  } else if (v === 'A') {
+    e.classList.add('as');
+    face.appendChild(el('i', 'pip', s));
+  } else {
+    PIPS[v].forEach(([x, y]) => {
+      const p = el('i', 'pip' + (y > 50 ? ' renverse' : ''), s);
+      p.style.left = `${x}%`;
+      p.style.top = `${y}%`;
+      face.appendChild(p);
+    });
+  }
+  e.append(indice(false), face, indice(true));
+  e.setAttribute('aria-label', `${R.nomValeur(v)} ${s}`);
+  return e;
+}
+const decrireCoup = (ids) => {
+  const v = R.valeurDe(ids[0]);
+  if (ids.length === 1) return `un ${R.nomValeur(v)}`.replace('un As', 'un As').replace('un Dame', 'une Dame');
+  return `${['', '', 'une paire', 'un brelan', 'un carré'][ids.length]} de ${R.nomValeur(v, 2)}`;
+};
+
+// ---------- Places autour de la table ----------
+function anglePlace(k, n) {
+  if (k === 0) return 90;
+  const m = n - 1;
+  if (m === 1) return 270;
+  const ecart = Math.min(250, 62 * m);
+  return 270 - ecart / 2 + (ecart * (k - 1)) / (m - 1);
+}
+function pointBord(angle, r = 1) {
+  const a = (angle * Math.PI) / 180;
+  const c = Math.cos(a); const s = Math.sin(a);
+  const e = 2 / 4;
+  return { x: 50 + 50 * r * Math.sign(c) * Math.abs(c) ** e, y: 50 + 50 * r * Math.sign(s) * Math.abs(s) ** e };
+}
+const ROLE_FINI = (n, r) => {
+  if (r === 1) return 'president';
+  if (r === n) return 'trou';
+  if (n >= 4 && r === 2) return 'vice';
+  if (n >= 4 && r === n - 1) return 'vicetrou';
+  return 'neutre';
+};
+function bulle(p, i) {
+  const n = etat.players.length;
+  if (etat.status === 'echange') {
+    const d = etat.dons.find((x) => x.de === i);
+    if (d) return { t: d.fait ? '✓ a rendu ses cartes' : 'choisit les cartes à rendre…', c: d.fait ? 'ok' : 'attente' };
+    const r = etat.dons.find((x) => x.a === i);
+    if (r) return { t: `a donné ${r.nb} carte${r.nb > 1 ? 's' : ''}`, c: 'trop' };
+    return null;
+  }
+  if (etat.status === 'jeu' || etat.status === 'fin') {
+    if (p.fini) { const role = R.ROLES[ROLE_FINI(n, p.fini)]; return { t: `${role.ico} ${role.nom}`, c: p.fini === 1 ? 'juste' : p.fini === n ? 'trop' : 'ok' }; }
+    if (p.aPasse && etat.status === 'jeu') return { t: 'passe', c: 'attente' };
+    if (etat.status === 'jeu' && etat.active === i && p.bot && !pliAffiche) return { t: 'réfléchit…', c: 'attente' };
+  }
+  return null;
+}
+const scoresAffiches = [];
+const pts = (n) => `${n} pt${Math.abs(n) > 1 ? 's' : ''}`;
+function plaqueEl(p, i, avecMain) {
+  const plaque = el('div', 'plaque-pr');
+  const avatar = el('span', 'avatar', p.bot ? '🤖' : (p.name || '?').trim().charAt(0).toUpperCase());
+  avatar.style.setProperty('--teinte', String((i * 67 + 120) % 360));
+  if (p.role) {
+    const r = R.ROLES[p.role];
+    const badge = el('span', 'badge-role', r.ico);
+    badge.title = r.nom;
+    avatar.appendChild(badge);
+  }
+  const txt = el('span', 'plaque-txt');
+  txt.appendChild(el('strong', 'nom', p.name + (i === maPlace && !salon.estLocal() ? ' (toi)' : '')));
+  const score = el('span', 'score-total', pts(p.score));
+  txt.appendChild(score);
+  plaque.append(avatar, txt);
+  if (avecMain) {
+    const mini = el('span', 'mini-main');
+    for (let k = 0; k < Math.min(p.main.length, 4); k++) mini.appendChild(el('i', 'mini-dos'));
+    mini.appendChild(el('b', 'mini-nb', String(p.main.length)));
+    plaque.appendChild(mini);
+  }
+  if (scoresAffiches[i] !== undefined && scoresAffiches[i] !== p.score) A.scores.push({ e: score, de: scoresAffiches[i], a: p.score });
+  scoresAffiches[i] = p.score;
+  return plaque;
+}
+function rendrePlaces() {
+  const zone = $('places');
+  zone.innerHTML = '';
+  const n = etat.players.length;
+  for (let k = 1; k < n; k++) {
+    const i = (maPlace + k) % n;
+    const p = etat.players[i];
+    const pos = pointBord(anglePlace(k, n));
+    const siege = el('div', 'siege-pr');
+    siege.dataset.i = String(i);
+    if (pos.y < 30) siege.classList.add('haut');
+    if (pos.x < 16) siege.classList.add('bord-g');
+    if (pos.x > 84) siege.classList.add('bord-d');
+    if ((etat.status === 'jeu' && etat.active === i && !pliAffiche) || (etat.status === 'echange' && etat.dons.some((d) => d.de === i && !d.fait))) siege.classList.add('actif');
+    if (p.fini) siege.classList.add('fini');
+    siege.style.left = `${pos.x}%`;
+    siege.style.top = `${pos.y}%`;
+    siege.appendChild(plaqueEl(p, i, true));
+    const b = bulle(p, i);
+    if (b) siege.appendChild(el('span', `bulle ${b.c}`, b.t));
+    zone.appendChild(siege);
+  }
+  const p = moi();
+  const zm = $('moi');
+  zm.innerHTML = '';
+  zm.dataset.i = String(maPlace);
+  zm.classList.toggle('actif', monTour() || !!monDon());
+  zm.appendChild(plaqueEl(p, maPlace, false));
+  const b = bulle(p, maPlace);
+  if (b) zm.appendChild(el('span', `bulle ${b.c}`, b.t));
+}
+
+// ---------- Le tas au centre ----------
+let pliAffiche = null;   // le pli qui vient d'être ramassé reste visible un instant
+let dernierPliVu = null;
+function rendreTas() {
+  const zone = $('tas');
+  zone.innerHTML = '';
+  let coups = etat.tas.slice(-3);
+  if (pliAffiche && etat.dernierPli && !etat.tas.length) coups = [{ j: etat.dernierPli.j, cartes: etat.dernierPli.cartes, ferme: true }];
+  coups.forEach((t, k) => {
+    const g = el('div', 'coup' + (k === coups.length - 1 ? ' dernier' : '') + (t.ferme ? ' ferme' : ''));
+    g.dataset.j = String(t.j);
+    g.dataset.cle = t.cartes.join(',');
+    g.style.setProperty('--k', String(coups.length - 1 - k));
+    g.style.setProperty('--rot', `${((t.j * 29 + k * 13) % 15) - 7}deg`);
+    t.cartes.forEach((c) => g.appendChild(carteEl(c)));
+    if (k === coups.length - 1) g.appendChild(el('span', 'qui', etat.players[t.j].name));
+    zone.appendChild(g);
+  });
+  if (!coups.length) zone.appendChild(el('div', 'tas-vide', ''));
+}
+
+// ---------- Ma main ----------
+function rendreMain() {
+  const zone = $('main');
+  zone.innerHTML = '';
+  const p = moi();
+  selection = selection.filter((c) => p.main.includes(c));
+  const tour = monTour();
+  const don = monDon();
+  const b = tour ? R.aBattre(etat) : null;
+  const jouables = new Set();
+  if (tour) {
+    const parValeur = {};
+    p.main.forEach((c) => { (parValeur[R.valeurDe(c)] = parValeur[R.valeurDe(c)] || []).push(c); });
+    Object.entries(parValeur).forEach(([v, cs]) => {
+      const ok = !b || (cs.length >= b.nb && (b.ouRien ? v === b.ouRien : R.force(v, etat.revolution) >= R.force(b.v, etat.revolution)));
+      if (ok) cs.forEach((c) => jouables.add(c));
+    });
+  }
+  R.trierMain(p.main, etat.revolution).forEach((c) => {
+    const e = carteEl(c);
+    if (tour) e.classList.add(jouables.has(c) ? 'jouable' : 'interdite');
+    if (don) e.classList.add('jouable');
+    if ((p.recu || []).includes(c) && etat.status === 'echange') e.classList.add('recue');
+    if (selection.includes(c)) e.classList.add('choisie');
+    e.addEventListener('click', () => { if (tour && !jouables.has(c)) { toast(texteABattre(b)); return; } clicCarte(c); });
+    zone.appendChild(e);
+  });
+  serrerMain();
+}
+function texteABattre(b) {
+  if (!b) return '';
+  const quoi = ['', 'une carte', 'une paire', 'un brelan', 'un carré'][b.nb];
+  if (b.ouRien) return `Il faut poser ${quoi} de ${R.nomValeur(b.ouRien, b.nb)}, ou passer.`;
+  return `Il faut poser ${quoi} de ${R.nomValeur(b.v, b.nb)} ou plus fort, ou passer.`;
+}
+function serrerMain() {
+  const zone = $('main');
+  const cartes = [...zone.children];
+  cartes.forEach((c) => { c.style.marginLeft = ''; });
+  if (cartes.length < 2) return;
+  const largeur = cartes[0].offsetWidth;
+  const dispo = zone.clientWidth - 12;
+  if (!largeur || !dispo) { if (zone.offsetParent) requestAnimationFrame(serrerMain); return; }
+  const ecart = Math.min(largeur * 0.08, (dispo - largeur) / (cartes.length - 1) - largeur);
+  cartes.slice(1).forEach((c) => { c.style.marginLeft = `${ecart}px`; });
+  const milieu = (cartes.length - 1) / 2;
+  cartes.forEach((c, k) => {
+    // léger éventail : l'écart vertical reste petit pour que les cartes du bord restent entières
+    c.style.setProperty('--angle', `${(k - milieu) * Math.min(2.2, 24 / cartes.length)}deg`);
+    c.style.setProperty('--creux', `${Math.min(12, Math.abs(k - milieu) ** 2 * Math.min(1.4, 14 / cartes.length ** 1.4))}px`);
+  });
+}
+
+function rendreBoutons() {
+  const jouer = $('btn-jouer');
+  const passer = $('btn-passer');
+  const don = monDon();
+  if (don) {
+    jouer.hidden = false;
+    passer.hidden = true;
+    jouer.disabled = selection.length !== don.nb;
+    jouer.textContent = selection.length === don.nb ? `Donner ${selection.length > 1 ? 'ces cartes' : 'cette carte'}` : `Choisis ${don.nb} carte${don.nb > 1 ? 's' : ''} à rendre`;
+    return;
+  }
+  const tour = monTour();
+  jouer.hidden = !tour;
+  passer.hidden = !tour || !etat.tas.length;
+  if (!tour) return;
+  const ok = selection.length > 0 && R.coupValide(etat, maPlace, selection);
+  jouer.disabled = !ok;
+  jouer.textContent = ok ? `Jouer ${decrireCoup(selection)}` : 'Jouer';
+}
+
+function rendreCentre() {
+  const n = etat.players.length;
+  const morceaux = [];
+  if (etat.status === 'termine') morceaux.push('Partie terminée');
+  else {
+    morceaux.push(`Manche ${etat.manche}${etat.options.manches ? ` / ${etat.options.manches}` : ''}`);
+    if (etat.revolution) morceaux.push('⟲ Révolution');
+  }
+  $('manche-info').textContent = morceaux.join(' · ');
+  $('tapis').classList.toggle('revolution', !!etat.revolution);
+  let texte = '';
+  const p = moi();
+  if (etat.status === 'echange') {
+    const don = monDon();
+    const recu = (p.recu || []).map((c) => `${R.nomValeur(R.valeurDe(c))} ${R.couleurDe(c)}`).join(', ').replace(/, ([^,]*)$/, ' et $1');
+    const r = etat.dons.find((x) => x.a === maPlace);
+    if (don) texte = `${recu ? `Tu reçois ${recu}. ` : ''}Choisis ${don.nb} carte${don.nb > 1 ? 's' : ''} à rendre.`;
+    else if (r) texte = `Tu donnes ${(p.donne || []).map((c) => `${R.nomValeur(R.valeurDe(c))} ${R.couleurDe(c)}`).join(', ').replace(/, ([^,]*)$/, ' et $1')}. En attente…`;
+    else texte = 'Échange des cartes entre le Président et le Trou du cul…';
+    if (etat.echangeDouble) texte = `✊ Révolution : échange à 4 cartes ! ${texte}`;
+  } else if (etat.status === 'jeu') {
+    if (pliAffiche) texte = '';
+    else if (monTour()) texte = etat.tas.length ? texteABattre(R.aBattre(etat)).replace('Il faut poser', 'À toi : pose').replace(', ou passer.', ', ou passe.') : 'À toi d\'ouvrir : pose ce que tu veux';
+    else texte = `Au tour ${de(etat.players[etat.active].name)}…`;
+  } else if (etat.status === 'fin') texte = '';
+  if (n && etat.status === 'jeu' && p.fini) texte = `Tu as fini : ${R.ROLES[ROLE_FINI(n, p.fini)].nom} ! ${texte}`;
+  $('message').textContent = texte;
+  $('message').classList.toggle('vide', !texte);
+}
+
+// ---------- Panneaux ----------
+function montrer(id, visible) {
+  const e = $(id);
+  if (e.hidden === visible) {
+    e.hidden = !visible;
+    if (visible && !sansAnimation()) e.animate([{ opacity: 0, transform: 'translate(-50%, -46%) scale(.94)' }, { opacity: 1, transform: 'translate(-50%, -50%)' }], { duration: 260, easing: 'ease-out' });
+  }
+}
+function rendrePanneaux() {
+  const bilan = etat.status === 'fin' && !pliAffiche;
+  montrer('panneau-bilan', bilan);
+  if (bilan) {
+    $('bilan-titre').textContent = `Fin de la manche ${etat.bilan.manche}`;
+    const ol = $('bilan-liste');
+    ol.innerHTML = '';
+    etat.bilan.lignes.forEach((l) => {
+      const r = R.ROLES[l.role];
+      const li = el('li', l.rang === 1 ? 'premier' : l.role === 'trou' ? 'dernier' : '');
+      li.append(el('span', 'rang', r.ico), el('span', 'nom', `${etat.players[l.j].name}`), el('small', 'role', r.nom), el('b', '', `+${l.points}`));
+      ol.appendChild(li);
+    });
+    if (etat.bilan.revolutionTrou) {
+      const li = el('li', 'revolution-trou', '');
+      li.append(el('span', 'rang', '✊'), el('span', 'nom', 'Révolution ! Le Trou du cul est devenu Président : à la prochaine manche, l\'échange se fait à 4 cartes.'));
+      ol.appendChild(li);
+    }
+    const fin = etat.options.manches && etat.bilan.manche >= etat.options.manches;
+    $('btn-manche-suivante').textContent = fin ? 'Voir le classement' : 'Manche suivante';
+  }
+  montrer('panneau-fin', etat.status === 'termine');
+  if (etat.status === 'termine') {
+    const cl = R.classementGeneral(etat);
+    $('fin-titre').textContent = `${cl[0].nom} remporte la partie !`;
+    const ol = $('fin-liste');
+    ol.innerHTML = '';
+    cl.forEach((x, k) => {
+      const li = el('li', k === 0 ? 'premier' : '');
+      li.append(el('span', 'rang', ['🥇', '🥈', '🥉'][k] || `${k + 1}.`), el('span', 'nom', x.nom),
+        el('small', 'role', `${x.presidences} fois Président`), el('b', '', pts(x.score)));
+      ol.appendChild(li);
+    });
+  }
+}
+function rendreScores() {
+  const t = $('table-scores');
+  t.innerHTML = '';
+  const tete = el('tr');
+  tete.appendChild(el('th', '', 'Manche'));
+  etat.players.forEach((p) => tete.appendChild(el('th', '', p.name)));
+  t.appendChild(tete);
+  const nb = Math.max(0, ...etat.players.map((p) => p.rangs.length));
+  const n = etat.players.length;
+  for (let m = 0; m < nb; m++) {
+    const tr = el('tr');
+    tr.appendChild(el('td', 'manche', String(m + 1)));
+    etat.players.forEach((p) => {
+      const r = p.rangs[m];
+      const role = r ? R.ROLES[ROLE_FINI(n, r)] : null;
+      const td = el('td', r === 1 ? 'reussi' : r === n ? 'rate' : '');
+      td.textContent = role ? `${role.ico} +${n - r}` : '–';
+      td.title = role ? role.nom : '';
+      tr.appendChild(td);
+    });
+    t.appendChild(tr);
+  }
+  const tot = el('tr', 'totaux');
+  tot.appendChild(el('td', 'manche', 'Total'));
+  etat.players.forEach((p) => tot.appendChild(el('td', '', String(p.score))));
+  t.appendChild(tot);
+}
+
+// ---------- Animations ----------
+const sansAnimation = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const centre = (r) => [r.left + r.width / 2, r.top + r.height / 2];
+let A = null;
+let precedent = null;
+const plaqueDe = (i) => {
+  const s = i === maPlace ? $('moi') : document.querySelector(`#places .siege-pr[data-i="${i}"]`);
+  const p = s && s.querySelector('.plaque-pr');
+  return (p || $('tapis')).getBoundingClientRect();
+};
+function arriver(e, depuis, delai, { rotation = 0, echelle = 0.6, duree = 420 } = {}) {
+  const [cx, cy] = centre(e.getBoundingClientRect());
+  const [dx, dy] = centre(depuis);
+  const finale = getComputedStyle(e).transform;
+  const debut = `translate(${dx - cx}px, ${dy - cy}px) rotate(${rotation}deg) scale(${echelle})`;
+  e.animate([
+    { transform: debut, opacity: 0 },
+    { transform: debut, opacity: 1, offset: 0.02 },
+    { transform: finale === 'none' ? 'none' : finale, opacity: 1 },
+  ], { duration: duree, delay: delai, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'backwards' });
+}
+function compter(e, de, a, delai) {
+  setTimeout(() => {
+    const t0 = performance.now();
+    const pas = (t) => {
+      const k = Math.min(1, (t - t0) / 700);
+      e.textContent = pts(Math.round(de + (a - de) * (1 - (1 - k) ** 3)));
+      if (k < 1 && e.isConnected) requestAnimationFrame(pas);
+    };
+    requestAnimationFrame(pas);
+    e.classList.add('monte');
+    setTimeout(() => e.classList.remove('monte'), 1300);
+  }, delai);
+}
+function bandeau(texte, duree = 1800) {
+  const b = $('bandeau');
+  b.textContent = texte;
+  b.hidden = false;
+  b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
+  clearTimeout(bandeau.t);
+  bandeau.t = setTimeout(() => { b.hidden = true; }, duree);
+}
+// le pli ramassé glisse hors du tapis
+function ramasser() {
+  if (sansAnimation()) return;
+  document.querySelectorAll('#tas .carte-pr').forEach((c, k) => {
+    const t0 = getComputedStyle(c).transform;
+    c.animate([{ transform: t0 === 'none' ? 'none' : t0, opacity: 1 }, { transform: `translate(${-140 - k * 6}px, -30px) rotate(-40deg) scale(.6)`, opacity: 0 }],
+      { duration: 480, delay: k * 30, easing: 'cubic-bezier(.5,0,.75,.4)', fill: 'forwards' });
+  });
+}
+function instantane() {
+  const r = { main: {}, plaques: {} };
+  document.querySelectorAll('#main .carte-pr').forEach((c) => { r.main[c.dataset.id] = c.getBoundingClientRect(); });
+  return r;
+}
+function animer(prev, avant) {
+  if (sansAnimation() || !prev || prev.place !== maPlace) { A.scores.forEach(({ e, a }) => { e.textContent = pts(a); }); return; }
+  const tapis = $('tapis').getBoundingClientRect();
+  // nouvelle manche : la donne
+  if (prev.manche !== etat.manche || prev.partie !== etat.partie) {
+    document.querySelectorAll('#main .carte-pr').forEach((c, k) => arriver(c, tapis, 80 + k * 45, { rotation: -25, echelle: 0.4, duree: 420 }));
+  }
+  // nouvelle combinaison posée : elle part de la main (ou de la plaque) du joueur
+  const g = document.querySelector('#tas .coup.dernier');
+  if (g && g.dataset.cle !== prev.dernierAffiche) {
+    const j = Number(g.dataset.j);
+    [...g.querySelectorAll('.carte-pr')].forEach((c, k) => {
+      const depuis = (j === maPlace && avant.main[c.dataset.id]) || plaqueDe(j);
+      arriver(c, depuis, k * 60, { rotation: j === maPlace ? 0 : -20, echelle: j === maPlace ? 1 : 0.45 });
+    });
+  }
+  // échange : les cartes reçues arrivent de la plaque de celui qui donne
+  const recues = document.querySelectorAll('#main .carte-pr.recue');
+  if (recues.length && etat.status === 'echange' && prev.status !== 'echange') {
+    const r = etat.dons.find((d) => d.de === maPlace) || etat.dons.find((d) => d.a === maPlace);
+    const autre = r ? (r.de === maPlace ? r.a : r.de) : null;
+    if (autre !== null) recues.forEach((c, k) => arriver(c, plaqueDe(autre), 500 + k * 120, { echelle: 0.5, duree: 600 }));
+  }
+  const delai = etat.status === 'fin' ? 1700 : 0;
+  A.scores.forEach(({ e, de, a }) => compter(e, de, a, delai));
+}
+
+const etatLogique = () => ({
+  place: maPlace, partie: etat.partie, manche: etat.manche, status: etat.status, coup: etat.coup,
+  nbTas: etat.tas.length, dernierNum: etat.dernierPli ? etat.dernierPli.num : 0, dernierJ: etat.dernierPli ? etat.dernierPli.j : null,
+  revolution: etat.revolution, fini: etat.players.map((p) => p.fini),
+  dernierAffiche: (document.querySelector('#tas .coup.dernier') || { dataset: {} }).dataset.cle,
+});
+
+function rendre(sansAnim = false) {
+  if (!etat) return;
+  const prev = precedent;
+  const avant = instantane();
+  // un pli vient d'être ramassé : on le laisse voir un instant
+  const d = etat.dernierPli;
+  const cle = d ? `${etat.partie}-${etat.manche}-${d.num}` : null;
+  if (cle && cle !== dernierPliVu) {
+    const premier = !prev;
+    dernierPliVu = cle;
+    if (!premier && !sansAnimation() && !etat.tas.length) {
+      pliAffiche = cle;
+      setTimeout(() => { if (pliAffiche === cle) ramasser(); }, 1050);
+      setTimeout(() => { if (pliAffiche === cle) { pliAffiche = null; rendre(true); } }, 1500);
+    }
+  }
+  if (pliAffiche && etat.tas.length) pliAffiche = null;
+  // fin de manche : on laisse voir la dernière combinaison avant le bilan
+  if (prev && prev.status === 'jeu' && etat.status === 'fin' && !sansAnimation()) {
+    pliAffiche = 'fin';
+    setTimeout(() => { if (pliAffiche === 'fin') { pliAffiche = null; rendre(true); } }, 1600);
+  }
+  A = { scores: [] };
+  rendrePlaces();
+  rendreTasOuFin();
+  rendreMain();
+  rendreBoutons();
+  rendreCentre();
+  rendrePanneaux();
+  if (!sansAnim) animer(prev, avant);
+  else A.scores.forEach(({ e, de, a }) => compter(e, de, a, 200));
+  // événements : révolution, joueur qui finit
+  if (prev && prev.place === maPlace && !sansAnim) {
+    if (etat.revolution !== prev.revolution && etat.evenement && etat.evenement.type === 'revolution') {
+      bandeau(etat.revolution ? '⟲ Révolution ! Le 3 devient la plus forte, le 2 la plus faible' : '⟳ Contre-révolution : retour à l\'ordre normal', 2200);
+    } else {
+      const n = etat.players.length;
+      etat.players.forEach((p, i) => {
+        if (p.fini && !prev.fini[i]) {
+          const role = R.ROLES[ROLE_FINI(n, p.fini)];
+          if (p.fini < n) bandeau(`${role.ico} ${p.name} ${i === maPlace ? '(toi) ' : ''}a fini : ${role.nom} !`, 1800);
+        }
+      });
+    }
+  }
+  precedent = etatLogique();
+}
+function rendreTasOuFin() { rendreTas(); }
