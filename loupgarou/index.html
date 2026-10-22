@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loup-Garou</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐺</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="loupgarou.css">
+  <script type="module" src="loupgarou.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Loup-Garou</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil : en ligne seulement (chacun son téléphone) -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne · chacun son téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Chacun découvre son rôle en secret sur son téléphone. Le narrateur est automatique : la nuit, chacun agit en secret ; le jour, on débat et on vote. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <label>Nombre de joueurs
+          <select id="nb-joueurs"></select>
+        </label>
+
+        <fieldset class="reglages" id="reglages">
+          <legend>Rôles de la partie <small>(choisis par celui qui crée le salon)</small></legend>
+          <label class="option-ligne">🐺 Loups-Garous
+            <select id="nb-loups">
+              <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            </select>
+          </label>
+          <div class="roles-choix" id="roles-choix"></div>
+          <p class="compo" id="compo"></p>
+        </fieldset>
+
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <!-- (mode un seul téléphone non proposé : les rôles doivent rester secrets) -->
+      <div hidden><select id="local-nb"><option value="1">1</option></select><div id="local-noms"></div><button id="btn-local" type="button"></button></div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="village-jeu" hidden>
+    <div class="ciel" id="ciel">
+      <span class="astre" aria-hidden="true"></span>
+      <div class="ciel-texte">
+        <p class="phase" id="phase"></p>
+        <p class="narration" id="narration" aria-live="polite"></p>
+      </div>
+      <button class="mon-role" id="mon-role" type="button"></button>
+    </div>
+
+    <section class="annonce" id="annonce" hidden></section>
+    <section class="action" id="action"></section>
+    <section class="village" id="village" aria-label="Les villageois"></section>
+
+    <section class="discussion" id="discussion">
+      <div class="onglets-chat" id="onglets-chat"></div>
+      <div class="messages" id="messages"></div>
+      <form class="saisie" id="saisie">
+        <input id="saisie-texte" maxlength="200" autocomplete="off" placeholder="Écrire au village…">
+        <button class="btn btn-principal" type="submit">Envoyer</button>
+      </form>
+    </section>
+
+    <details class="journal">
+      <summary>Journal de la partie</summary>
+      <ol id="journal"></ol>
+    </details>
+  </main>
+
+  <!-- carte de rôle -->
+  <dialog class="regles dialog-role" id="dialog-role">
+    <div id="dialog-role-contenu"></div>
+    <button class="btn fermer" type="button" id="fermer-role">Fermer</button>
+  </dialog>
+
+  <dialog class="regles" id="regles">
+    <h2>Loup-Garou</h2>
+    <p>Des loups-garous se cachent parmi les villageois. Chaque nuit, ils dévorent quelqu'un ; chaque jour, le village vote pour éliminer un suspect. Le narrateur est automatique : chacun suit la partie et agit sur son téléphone.</p>
+    <h3>Gagner</h3>
+    <ul>
+      <li><strong>Le village</strong> gagne quand tous les loups-garous (Loup blanc compris) sont morts.</li>
+      <li><strong>Les loups</strong> gagnent quand il n'y a plus de villageois.</li>
+      <li><strong>Le Loup blanc</strong> gagne seul s'il est le dernier survivant.</li>
+      <li><strong>Les amoureux</strong> d'un camp différent gagnent ensemble s'ils sont les deux derniers.</li>
+    </ul>
+    <h3>La nuit, dans l'ordre</h3>
+    <ul>
+      <li>💘 <strong>Cupidon</strong> (1re nuit) désigne deux amoureux : si l'un meurt, l'autre meurt de chagrin.</li>
+      <li>🛡️ <strong>Salvateur</strong> protège un joueur des loups (jamais deux nuits de suite le même).</li>
+      <li>🔮 <strong>Voyante</strong> découvre le rôle d'un joueur.</li>
+      <li>🐺 <strong>Loups-Garous</strong> choisissent leur victime (s'ils ne sont pas d'accord, le sort tranche au bout de 20 s). Ils ont leur propre chat. 👧 La <strong>Petite fille</strong> peut les espionner pour voir qui ils visent, mais une fois sur cinq, ils la surprennent et découvrent qui elle est.</li>
+      <li>🤍 <strong>Loup blanc</strong> (une nuit sur deux) peut dévorer un autre loup.</li>
+      <li>🧪 <strong>Sorcière</strong> voit la victime des loups : elle peut la sauver (potion de vie) et/ou empoisonner quelqu'un (potion de mort), une fois chacune dans la partie.</li>
+    </ul>
+    <h3>Le jour</h3>
+    <ul>
+      <li>On découvre les morts de la nuit et leur rôle. On débat (de vive voix ou dans le chat), puis chacun vote. En cas d'égalité, on revote entre les ex æquo ; si l'égalité reste, personne n'est éliminé.</li>
+      <li>🏹 <strong>Chasseur</strong> : en mourant, il tire sur un joueur de son choix.</li>
+      <li>👴 <strong>Ancien</strong> : survit à la première attaque des loups ; mais si le village le tue (vote, sorcière, chasseur), les villageois perdent tous leurs pouvoirs.</li>
+      <li>🤪 <strong>Idiot du village</strong> : s'il est désigné par le vote, il est épargné mais ne vote plus.</li>
+    </ul>
+    <p>Les morts voient tous les rôles, mais ne peuvent plus parler. Si un joueur ne répond plus, celui qui a créé le salon peut faire avancer la partie.</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+/* ==========================================================================
+   Loup-Garou : un village sous la lune
+   la nuit, un ciel étoilé bleu nuit ; le jour, une aube chaude sur les toits
+   ========================================================================== */
+
+/* ---------- Accueil : composition ---------- */
+.reglages { border: 1px solid var(--nuit-3); border-radius: 12px; padding: 8px 12px 10px; display: grid; gap: 8px; }
+.reglages legend { padding: 0 6px; font-weight: 700; font-size: .9rem; }
+.reglages legend small { font-weight: 400; color: var(--brume); }
+.carte-salon .option-ligne { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 700; }
+.carte-salon .option-ligne select { width: auto; }
+.roles-choix { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+.carte-salon .role-option {
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+  padding: 6px 8px; border-radius: 10px; background: var(--nuit); border: 1px solid var(--nuit-3);
+  font-size: .9rem; font-weight: 600;
+}
+.role-option:has(input:checked) { border-color: #F2C230; background: rgba(242, 194, 48, .1); }
+.carte-salon .role-option input { width: 18px; height: 18px; accent-color: #F2C230; flex: none; margin: 0; }
+.role-option .ico { font-size: 1.15rem; }
+.compo { font-size: .85rem; color: var(--brume); line-height: 1.4; }
+.compo.erreur { color: #FF9C8A; font-weight: 700; }
+
+/* ---------- La page de jeu ---------- */
+body.nuit, body.jour { transition: background 1.2s; }
+body.nuit {
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 8%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 47% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 12%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 81% 26%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 6%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 5% 40%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 73% 44%, #fff 50%, transparent 51%),
+    linear-gradient(180deg, #070B1F 0%, #0F1840 45%, #1B2350 100%) fixed;
+}
+body.jour { background: linear-gradient(180deg, #F4B26B 0%, #E58A5A 18%, #6B4A6E 45%, #2A2550 100%) fixed; }
+body.mort #village .joueur { filter: saturate(.75); }
+
+#jeu.village-jeu:not([hidden]) {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 10px 12px 28px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "ciel" "annonce" "action" "village" "discussion" "journal";
+}
+@media (min-width: 900px) {
+  #jeu.village-jeu:not([hidden]) {
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+    grid-template-areas: "ciel ciel" "annonce discussion" "action discussion" "village discussion" "journal discussion";
+    align-items: start;
+  }
+  .discussion { position: sticky; top: 10px; height: calc(100dvh - var(--h-barre, 57px) - 40px); }
+}
+
+/* ---------- Le ciel : la phase et la narration ---------- */
+.ciel {
+  grid-area: ciel;
+  position: relative;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  color: #F5EEDC;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M0 60V42l20-8 14 8V28l18-14 18 14v18l16-10 22 10V30l12-10 12 10v14l20-12 20 12V24l8-6 8 6v22l24-14 22 14V36l16-8 14 8v-6l20-16 20 16v16l22-12 20 12V40l14-6 18 6v20Z' fill='%23070B1F' opacity='.85'/%3E%3C/svg%3E") bottom / 100% 34px no-repeat,
+    linear-gradient(180deg, rgba(20, 28, 70, .9), rgba(10, 14, 40, .95));
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+  transition: background 1s;
+}
+body.jour .ciel {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 60' preserveAspectRatio='none'%3E%3Cpath d='M0 60V42l20-8 14 8V28l18-14 18 14v18l16-10 22 10V30l12-10 12 10v14l20-12 20 12V24l8-6 8 6v22l24-14 22 14V36l16-8 14 8v-6l20-16 20 16v16l22-12 20 12V40l14-6 18 6v20Z' fill='%234A2A3A' opacity='.8'/%3E%3C/svg%3E") bottom / 100% 34px no-repeat,
+    linear-gradient(180deg, #FFD08A 0%, #F29D6B 60%, #C9706A 100%);
+  color: #3A1A10;
+}
+.astre {
+  width: 54px; height: 54px; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 35%, #FFFBE8, #E9E2C8 60%, #C9C2A6);
+  box-shadow: 0 0 24px 6px rgba(255, 250, 220, .35);
+  position: relative;
+}
+.astre::after { /* cratères */
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 62% 40%, rgba(150, 140, 110, .35) 0 9%, transparent 10%), radial-gradient(circle at 40% 66%, rgba(150, 140, 110, .3) 0 7%, transparent 8%);
+}
+body.jour .astre { background: radial-gradient(circle, #FFF6C8, #FFD35A 55%, #F2A13A); box-shadow: 0 0 34px 12px rgba(255, 210, 90, .55); }
+body.jour .astre::after { display: none; }
+.ciel-texte { flex: 1; min-width: 200px; display: grid; gap: 2px; padding-bottom: 14px; }
+.phase { font: 900 clamp(1.25rem, 2.6vw, 1.7rem) "Playfair Display", Georgia, serif; }
+.narration { font-size: clamp(.92rem, 1.6vw, 1.05rem); font-weight: 600; opacity: .92; }
+.mon-role {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  background: rgba(0, 0, 0, .35); border: 1px solid rgba(255, 255, 255, .3); color: #fff;
+  font: 700 .9rem var(--police); margin-bottom: 14px;
+}
+.mon-role .ico { font-size: 1.2rem; }
+.mon-role .coeur { font-size: .8rem; font-weight: 600; opacity: .9; }
+
+/* ---------- Annonce des morts ---------- */
+.annonce {
+  grid-area: annonce;
+  display: grid; gap: 6px;
+  padding: 12px 16px; border-radius: 16px;
+  background: rgba(245, 238, 220, .96); color: #2A1A10;
+  border: 2px solid #8C6420;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .35);
+}
+.annonce-titre { font: 900 1.05rem "Playfair Display", Georgia, serif; color: #6B2414; }
+.annonce-ligne { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.annonce-ico { font-size: 1.4rem; }
+.annonce-role { padding: 1px 9px; border-radius: 999px; background: #2A1A10; color: #F5EEDC; font-size: .82rem; }
+
+/* ---------- Ce que je dois faire ---------- */
+.action {
+  grid-area: action;
+  display: grid; justify-items: start; gap: 8px;
+  padding: 14px 16px; border-radius: 16px;
+  background: rgba(10, 14, 36, .82); border: 1px solid rgba(242, 194, 48, .45);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .3);
+}
+body.jour .action { background: rgba(40, 24, 40, .82); }
+.action:empty { display: none; }
+.action-titre { font: 700 1.1rem var(--police); color: #F2C230; }
+.action-texte { color: #E8E2F5; line-height: 1.4; }
+.action .btn { width: auto; }
+.action .compte { font-size: .85rem; color: var(--brume); }
+.btn-hote { border: 1px dashed rgba(255, 255, 255, .4); background: transparent; font-size: .85rem; }
+
+/* distribution des rôles : une carte à retourner */
+.action.distribution { justify-items: center; text-align: center; }
+.carte-retournable {
+  position: relative; width: min(260px, 72vw); aspect-ratio: 3 / 4; border: 0; padding: 0; background: none; cursor: pointer;
+  perspective: 900px;
+}
+.carte-dos, .carte-face {
+  position: absolute; inset: 0; border-radius: 18px;
+  backface-visibility: hidden; transition: transform .6s cubic-bezier(.3, .9, .3, 1);
+}
+.carte-dos {
+  display: grid; place-items: center; align-content: center; gap: 10px; padding: 18px;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 250, 220, .25), transparent 40%),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, .05) 0 2px, transparent 2px 10px),
+    linear-gradient(160deg, #1C2A5A, #0A1030);
+  border: 3px solid #C9A045; color: #F5EEDC; font-family: var(--police);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .5);
+}
+.carte-dos span { font-size: 4rem; filter: drop-shadow(0 0 18px rgba(255, 250, 220, .6)); }
+.carte-dos small { opacity: .75; }
+.carte-face { transform: rotateY(180deg); }
+.carte-retournable.vue .carte-dos { transform: rotateY(-180deg); }
+.carte-retournable.vue .carte-face { transform: rotateY(0); }
+.carte-face .carte-role { height: 100%; }
+
+.carte-role {
+  display: grid; justify-items: center; align-content: center; gap: 8px; text-align: center;
+  padding: 18px 16px; border-radius: 18px;
+  background: linear-gradient(170deg, #F8F1DE, #E9DCBB);
+  border: 3px solid #4A7A4A; color: #2A1A10;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .45);
+}
+.carte-role.camp-loups { border-color: #A3261A; background: linear-gradient(170deg, #F6E3DA, #E2BFB0); }
+.carte-role.r-loupblanc { border-color: #9AA4B8; background: linear-gradient(170deg, #FFFFFF, #DCE2EC); }
+.carte-ico { font-size: 4.2rem; line-height: 1; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .25)); }
+.carte-nom { font: 900 1.5rem "Playfair Display", Georgia, serif; }
+.carte-texte { font-size: .92rem; line-height: 1.4; }
+.carte-camp { font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; opacity: .7; }
+.dialog-role .carte-role { margin-bottom: 10px; }
+.info-role { margin: 6px 0; line-height: 1.4; }
+
+/* ---------- Le village : les joueurs ---------- */
+.village {
+  grid-area: village;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;
+}
+.joueur {
+  position: relative;
+  display: flex; align-items: center; gap: 8px; text-align: left;
+  padding: 7px 10px 7px 7px; border-radius: 14px;
+  background: rgba(245, 238, 220, .95); color: #2A1A10;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+  font-family: var(--police);
+  transition: transform .15s, border-color .15s, box-shadow .15s, opacity .3s;
+}
+.joueur:disabled { cursor: default; opacity: 1; }
+.joueur .avatar {
+  position: relative; flex: none;
+  display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, hsl(var(--teinte) 60% 62%), hsl(var(--teinte) 45% 38%));
+  color: #fff; font-weight: 700; font-size: 1.05rem; border: 2px solid #fff;
+}
+.avatar-role { position: absolute; right: -8px; bottom: -6px; font-size: 1.05rem; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .6)); }
+.joueur-txt { display: grid; min-width: 0; line-height: 1.2; }
+.joueur-txt strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.joueur-txt small { font-size: .78rem; color: #6B5040; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.joueur.moi { border-color: #6B8BD9; }
+.joueur.mort { background: rgba(120, 110, 100, .55); color: #E8E2D8; box-shadow: none; }
+.joueur.mort .avatar { background: #3A3430; filter: grayscale(1); }
+.joueur.mort .joueur-txt small { color: #D8D0C4; }
+.joueur.choisissable { cursor: pointer; border-color: rgba(242, 194, 48, .7); }
+.joueur.choisissable:hover { transform: translateY(-2px); }
+.joueur.choisi { border-color: #F2C230; box-shadow: 0 0 0 3px rgba(242, 194, 48, .5), 0 6px 16px rgba(0, 0, 0, .3); transform: translateY(-2px); }
+.joueur.candidat { border-color: #E07B39; }
+.joueur.gagnant { border-color: #2E8B4F; box-shadow: 0 0 0 3px rgba(46, 139, 79, .45); }
+.votes {
+  position: absolute; top: -8px; right: -6px;
+  padding: 1px 8px; border-radius: 999px; font-size: .8rem; font-weight: 700;
+  background: #A3261A; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+}
+.votes.loups { background: #2A1A10; }
+.a-vote { position: absolute; bottom: -7px; right: 8px; font-size: .68rem; padding: 0 6px; border-radius: 999px; background: #2E8B4F; color: #fff; }
+
+/* ---------- Discussion ---------- */
+.discussion {
+  grid-area: discussion;
+  display: flex; flex-direction: column; gap: 6px;
+  min-height: 260px; max-height: 60dvh;
+  padding: 10px; border-radius: 16px;
+  background: rgba(10, 14, 36, .82); border: 1px solid rgba(255, 255, 255, .12);
+}
+body.jour .discussion { background: rgba(40, 24, 40, .82); }
+.onglets-chat { display: flex; gap: 6px; }
+.onglets-chat:empty { display: none; }
+.onglet-chat { padding: 4px 12px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .25); background: transparent; color: #E8E2F5; font: 600 .85rem var(--police); cursor: pointer; }
+.onglet-chat.actif { background: #F2C230; color: #1A1430; border-color: #F2C230; }
+.messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding: 2px; min-height: 120px; }
+.messages .vide { color: var(--brume); font-size: .85rem; font-style: italic; }
+.msg { align-self: flex-start; max-width: 88%; padding: 5px 10px; border-radius: 12px 12px 12px 4px; background: rgba(255, 255, 255, .1); color: #F2EEFA; font-size: .92rem; line-height: 1.35; overflow-wrap: anywhere; }
+.msg strong { display: block; font-size: .78rem; }
+.msg.de-moi { align-self: flex-end; border-radius: 12px 12px 4px 12px; background: rgba(242, 194, 48, .22); }
+.msg.systeme { align-self: center; background: rgba(163, 38, 26, .55); text-align: center; font-weight: 600; }
+.saisie { display: flex; gap: 6px; }
+.saisie input { flex: 1; min-width: 0; }
+.saisie .btn { width: auto; padding: 8px 14px; }
+
+/* ---------- Journal ---------- */
+.journal { grid-area: journal; border-radius: 14px; background: rgba(10, 14, 36, .6); padding: 8px 14px; color: #E8E2F5; }
+.journal summary { cursor: pointer; font-weight: 700; }
+.journal ol { list-style: none; display: grid; gap: 4px; margin-top: 8px; font-size: .88rem; max-height: 240px; overflow-y: auto; }
+
+@media (max-width: 420px) {
+  .village { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .astre { width: 42px; height: 42px; }
+  .mon-role { margin-bottom: 4px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .carte-dos, .carte-face, body.nuit, body.jour { transition: none; }
+}
