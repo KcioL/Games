@@ -203,7 +203,7 @@
 .carte-cl {
   --l: 86px;
   width: var(--l);
-  aspect-ratio: 5 / 7;
+  aspect-ratio: 3 / 4;
   flex: none;
   position: relative;
   border-radius: calc(var(--l) * .09);
@@ -246,13 +246,21 @@
   hyphens: auto;
 }
 .carte-cl.suspect { border-top: calc(var(--l) * .05) solid var(--teinte); }
-.carte-cl.petite { --l: 64px; }
+/* carte complète (image du dossier cartes/) : rien à dessiner par-dessus */
+.carte-cl.complete {
+  display: block;
+  padding: 0;
+  border: none;
+  background: #111827 center / cover no-repeat;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .45), 0 4px 10px rgba(0, 0, 0, .45);
+}
+.carte-cl.petite { --l: 70px; }
 .carte-cl.petite .cat-cl { display: none; }
 .carte-cl.petite { grid-template-rows: minmax(0, 1fr) auto; }
 
 .trio { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.trio.mini { --l: 54px; gap: 6px; }
-.trio.mini .carte-cl { --l: 54px; }
+.trio.mini { --l: 60px; gap: 6px; }
+.trio.mini .carte-cl { --l: 60px; }
 
 /* ---------- Le panneau de côté : cuir et laiton ---------- */
 .cote {
@@ -426,6 +434,10 @@ dialog.regles#regles p, dialog.regles#regles li { color: #E8DCC4; }
 dialog.regles#regles li::marker { color: var(--laiton); }
 dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A); border: 1px solid rgba(201, 161, 92, .6); color: var(--creme); }
 .dlg-cl { max-width: min(660px, 96vw); }
+@media (min-width: 700px) {
+  .dlg-cl { max-width: min(860px, 96vw); }
+  .rangee-cartes.choix .carte-cl.petite { --l: 92px; }
+}
 .dlg-cl h3 { margin: 12px 0 4px; font: 700 1rem/1.3 var(--serif); color: var(--laiton-clair); }
 .choix-texte { color: #E8DCC4; }
 .rangee-cartes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 6px 0; }
@@ -452,6 +464,7 @@ dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A
   box-shadow: 0 2px 5px rgba(0, 0, 0, .5);
 }
 .rangee-cartes .carte-cl.choisie.connue::after { display: none; }
+.rangee-cartes.choix .carte-cl.choisie { opacity: 1; }
 .choix-boutons {
   display: flex; gap: 8px; justify-content: flex-end;
   margin: 14px -4px 0; padding: 10px 4px 2px;
@@ -491,5 +504,5 @@ dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A
   .de { width: 34px; height: 34px; padding: 4px; }
   .de span.pt::after { width: 6px; height: 6px; }
   #dlg-refuter .carte-cl { --l: 92px; }
-  .rangee-cartes .carte-cl.petite { --l: 56px; }
+  .rangee-cartes .carte-cl.petite { --l: 64px; }
 }

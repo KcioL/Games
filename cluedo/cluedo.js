@@ -199,14 +199,19 @@ function carteEl(id, cls = '') {
   const c = R.CARTES[id];
   const e = el('div', `carte-cl ${c.cat} ${cls}`.trim());
   e.dataset.id = id;
+  e.title = c.nom;
+  const img = images.get(id);
+  if (img) {
+    // une carte complète dessinée (dossier cartes/) : on l'affiche telle quelle
+    e.classList.add('complete');
+    e.style.backgroundImage = `url("${img}")`;
+    e.setAttribute('aria-label', c.nom);
+    return e;
+  }
   const etiquette = { suspect: 'Suspect', arme: 'Arme', piece: 'Lieu' }[c.cat];
   e.append(el('span', 'cat-cl', etiquette));
   const ill = el('div', 'ill-cl');
-  const img = images.get(id);
-  if (img) {
-    ill.classList.add('photo');
-    ill.style.backgroundImage = `url("${img}")`;
-  } else if (c.cat === 'suspect') {
+  if (c.cat === 'suspect') {
     ill.style.setProperty('--teinte', c.couleur);
     ill.innerHTML = SILHOUETTE;
   } else if (c.cat === 'arme') {
