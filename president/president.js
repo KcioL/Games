@@ -464,6 +464,7 @@ function serrerMain() {
 function rendreChoixCombo() {
   const zone = $('choix-combo');
   zone.innerHTML = '';
+  $('message').classList.remove('sous-combo'); // le message du centre se cache derrière le choix
   const tour = monTour();
   const b = tour ? R.aBattre(etat) : null;
   if (!tour || !selection.length) { zone.hidden = true; return; }
@@ -474,17 +475,33 @@ function rendreChoixCombo() {
   for (let n = 1; n <= memes.length; n++) if (R.coupValide(etat, maPlace, memes.slice(0, n))) nombres.push(n);
   if (nombres.length < 2) { zone.hidden = true; return; }
   zone.hidden = false;
+  $('message').classList.add('sous-combo');
   const m = b && R.manquePourCarre(etat);
+  const nomV = FIGURES[v] || v;
+  zone.appendChild(el('p', 'combo-titre', `Combien de ${R.nomValeur(v, 2)} ?`));
+  const rangee = el('div', 'combo-rangee');
   for (const n of nombres) {
-    const nomN = ['', '1 carte', 'Paire', 'Brelan', 'Carré'][n] + (m && m.v === v && m.nb === n && n !== b.nb ? ' (finit le carré)' : '');
-    const bt = el('button', `combo${selection.length === n ? ' actif' : ''}`, nomN);
+    const bt = el('button', `combo${selection.length === n ? ' actif' : ''}`);
     bt.type = 'button';
+    bt.setAttribute('aria-pressed', String(selection.length === n));
+    // un petit éventail de n cartes
+    const pile = el('span', 'combo-pile');
+    memes.slice(0, n).forEach((c, k) => {
+      const mc = el('span', 'mini-carte' + (['♥', '♦'].includes(R.couleurDe(c)) ? ' rouge' : ''));
+      mc.style.setProperty('--k', String(k - (n - 1) / 2));
+      mc.append(el('b', '', nomV), el('i', '', R.couleurDe(c)));
+      pile.appendChild(mc);
+    });
+    bt.appendChild(pile);
+    bt.appendChild(el('span', 'combo-nom', ['', '1 carte', 'Paire', 'Brelan', 'Carré'][n]));
+    if (m && m.v === v && m.nb === n && n !== b.nb) bt.appendChild(el('span', 'combo-plus', 'finit le carré'));
     bt.addEventListener('click', () => {
       selection = [...selection.filter((c) => memes.includes(c)), ...memes.filter((c) => !selection.includes(c))].slice(0, n);
       rendreMain(); rendreBoutons();
     });
-    zone.appendChild(bt);
+    rangee.appendChild(bt);
   }
+  zone.appendChild(rangee);
 }
 
 function rendreBoutons() {
