@@ -43,7 +43,7 @@ export function normaliser(s) {
   s.tas.forEach((t) => { t.cartes = t.cartes || []; });
   s.classement = s.classement || [];
   s.dons = s.dons || [];
-  s.options = s.options || { revolution: true, revolutionTrou: true, ouRien: false, manches: 0 };
+  s.options = s.options || { revolution: true, revolutionTrou: true, ouRien: true, manches: 0 };
   if (s.dernierPli) s.dernierPli.cartes = s.dernierPli.cartes || [];
   return s;
 }
@@ -141,15 +141,34 @@ export function aBattre(s) {
   return { nb: t.cartes.length, v: valeurDe(t.cartes[0]), ouRien: s.ouRien };
 }
 
+// Le carré en cours : la valeur posée en dernier et le nombre de cartes qui manquent pour faire 4 (null : rien à compléter)
+export function manquePourCarre(s) {
+  if (!s.tas.length) return null;
+  const v = valeurDe(s.tas[s.tas.length - 1].cartes[0]);
+  let n = 0;
+  for (let k = s.tas.length - 1; k >= 0 && valeurDe(s.tas[k].cartes[0]) === v; k--) n += s.tas[k].cartes.length;
+  return n >= 4 ? null : { v, nb: 4 - n };
+}
+// ces cartes complètent-elles le carré ? (ex. un 6, un 6, puis une paire de 6)
+export function completeCarre(s, ids) {
+  const m = manquePourCarre(s);
+  return !!m && ids.length === m.nb && ids.every((c) => valeurDe(c) === m.v);
+}
+
 export function coupValide(s, i, ids) {
-  if (s.status !== 'jeu' || s.active !== i) return false;
+  if (s.status !== 'jeu') return false;
   const p = s.players[i];
+  if (!p || !p.main.length) return false;
   if (!Array.isArray(ids) || !ids.length || ids.length > 4 || new Set(ids).size !== ids.length) return false;
   if (!ids.every((c) => p.main.includes(c))) return false;
   const v = valeurDe(ids[0]);
   if (!ids.every((c) => valeurDe(c) === v)) return false;
+  // hors de son tour : seulement pour compléter un carré, avec la règle de la rapidité
+  if (s.active !== i) return !!(s.options.rapidite && completeCarre(s, ids));
   const b = aBattre(s);
   if (!b) return true;
+  // compléter le carré est toujours permis, même avec plus de cartes que le coup précédent
+  if (completeCarre(s, ids)) return true;
   if (ids.length !== b.nb) return false;
   if (b.ouRien) return v === b.ouRien;
   return force(v, s.revolution) >= force(b.v, s.revolution);
@@ -160,6 +179,7 @@ export function jouer(s, i, ids) {
   const p = s.players[i];
   const v = valeurDe(ids[0]);
   const precedent = aBattre(s);
+  const horsTour = s.active !== i; // rapidité : il coupe la parole aux autres
   p.main = p.main.filter((c) => !ids.includes(c));
   s.tas.push({ j: i, cartes: ids });
   s.dernierJoueur = i;
@@ -167,8 +187,13 @@ export function jouer(s, i, ids) {
   p.aPasse = false;
   s.coup = (s.coup || 0) + 1;
   s.evenement = null;
-  // « … ou rien » : après une valeur égale, le suivant doit poser la même valeur ou passer
+  // « … ou rien » : après une valeur égale, les suivants doivent poser la même valeur ou passer
+  // (« Roi ou rien ! »), jusqu'à ce que le pli soit ramassé
   s.ouRien = s.options.ouRien && precedent && precedent.v === v ? v : null;
+  // carré complété : 4 cartes de la même valeur posées à la suite (en un ou plusieurs coups)
+  let memeValeur = 0;
+  for (let k = s.tas.length - 1; k >= 0 && valeurDe(s.tas[k].cartes[0]) === v; k--) memeValeur += s.tas[k].cartes.length;
+  const carreComplete = ids.length < 4 && memeValeur >= 4;
   if (!p.main.length) {
     p.fini = s.classement.length + 1;
     s.classement.push(i);
@@ -180,6 +205,8 @@ export function jouer(s, i, ids) {
     if (s.options.revolution) { s.revolution = !s.revolution; s.evenement = { type: 'revolution', j: i, actif: s.revolution }; }
   }
   if (v === plusForte(s.revolution) && !(ids.length === 4 && s.options.revolution)) ferme = true;
+  // celui qui complète le carré ramasse le pli et rejoue
+  if (carreComplete) { ferme = true; s.evenement = { type: 'carre', j: i, v, nb: ids.length, rapide: horsTour, coupe: horsTour ? s.active : -1 }; }
   if (finSiPossible(s)) return true;
   if (ferme) { fermerPli(s, i); return true; }
   s.active = suivant(s, i);
@@ -191,7 +218,6 @@ export function jouer(s, i, ids) {
 export function passer(s, i) {
   if (s.status !== 'jeu' || s.active !== i || !s.tas.length) return false; // on ne passe pas quand on ouvre
   s.passes += 1;
-  s.ouRien = null;
   s.players[i].aPasse = true;
   s.coup = (s.coup || 0) + 1;
   s.evenement = null;
@@ -290,6 +316,10 @@ export function coupBot(s, i) {
     const choix = (normaux.length ? normaux : gs)[0];
     return { type: 'jouer', ids: choix.cartes };
   }
+  // compléter le carré : on ramasse le pli et on rejoue
+  const m = manquePourCarre(s);
+  const g4 = m && gs.find((g) => g.v === m.v && g.cartes.length >= m.nb);
+  if (g4) return { type: 'jouer', ids: g4.cartes.slice(0, m.nb) };
   const ok = gs.filter((g) => g.cartes.length >= b.nb && (b.ouRien ? g.v === b.ouRien : g.f >= force(b.v, s.revolution)));
   if (!ok.length) return { type: 'passer' };
   // de préférence sans casser un groupe plus grand, et sans gaspiller les cartes fortes
@@ -303,4 +333,14 @@ export function coupBot(s, i) {
     choix = autre;
   }
   return { type: 'jouer', ids: choix.cartes.slice(0, b.nb) };
+}
+
+// Rapidité : un bot qui peut compléter le carré hors de son tour
+export function rapideBot(s, i) {
+  if (!s.options.rapidite || s.status !== 'jeu' || s.active === i) return null;
+  const p = s.players[i];
+  const m = manquePourCarre(s);
+  if (!m || !p.main.length) return null;
+  const cartes = p.main.filter((c) => valeurDe(c) === m.v);
+  return cartes.length >= m.nb ? cartes.slice(0, m.nb) : null;
 }

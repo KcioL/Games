@@ -286,6 +286,40 @@
 .main-pr .carte-pr.recue { box-shadow: 0 0 0 3px #7CF0A2, 0 0 18px 4px rgba(124, 240, 162, .6); }
 .main-pr .carte-pr.choisie { transform: translateY(calc(var(--creux, 0px) - 26px)) rotate(var(--angle, 0deg)); z-index: 6; box-shadow: 0 0 0 3px #FFD966, 0 0 24px 6px rgba(255, 217, 102, .7); }
 .main-pr .carte-pr:not(:last-child) .indice.bas { opacity: 0; }
+/* beaucoup de cartes sur un téléphone debout : deux rangées */
+.main-pr.deux-rangs { flex-direction: column; align-items: center; justify-content: flex-end; padding-top: 10px; }
+.main-pr .rang { display: flex; justify-content: center; align-items: flex-end; width: 100%; }
+.main-pr .rang + .rang { margin-top: calc(var(--carte-main) * -.7); }
+/* ouvrir avec 1 carte, une paire, un brelan ou un carré */
+.choix-combo {
+  position: absolute; z-index: 8;
+  left: 50%; bottom: calc(100% + 6px); translate: -50% 0;
+  display: flex; gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #FFF8EC;
+  border: 2px solid #D9B48A;
+  box-shadow: 0 6px 18px rgba(70, 35, 10, .35);
+  animation: combo-entre .18s ease-out;
+}
+.choix-combo[hidden] { display: none; }
+.choix-combo .combo {
+  border: none; border-radius: 999px;
+  padding: 7px 13px;
+  background: transparent;
+  color: #4A2A14;
+  font: 700 .9rem var(--police);
+  white-space: nowrap;
+}
+.btn-table.rapide {
+  background: linear-gradient(180deg, #FFE066, #F2B632);
+  color: #4A2A14; font-weight: 800;
+  border-color: #B9803E;
+  animation: rapide-pulse .55s ease-in-out infinite alternate;
+}
+@keyframes rapide-pulse { to { transform: scale(1.06); box-shadow: 0 0 0 4px rgba(255, 224, 102, .55), 0 0 22px rgba(255, 200, 60, .8); } }
+.choix-combo .combo.actif { background: #C0453A; color: #fff; }
+@keyframes combo-entre { from { opacity: 0; translate: -50% 6px; } }
 
 /* tableau des scores */
 .scores-defile { overflow-x: auto; max-width: 100%; }

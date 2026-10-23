@@ -93,8 +93,12 @@
           <span><strong>Carré qui inverse l'ordre</strong><small>Poser un carré inverse l'ordre des cartes : le 3 devient la plus forte, le 2 la plus faible.</small></span>
         </label>
         <label class="option">
-          <input type="checkbox" id="opt-ourien">
-          <span><strong>« … ou rien »</strong><small>Si on pose la même valeur que le joueur précédent, le suivant doit poser cette valeur ou passer.</small></span>
+          <input type="checkbox" id="opt-ourien" checked>
+          <span><strong>« Roi ou rien »</strong><small>Si on pose la même valeur que le joueur précédent, les suivants doivent poser cette valeur ou passer (« Roi ou rien ! », « 7 ou rien ! »…).</small></span>
+        </label>
+        <label class="option">
+          <input type="checkbox" id="opt-rapidite">
+          <span><strong>Rapidité</strong><small>Si tu as de quoi compléter un carré, tu peux poser tes cartes sans attendre ton tour, à condition d'être plus rapide que les autres.</small></span>
         </label>
         <label class="option-ligne">Nombre de manches
           <select id="opt-manches">
@@ -179,7 +183,9 @@
           <div class="moi-pr" id="moi"></div>
           <button class="btn-table" id="btn-passer" hidden>Passer</button>
           <button class="btn-table principal" id="btn-jouer" hidden disabled>Jouer</button>
+          <button class="btn-table rapide" id="btn-rapide" hidden>⚡ Finir le carré</button>
         </div>
+        <div class="choix-combo" id="choix-combo" hidden></div>
         <div class="main-pr" id="main"></div>
       </div>
     </div>
@@ -201,7 +207,9 @@
       <li>Celui qui ouvre pose une carte, une paire, un brelan ou un carré.</li>
       <li>Les suivants posent le même nombre de cartes, d'une valeur égale ou plus forte, ou passent. On peut rejouer plus tard dans le même pli après avoir passé.</li>
       <li>Quand tout le monde passe, le pli est ramassé : celui qui a posé en dernier rejoue ce qu'il veut.</li>
-      <li>Poser un 2 (ou un carré) ferme le pli tout de suite : on rejoue.</li>
+      <li>Poser un 2 ferme le pli tout de suite : personne ne joue sur un 2, et celui qui l'a posé rejoue.</li>
+      <li>Un carré ferme aussi le pli, qu'il soit posé d'un coup ou <strong>complété</strong> à plusieurs : celui qui pose la 4e carte ramasse le pli et rejoue.</li>
+      <li>Pour compléter un carré, on peut poser plus de cartes que le coup précédent : après un 6 puis un 6, une paire de 6 ; après un Roi, un brelan de Rois.</li>
       <li>1re manche : la Dame de cœur commence. Ensuite, c'est le Trou du cul.</li>
     </ul>
     <h3>Rôles et échanges</h3>
@@ -214,7 +222,8 @@
     <ul>
       <li><strong>Révolution du Trou du cul</strong> : si le Trou du cul de la manche précédente finit Président, l'échange suivant se fait à 4 cartes : le nouveau Trou du cul donne ses 4 meilleures cartes, le Président lui en rend 4 de son choix (le Vice-trou du cul n'est pas concerné).</li>
       <li><strong>Carré qui inverse l'ordre</strong> : un carré inverse l'ordre des cartes jusqu'au prochain carré (le 3 devient la plus forte).</li>
-      <li><strong>« … ou rien »</strong> : si on pose la même valeur que le joueur précédent, le suivant doit poser cette valeur ou passer.</li>
+      <li><strong>Rapidité</strong> (désactivée par défaut) : si tu as de quoi compléter le carré, le bouton ⚡ te permet de poser tes cartes sans attendre ton tour, à condition d'être plus rapide que le joueur qui doit jouer. Tu ramasses alors le pli et tu rejoues.</li>
+      <li><strong>« Roi ou rien »</strong> : si on pose la même valeur que le joueur précédent, les suivants doivent poser cette valeur ou passer (« Roi ou rien ! » pour des Rois, « 7 ou rien ! » pour des 7…), jusqu'à ce que le pli soit ramassé.</li>
     </ul>
     <button class="btn fermer">Fermer</button>
   </dialog>

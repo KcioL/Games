@@ -22,6 +22,7 @@ const salon = initSalon({
       revolution: $('opt-revolution').checked,
       revolutionTrou: $('opt-revolution-trou').checked,
       ouRien: $('opt-ourien').checked,
+      rapidite: $('opt-rapidite').checked,
       manches: parseInt($('opt-manches').value, 10) || 0,
     };
     return { players: joueurs, options };
@@ -46,6 +47,7 @@ const salon = initSalon({
     noterChangement();
     rendre();
     planifierBot();
+    planifierRapide();
   },
   // Sur un seul téléphone : on le passe au joueur humain qui doit jouer (ou rendre ses cartes)
   quiDoitJouer: (s) => {
@@ -97,6 +99,23 @@ function planifierBot() {
       return ok || R.passer(s, i) || R.jouer(s, i, [R.trierMain(s.players[i].main, s.revolution)[0]]);
     });
   }, delai);
+}
+// Rapidité : un bot qui peut compléter le carré le fait hors de son tour, s'il est assez rapide
+let rapidePrevu = '';
+function planifierRapide() {
+  if (!etat || !etat.options.rapidite || etat.status !== 'jeu') return;
+  const cle = `${etat.partie}-${etat.manche}-${etat.coup}`;
+  if (rapidePrevu === cle) return;
+  rapidePrevu = cle;
+  const coup = etat.coup;
+  etat.players.forEach((p, i) => {
+    if (!p.bot || i === etat.active || !R.rapideBot(etat, i) || Math.random() < 0.3) return;
+    setTimeout(() => agir((s) => {
+      if (s.coup !== coup) return false;
+      const ids = R.rapideBot(s, i);
+      return ids ? R.jouer(s, i, ids) : false;
+    }), 1100 + Math.random() * 1500);
+  });
 }
 let dernierChangement = Date.now();
 let dernierCoupConnu = null;
@@ -157,6 +176,20 @@ $('btn-jouer').addEventListener('click', () => {
   if (!monTour() || !R.coupValide(etat, maPlace, ids)) return;
   selection = [];
   agir((s) => R.jouer(s, maPlace, ids));
+});
+// Rapidité : compléter le carré sans attendre son tour
+function rapideHumain() {
+  if (!etat || !etat.options.rapidite || etat.status !== 'jeu' || etat.active === maPlace || pliAffiche) return null;
+  const m = R.manquePourCarre(etat);
+  if (!m) return null;
+  const cartes = moi().main.filter((c) => R.valeurDe(c) === m.v);
+  return cartes.length >= m.nb ? cartes.slice(0, m.nb) : null;
+}
+$('btn-rapide').addEventListener('click', () => {
+  const ids = rapideHumain();
+  if (!ids) return;
+  let ok = false;
+  agir((s) => { ok = R.jouer(s, maPlace, ids); return ok; }).then(() => { if (!ok) toast('Trop tard ! Quelqu\'un a joué avant toi.'); });
 });
 $('btn-passer').addEventListener('click', () => {
   if (!monTour()) return;
@@ -361,7 +394,8 @@ function rendreMain() {
     const parValeur = {};
     p.main.forEach((c) => { (parValeur[R.valeurDe(c)] = parValeur[R.valeurDe(c)] || []).push(c); });
     Object.entries(parValeur).forEach(([v, cs]) => {
-      const ok = !b || (cs.length >= b.nb && (b.ouRien ? v === b.ouRien : R.force(v, etat.revolution) >= R.force(b.v, etat.revolution)));
+      const m = b && R.manquePourCarre(etat);
+      const ok = !b || (m && m.v === v && cs.length >= m.nb) || (cs.length >= b.nb && (b.ouRien ? v === b.ouRien : R.force(v, etat.revolution) >= R.force(b.v, etat.revolution)));
       if (ok) cs.forEach((c) => jouables.add(c));
     });
   }
@@ -379,28 +413,86 @@ function rendreMain() {
 function texteABattre(b) {
   if (!b) return '';
   const quoi = ['', 'une carte', 'une paire', 'un brelan', 'un carré'][b.nb];
-  if (b.ouRien) return `Il faut poser ${quoi} de ${R.nomValeur(b.ouRien, b.nb)}, ou passer.`;
+  if (b.ouRien) return `${R.nomValeur(b.ouRien)} ou rien : il faut poser ${quoi} de ${R.nomValeur(b.ouRien, b.nb)}, ou passer.`;
   return `Il faut poser ${quoi} de ${R.nomValeur(b.v, b.nb)} ou plus fort, ou passer.`;
 }
 function serrerMain() {
   const zone = $('main');
-  const cartes = [...zone.children];
-  cartes.forEach((c) => { c.style.marginLeft = ''; });
+  // on remet toutes les cartes sur une seule rangée pour mesurer
+  const cartes = [...zone.querySelectorAll('.carte-pr')];
+  cartes.forEach((c) => { c.style.marginLeft = ''; zone.appendChild(c); });
+  zone.querySelectorAll('.rang').forEach((r) => r.remove());
+  zone.classList.remove('deux-rangs');
   if (cartes.length < 2) return;
   const largeur = cartes[0].offsetWidth;
   const dispo = zone.clientWidth - 12;
   if (!largeur || !dispo) { if (zone.offsetParent) requestAnimationFrame(serrerMain); return; }
-  const ecart = Math.min(largeur * 0.08, (dispo - largeur) / (cartes.length - 1) - largeur);
-  cartes.slice(1).forEach((c) => { c.style.marginLeft = `${ecart}px`; });
-  const milieu = (cartes.length - 1) / 2;
-  cartes.forEach((c, k) => {
-    // léger éventail : l'écart vertical reste petit pour que les cartes du bord restent entières
-    c.style.setProperty('--angle', `${(k - milieu) * Math.min(2.2, 24 / cartes.length)}deg`);
-    c.style.setProperty('--creux', `${Math.min(12, Math.abs(k - milieu) ** 2 * Math.min(1.4, 14 / cartes.length ** 1.4))}px`);
+  let rangs = [cartes];
+  // téléphone debout et beaucoup de cartes : deux rangées, pour que chaque carte soit facile à toucher
+  const visible = (dispo - largeur) / (cartes.length - 1);
+  if (window.matchMedia('(orientation: portrait)').matches && cartes.length >= 8 && visible < largeur * 0.5) {
+    // on coupe entre deux valeurs, le plus près possible du milieu
+    const milieu = cartes.length / 2;
+    let coupe = Math.ceil(milieu);
+    let meilleur = Infinity;
+    for (let k = 1; k < cartes.length; k++) {
+      if (R.valeurDe(cartes[k].dataset.id) === R.valeurDe(cartes[k - 1].dataset.id)) continue;
+      if (Math.abs(k - milieu) < meilleur) { meilleur = Math.abs(k - milieu); coupe = k; }
+    }
+    rangs = [cartes.slice(0, coupe), cartes.slice(coupe)];
+    zone.classList.add('deux-rangs');
+    rangs.forEach((r) => {
+      const d = el('div', 'rang');
+      r.forEach((c) => d.appendChild(c));
+      zone.appendChild(d);
+    });
+  }
+  rangs.forEach((r) => {
+    if (r.length < 2) return;
+    const ecart = Math.min(largeur * 0.08, (dispo - largeur) / (r.length - 1) - largeur);
+    r.slice(1).forEach((c) => { c.style.marginLeft = `${ecart}px`; });
+    const milieu = (r.length - 1) / 2;
+    r.forEach((c, k) => {
+      // léger éventail : l'écart vertical reste petit pour que les cartes du bord restent entières
+      c.style.setProperty('--angle', `${(k - milieu) * Math.min(2.2, 24 / r.length)}deg`);
+      c.style.setProperty('--creux', `${Math.min(12, Math.abs(k - milieu) ** 2 * Math.min(1.4, 14 / r.length ** 1.4))}px`);
+    });
   });
 }
 
+// Quand on ouvre avec plusieurs cartes de la même valeur : choisir d'un geste 1 carte, une paire, un brelan ou un carré
+function rendreChoixCombo() {
+  const zone = $('choix-combo');
+  zone.innerHTML = '';
+  const tour = monTour();
+  const b = tour ? R.aBattre(etat) : null;
+  if (!tour || !selection.length) { zone.hidden = true; return; }
+  const v = R.valeurDe(selection[0]);
+  const memes = R.trierMain(moi().main.filter((c) => R.valeurDe(c) === v));
+  // les nombres de cartes permis : tout quand on ouvre ; sinon celui du coup précédent, ou de quoi compléter le carré
+  const nombres = [];
+  for (let n = 1; n <= memes.length; n++) if (R.coupValide(etat, maPlace, memes.slice(0, n))) nombres.push(n);
+  if (nombres.length < 2) { zone.hidden = true; return; }
+  zone.hidden = false;
+  const m = b && R.manquePourCarre(etat);
+  for (const n of nombres) {
+    const nomN = ['', '1 carte', 'Paire', 'Brelan', 'Carré'][n] + (m && m.v === v && m.nb === n && n !== b.nb ? ' (finit le carré)' : '');
+    const bt = el('button', `combo${selection.length === n ? ' actif' : ''}`, nomN);
+    bt.type = 'button';
+    bt.addEventListener('click', () => {
+      selection = [...selection.filter((c) => memes.includes(c)), ...memes.filter((c) => !selection.includes(c))].slice(0, n);
+      rendreMain(); rendreBoutons();
+    });
+    zone.appendChild(bt);
+  }
+}
+
 function rendreBoutons() {
+  rendreChoixCombo();
+  const rapide = rapideHumain();
+  const br = $('btn-rapide');
+  br.hidden = !rapide;
+  if (rapide) br.textContent = `⚡ Finir le carré : ${decrireCoup(rapide)}`;
   const jouer = $('btn-jouer');
   const passer = $('btn-passer');
   const don = monDon();
@@ -442,7 +534,7 @@ function rendreCentre() {
     if (etat.echangeDouble) texte = `✊ Révolution : échange à 4 cartes ! ${texte}`;
   } else if (etat.status === 'jeu') {
     if (pliAffiche) texte = '';
-    else if (monTour()) texte = etat.tas.length ? texteABattre(R.aBattre(etat)).replace('Il faut poser', 'À toi : pose').replace(', ou passer.', ', ou passe.') : 'À toi d\'ouvrir : pose ce que tu veux';
+    else if (monTour()) texte = etat.tas.length ? texteABattre(R.aBattre(etat)).replace(' ou rien : il faut poser', ' ou rien ! À toi : pose').replace('Il faut poser', 'À toi : pose').replace(', ou passer.', ', ou passe.') : 'À toi d\'ouvrir : pose ce que tu veux';
     else texte = `Au tour ${de(etat.players[etat.active].name)}…`;
   } else if (etat.status === 'fin') texte = '';
   if (n && etat.status === 'jeu' && p.fini) texte = `Tu as fini : ${R.ROLES[ROLE_FINI(n, p.fini)].nom} ! ${texte}`;
@@ -607,7 +699,7 @@ function animer(prev, avant) {
 const etatLogique = () => ({
   place: maPlace, partie: etat.partie, manche: etat.manche, status: etat.status, coup: etat.coup,
   nbTas: etat.tas.length, dernierNum: etat.dernierPli ? etat.dernierPli.num : 0, dernierJ: etat.dernierPli ? etat.dernierPli.j : null,
-  revolution: etat.revolution, fini: etat.players.map((p) => p.fini),
+  revolution: etat.revolution, fini: etat.players.map((p) => p.fini), ouRien: etat.ouRien,
   dernierAffiche: (document.querySelector('#tas .coup.dernier') || { dataset: {} }).dataset.cle,
 });
 
@@ -644,7 +736,16 @@ function rendre(sansAnim = false) {
   else A.scores.forEach(({ e, de, a }) => compter(e, de, a, 200));
   // événements : révolution, joueur qui finit
   if (prev && prev.place === maPlace && !sansAnim) {
-    if (etat.revolution !== prev.revolution && etat.evenement && etat.evenement.type === 'revolution') {
+    const ev = etat.evenement;
+    if (ev && ev.type === 'carre' && ev.rapide && prev.coup !== etat.coup) {
+      const qui = ev.j === maPlace ? 'Tu as' : `${etat.players[ev.j].name} a`;
+      const coupe = ev.coupe >= 0 ? (ev.coupe === maPlace ? 'avant toi' : `avant ${etat.players[ev.coupe].name}`) : 'avant son tour';
+      bandeau(`⚡ Rapidité ! ${qui} complété le carré de ${R.nomValeur(ev.v, 2)} ${coupe} : ${ev.j === maPlace ? 'tu ramasses le pli et tu rejoues' : 'il ramasse le pli et rejoue'}.`, 3000);
+    } else if (ev && ev.type === 'carre' && prev.coup !== etat.coup) {
+      bandeau(`Carré de ${R.nomValeur(ev.v, 2)} ! ${ev.j === maPlace ? 'Tu ramasses' : `${etat.players[ev.j].name} ramasse`} le pli et ${ev.j === maPlace ? 'rejoues' : 'rejoue'}.`, 2000);
+    } else if (etat.ouRien && etat.ouRien !== prev.ouRien && etat.status === 'jeu') {
+      bandeau(`${R.nomValeur(etat.ouRien)} ou rien !`, 1500);
+    } else if (etat.revolution !== prev.revolution && etat.evenement && etat.evenement.type === 'revolution') {
       bandeau(etat.revolution ? '⟲ Révolution ! Le 3 devient la plus forte, le 2 la plus faible' : '⟳ Contre-révolution : retour à l\'ordre normal', 2200);
     } else {
       const n = etat.players.length;
