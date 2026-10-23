@@ -114,7 +114,10 @@ function debutTour(s) {
 export const pieceDe = (s, suspect) => (s.pions[suspect] && s.pions[suspect].piece) || null;
 export function occupees(s, sauf) {
   const o = new Set();
-  Object.entries(s.pions).forEach(([id, p]) => { if (id !== sauf && p && p.piece == null) o.add(cle(p.c, p.r)); });
+  // les personnages que personne ne joue restent hors du plateau tant qu'une suggestion ne les amène pas dans une pièce :
+  // ils ne bloquent donc pas les couloirs
+  const joues = new Set((s.players || []).map((p) => p.suspect));
+  Object.entries(s.pions).forEach(([id, p]) => { if (id !== sauf && joues.has(id) && p && p.piece == null) o.add(cle(p.c, p.r)); });
   return o;
 }
 export const portesDe = (idPiece) => PORTES.filter((d) => d.piece === idPiece);

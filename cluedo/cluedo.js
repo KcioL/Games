@@ -199,11 +199,13 @@ function carteEl(id, cls = '') {
   const c = R.CARTES[id];
   const e = el('div', `carte-cl ${c.cat} ${cls}`.trim());
   e.dataset.id = id;
+  e.title = c.nom;
+  const img = images.get(id);
   const etiquette = { suspect: 'Suspect', arme: 'Arme', piece: 'Lieu' }[c.cat];
   e.append(el('span', 'cat-cl', etiquette));
   const ill = el('div', 'ill-cl');
-  const img = images.get(id);
   if (img) {
+    // illustration déposée dans cartes/ : elle remplit le cadre de la carte
     ill.classList.add('photo');
     ill.style.backgroundImage = `url("${img}")`;
   } else if (c.cat === 'suspect') {
@@ -214,13 +216,15 @@ function carteEl(id, cls = '') {
   } else {
     // un morceau du plateau, centré sur la pièce
     const [x1, y1, x2, y2] = c.zone;
-    const cote = Math.min(x2 - x1, y2 - y1) * 0.92;
+    // découpe au format 4:3, comme le cadre de l'illustration
+    const lw = Math.min(x2 - x1, ((y2 - y1) * 4) / 3) * 0.94;
+    const lh = (lw * 3) / 4;
     const cx = (x1 + x2) / 2; const cy = (y1 + y2) / 2;
-    const ox = Math.max(0, Math.min(PLATEAU.largeur - cote, cx - cote / 2));
-    const oy = Math.max(0, Math.min(PLATEAU.hauteur - cote, cy - cote / 2));
+    const ox = Math.max(0, Math.min(PLATEAU.largeur - lw, cx - lw / 2));
+    const oy = Math.max(0, Math.min(PLATEAU.hauteur - lh, cy - lh / 2));
     ill.classList.add('lieu');
-    ill.style.backgroundSize = `${(PLATEAU.largeur / cote) * 100}% ${(PLATEAU.hauteur / cote) * 100}%`;
-    ill.style.backgroundPosition = `${(ox / (PLATEAU.largeur - cote)) * 100}% ${(oy / (PLATEAU.hauteur - cote)) * 100}%`;
+    ill.style.backgroundSize = `${(PLATEAU.largeur / lw) * 100}% ${(PLATEAU.hauteur / lh) * 100}%`;
+    ill.style.backgroundPosition = `${(ox / (PLATEAU.largeur - lw)) * 100}% ${(oy / (PLATEAU.hauteur - lh)) * 100}%`;
   }
   e.append(ill);
   e.append(el('span', 'nom-cl', c.nom));
@@ -319,6 +323,16 @@ function rendrePlateau() {
     if (!e || !cible) return;
     const j = joueurDuSuspect(id);
     e.classList.toggle('joue', j >= 0);
+    // un personnage que personne ne joue n'apparaît que quand une suggestion l'amène dans une pièce
+    const etaitCache = e.classList.contains('cache');
+    const cache = j < 0 && !(etat.pions[id] && etat.pions[id].piece);
+    e.classList.toggle('cache', cache);
+    if (cache) return;
+    if (etaitCache) {
+      placer(e, cible, null, null);
+      e.animate([{ opacity: 0, transform: 'translate(-50%, -50%) scale(.3)' }, { opacity: 1, transform: 'translate(-50%, -50%)' }], { duration: 500, easing: 'ease-out' });
+      return;
+    }
     e.classList.toggle('actif', j >= 0 && j === etat.active && etat.status === 'jeu');
     e.classList.toggle('moi', j === maPlace);
     const a = avant && avant[id];

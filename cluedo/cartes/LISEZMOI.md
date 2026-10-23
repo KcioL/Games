@@ -7,10 +7,13 @@ automatiquement ; une carte sans image garde son dessin. Tu peux les ajouter pet
 
 - L'image remplit le **cadre de l'illustration** de la carte : le jeu ajoute lui-même le petit
   titre (« Suspect », « Arme », « Lieu ») et le nom en dessous. Pas besoin d'écrire le nom dans l'image.
-- Format **carré** (ou presque), par exemple **600 × 600 pixels**.
+- Format **paysage 4 × 3**, par exemple **800 × 600 pixels** (une image plus grande s'affiche aussi,
+  mais elle est lourde à charger sur téléphone : vise moins de 150 Ko par image).
 - **JPG**, **PNG** ou **WEBP** (le jeu essaie dans cet ordre).
 - Le nom du fichier est l'`id` de la carte, tel qu'il est écrit dans `cluedo/donnees.js`
   (minuscules, sans accents).
+- Pour les pièces, sans image, la carte montre la pièce découpée dans le plateau : si ça te plaît,
+  il suffit de ne pas mettre d'image pour les pièces.
 
 ## Les fichiers (avec les personnages et armes actuels)
 

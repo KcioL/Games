@@ -126,6 +126,7 @@
 }
 .pion[data-id="leblanc"] span, .pion[data-id="moutarde"] span { color: rgba(40, 25, 15, .85); text-shadow: none; }
 .pion:not(.joue) { filter: saturate(.55) brightness(.85); opacity: .85; }
+.pion.cache { display: none; }
 .pion.actif { z-index: 3; animation: pion-actif 1.1s ease-in-out infinite alternate; }
 @keyframes pion-actif {
   from { box-shadow: 0 .35cqw .6cqw rgba(0, 0, 0, .7), 0 0 0 .3cqw rgba(255, 230, 160, .5); }
@@ -203,14 +204,14 @@
 .carte-cl {
   --l: 86px;
   width: var(--l);
-  aspect-ratio: 5 / 7;
   flex: none;
   position: relative;
   border-radius: calc(var(--l) * .09);
   background: var(--creme);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .35), 0 4px 10px rgba(0, 0, 0, .45), inset 0 0 0 calc(var(--l) * .035) var(--creme), inset 0 0 0 calc(var(--l) * .05) #7A5A36;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-content: start;
   padding: calc(var(--l) * .08);
   gap: calc(var(--l) * .04);
   color: var(--encre-cl);
@@ -224,6 +225,7 @@
   color: #7A5A36;
 }
 .ill-cl {
+  aspect-ratio: 4 / 3;
   border-radius: calc(var(--l) * .05);
   overflow: hidden;
   display: grid; place-items: center;
@@ -231,11 +233,17 @@
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2);
 }
 .ill-cl svg { width: 82%; height: 82%; }
-.ill-cl.photo { background: center / cover no-repeat; }
+
 .ill-cl.lieu { background-image: url("plateau.jpg"); background-repeat: no-repeat; }
 .carte-cl.suspect .ill-cl { background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--teinte) 55%, #fff), var(--teinte) 70%); }
 .carte-cl.suspect .ill-cl svg { fill: rgba(30, 18, 14, .82); width: 92%; height: 92%; align-self: end; }
-.carte-cl.suspect .ill-cl.photo, .carte-cl .ill-cl.photo { background-color: #E5D6B8; }
+/* illustration déposée dans cartes/ : elle remplit le cadre (format 4:3), sans être déformée */
+.carte-cl .ill-cl.photo, .carte-cl.suspect .ill-cl.photo, .carte-cl.arme .ill-cl.photo {
+  background-color: #2A1914;
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+}
 .carte-cl.arme .ill-cl { background: radial-gradient(circle at 50% 35%, #F3E6C9, #D8C29B); }
 .carte-cl.arme .ill-cl svg { fill: none; stroke: var(--encre-cl); stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; }
 .nom-cl {
@@ -246,13 +254,13 @@
   hyphens: auto;
 }
 .carte-cl.suspect { border-top: calc(var(--l) * .05) solid var(--teinte); }
-.carte-cl.petite { --l: 64px; }
+.carte-cl.petite { --l: 70px; }
 .carte-cl.petite .cat-cl { display: none; }
-.carte-cl.petite { grid-template-rows: minmax(0, 1fr) auto; }
+.carte-cl.petite { grid-template-rows: auto auto; }
 
 .trio { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-.trio.mini { --l: 54px; gap: 6px; }
-.trio.mini .carte-cl { --l: 54px; }
+.trio.mini { --l: 60px; gap: 6px; }
+.trio.mini .carte-cl { --l: 60px; }
 
 /* ---------- Le panneau de côté : cuir et laiton ---------- */
 .cote {
@@ -426,6 +434,10 @@ dialog.regles#regles p, dialog.regles#regles li { color: #E8DCC4; }
 dialog.regles#regles li::marker { color: var(--laiton); }
 dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A); border: 1px solid rgba(201, 161, 92, .6); color: var(--creme); }
 .dlg-cl { max-width: min(660px, 96vw); }
+@media (min-width: 700px) {
+  .dlg-cl { max-width: min(860px, 96vw); }
+  .rangee-cartes.choix .carte-cl.petite { --l: 92px; }
+}
 .dlg-cl h3 { margin: 12px 0 4px; font: 700 1rem/1.3 var(--serif); color: var(--laiton-clair); }
 .choix-texte { color: #E8DCC4; }
 .rangee-cartes { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding: 6px 0; }
@@ -452,6 +464,7 @@ dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A
   box-shadow: 0 2px 5px rgba(0, 0, 0, .5);
 }
 .rangee-cartes .carte-cl.choisie.connue::after { display: none; }
+.rangee-cartes.choix .carte-cl.choisie { opacity: 1; }
 .choix-boutons {
   display: flex; gap: 8px; justify-content: flex-end;
   margin: 14px -4px 0; padding: 10px 4px 2px;
@@ -491,5 +504,5 @@ dialog.regles#regles .btn { background: linear-gradient(180deg, #4A2E22, #34201A
   .de { width: 34px; height: 34px; padding: 4px; }
   .de span.pt::after { width: 6px; height: 6px; }
   #dlg-refuter .carte-cl { --l: 92px; }
-  .rangee-cartes .carte-cl.petite { --l: 56px; }
+  .rangee-cartes .carte-cl.petite { --l: 64px; }
 }
