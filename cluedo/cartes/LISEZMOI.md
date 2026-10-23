@@ -1,13 +1,13 @@
 # Cluedo : illustrations des cartes (facultatif)
 
-Dépose ici une carte toute faite pour remplacer le dessin par défaut. Le jeu l'utilise
+Dépose ici une image pour remplacer le dessin par défaut d'une carte. Le jeu l'utilise
 automatiquement ; une carte sans image garde son dessin. Tu peux les ajouter petit à petit.
 
 ## Format
 
-- Des **cartes complètes** (cadre, nom, dessin : tout est dans l'image). Le jeu les affiche telles quelles,
-  sans rien ajouter par-dessus.
-- Portrait au format **3 × 4**, par exemple **765 × 1024 pixels**.
+- L'image remplit le **cadre de l'illustration** de la carte : le jeu ajoute lui-même le petit
+  titre (« Suspect », « Arme », « Lieu ») et le nom en dessous. Pas besoin d'écrire le nom dans l'image.
+- Format **carré** (ou presque), par exemple **600 × 600 pixels**.
 - **JPG**, **PNG** ou **WEBP** (le jeu essaie dans cet ordre).
 - Le nom du fichier est l'`id` de la carte, tel qu'il est écrit dans `cluedo/donnees.js`
   (minuscules, sans accents).
