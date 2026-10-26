@@ -17,6 +17,18 @@ export const SPECIALES = {
   butin: { n: 2, nom: 'Butin', image: (k) => 'butin' },
 };
 
+// Pouvoirs des pirates (variante, choisie par l'hôte) : ils agissent quand le pirate remporte le pli.
+// Le numéro est celui de l'illustration (cartes/pirate-1.jpg … pirate-5.jpg).
+export const PIRATES = {
+  1: { nom: 'Captain Blood', pouvoir: 'meneur', texte: 'choisit qui commence le pli suivant' },
+  2: { nom: 'Quartermaster', pouvoir: 'regarder', texte: 'regarde en secret les cartes qui n\'ont pas été distribuées' },
+  3: { nom: 'Rogue', pouvoir: 'pioche', texte: 'pioche 2 cartes dans le paquet, puis en défausse 2' },
+  4: { nom: 'Cook', pouvoir: 'ajuste', texte: 'à la fin de la manche, peut changer son annonce de 1 (en plus ou en moins)' },
+  5: { nom: 'Gunner', pouvoir: 'pari', texte: 'parie 0, 10 ou 20 points sur son annonce : gagnés si elle est réussie, perdus sinon' },
+};
+export const nomPirate = (k) => (PIRATES[k] ? PIRATES[k].nom : 'Pirate');
+export const PARIS = [0, 10, 20];
+
 export function nouveauPaquet() {
   const p = [];
   COULEURS.forEach((s) => { for (let v = 1; v <= 14; v++) p.push({ id: `${s}${v}`, t: 'n', s, v }); });
@@ -44,7 +56,11 @@ export function normaliser(s) {
     p.plis = p.plis || 0;
     p.bonus = p.bonus || 0;
     if (p.annonce === undefined || p.annonce === null) p.annonce = -1;
+    p.pari = p.pari || 0;
+    p.ajuste = !!p.ajuste;
   });
+  s.reste = s.reste || [];
+  s.pouvoir = s.pouvoir || null;
   s.pli = s.pli || [];
   s.scores = s.scores || [];
   s.scores.forEach((m) => { m.lignes = m.lignes || []; });
@@ -67,10 +83,13 @@ function demarrerManche(s) {
   const n = s.players.length;
   const nb = cartesPourManche(s.manche, n);
   const paquet = nouveauPaquet();
-  s.players.forEach((p) => Object.assign(p, { main: [], annonce: -1, plis: 0, bonus: 0, allies: [] }));
+  s.players.forEach((p) => Object.assign(p, { main: [], annonce: -1, plis: 0, bonus: 0, allies: [], pari: 0, ajuste: false, annonceDepart: null }));
   for (let k = 0; k < nb; k++) {
     for (let o = 1; o <= n; o++) s.players[(s.donneur + o) % n].main.push(paquet.pop());
   }
+  s.reste = paquet; // cartes non distribuées (pour les pouvoirs du Rogue et du Quartermaster)
+  s.pouvoir = null;
+  s.dernierPouvoir = null;
   s.cartesManche = nb;
   s.status = 'annonces';
   s.pli = [];
@@ -182,7 +201,7 @@ function alliesButin(pli, gagnant) {
 }
 
 export function jouer(s, i, id, choix) {
-  if (s.status !== 'jeu' || s.active !== i) return false;
+  if (s.status !== 'jeu' || s.active !== i || s.pouvoir) return false;
   const p = s.players[i];
   const k = p.main.findIndex((c) => c.id === id);
   if (k < 0) return false;
@@ -212,8 +231,83 @@ export function jouer(s, i, id, choix) {
   s.dernierPli = { cartes: s.pli, gagnant: r.gagnant, detruit: r.detruit, raison: r.raison, bonus: r.bonus, num: s.numPli, k: r.k, allies: r.allies };
   s.numPli += 1;
   s.pli = [];
-  if (s.numPli >= s.cartesManche) finManche(s);
-  else { s.entame = r.meneur; s.active = r.meneur; }
+  const finie = s.numPli >= s.cartesManche;
+  s.entame = r.meneur;
+  s.active = r.meneur;
+  s.dernierPouvoir = null;
+  // pouvoir du pirate qui a remporté le pli
+  const pv = pouvoirDuPli(s, r, finie);
+  if (pv) {
+    s.pouvoir = { type: pv.pouvoir, j: r.gagnant, k: pv.k, finie };
+    if (pv.pouvoir === 'pioche') {
+      const pioche = s.reste.splice(-2, 2);
+      s.players[r.gagnant].main.push(...pioche);
+      s.pouvoir.nb = pioche.length;
+      s.pouvoir.pioche = pioche.map((c) => c.id);
+    }
+    s.active = r.gagnant;
+    return true;
+  }
+  if (finie) finManche(s);
+  return true;
+}
+
+function pouvoirDuPli(s, r, finie) {
+  if (!s.pouvoirs || r.detruit || r.raison === 'baleine' || r.k < 0) return null;
+  const e = s.dernierPli.cartes[r.k];
+  if (!e || e.c.t !== 'pirate') return null; // la Tigresse jouée en pirate n'a pas de pouvoir
+  const def = PIRATES[e.c.k];
+  if (!def) return null;
+  const g = s.players[r.gagnant];
+  if (def.pouvoir === 'ajuste') { g.ajuste = true; s.dernierPouvoir = { type: 'ajuste', j: r.gagnant, k: e.c.k }; return null; }
+  // inutiles quand la manche est finie
+  if (finie && ['pioche', 'regarder', 'meneur'].includes(def.pouvoir)) return null;
+  if (def.pouvoir === 'pioche' && !s.reste.length) return null;
+  if (def.pouvoir === 'regarder' && !s.reste.length) return null;
+  return { pouvoir: def.pouvoir, k: e.c.k };
+}
+
+// Le joueur utilise le pouvoir de son pirate
+//   pari : 0, 10 ou 20 ; meneur : index du joueur qui commence ; pioche : les ids des cartes défaussées ; regarder : rien
+export function utiliserPouvoir(s, i, choix) {
+  const pv = s.pouvoir;
+  if (s.status !== 'jeu' || !pv || pv.j !== i) return false;
+  const p = s.players[i];
+  const trace = { type: pv.type, j: i, k: pv.k };
+  if (pv.type === 'pari') {
+    if (!PARIS.includes(choix)) return false;
+    p.pari = choix;
+    trace.pari = choix;
+  } else if (pv.type === 'meneur') {
+    if (!Number.isInteger(choix) || !s.players[choix]) return false;
+    s.entame = choix;
+    trace.meneur = choix;
+  } else if (pv.type === 'pioche') {
+    const ids = Array.isArray(choix) ? choix : [];
+    if (ids.length !== pv.nb || new Set(ids).size !== ids.length || !ids.every((id) => p.main.some((c) => c.id === id))) return false;
+    p.main = p.main.filter((c) => !ids.includes(c.id));
+    trace.nb = pv.nb;
+  }
+  s.pouvoir = null;
+  s.dernierPouvoir = trace;
+  s.active = s.entame;
+  s.coup = (s.coup || 0) + 1;
+  if (pv.finie) finManche(s);
+  return true;
+}
+
+// Cook : en fin de manche, changer son annonce de −1, 0 ou +1
+export function ajuster(s, i, delta) {
+  const p = s.players[i];
+  if (s.status !== 'ajustement' || !p || !p.ajuste || ![-1, 0, 1].includes(delta)) return false;
+  const nouvelle = p.annonce + delta;
+  if (nouvelle < 0 || nouvelle > s.cartesManche) return false;
+  p.annonceDepart = p.annonce;
+  p.annonce = nouvelle;
+  p.ajuste = false;
+  s.dernierPouvoir = { type: 'ajuste', j: i, de: p.annonceDepart, a: nouvelle };
+  s.coup = (s.coup || 0) + 1;
+  finManche(s);
   return true;
 }
 
@@ -224,19 +318,29 @@ export function pointsManche(s) {
   return s.players.map((p, i) => {
     // alliances du Butin : +20 chacun si les deux ont réussi leur annonce
     const allies = reussi[i] ? p.allies.filter((b) => reussi[b]).length * 20 : 0;
+    // pari du Gunner : gagné si l'annonce est réussie, perdu sinon
+    const pari = p.pari ? (reussi[i] ? p.pari : -p.pari) : 0;
+    const extra = { pari, ajustee: p.annonceDepart !== null && p.annonceDepart !== undefined && p.annonceDepart !== p.annonce ? p.annonceDepart : null };
     if (p.annonce === 0) {
       const base = p.plis === 0 ? 10 * cartes : -10 * cartes;
-      return { annonce: 0, plis: p.plis, bonus: p.plis === 0 ? allies : 0, points: base + (p.plis === 0 ? allies : 0), reussi: reussi[i] };
+      return { annonce: 0, plis: p.plis, bonus: (p.plis === 0 ? allies : 0) + pari, points: base + (p.plis === 0 ? allies : 0) + pari, reussi: reussi[i], ...extra };
     }
     if (reussi[i]) {
-      const bonus = p.bonus + allies;
-      return { annonce: p.annonce, plis: p.plis, bonus, points: 20 * p.annonce + bonus, reussi: true };
+      const bonus = p.bonus + allies + pari;
+      return { annonce: p.annonce, plis: p.plis, bonus, points: 20 * p.annonce + bonus, reussi: true, ...extra };
     }
-    return { annonce: p.annonce, plis: p.plis, bonus: 0, points: -10 * Math.abs(p.plis - p.annonce), reussi: false };
+    return { annonce: p.annonce, plis: p.plis, bonus: pari, points: -10 * Math.abs(p.plis - p.annonce) + pari, reussi: false, ...extra };
   });
 }
 
 function finManche(s) {
+  // Cook : ceux qui peuvent encore changer leur annonce le font d'abord
+  if (s.players.some((p) => p.ajuste)) {
+    s.status = 'ajustement';
+    s.active = -1;
+    s.coup = (s.coup || 0) + 1;
+    return;
+  }
   const lignes = pointsManche(s);
   lignes.forEach((l, i) => { s.players[i].score += l.points; });
   s.scores.push({ manche: s.manche, cartes: s.cartesManche, lignes });
@@ -340,4 +444,32 @@ export function coupBot(s, i) {
   // on ne veut plus de pli : on se débarrasse de la plus forte carte qui perd
   if (perdants.length) return choisir(perdants[perdants.length - 1]);
   return choisir(parValeur[0]);
+}
+
+// ---------- Pouvoirs des pirates : les bots ----------
+export function pouvoirBot(s, i) {
+  const pv = s.pouvoir;
+  const p = s.players[i];
+  const reste = s.cartesManche - s.numPli; // plis encore à jouer
+  const besoin = p.annonce - p.plis;
+  if (pv.type === 'pari') {
+    if (besoin < 0 || besoin > reste) return 0;          // annonce déjà ratée
+    return besoin === 0 || reste <= 2 ? 20 : 10;
+  }
+  if (pv.type === 'meneur') {
+    // besoin de plis : on ouvre soi-même ; sinon on fait ouvrir le voisin pour jouer en dernier
+    return besoin > 0 ? i : (i + 1) % s.players.length;
+  }
+  if (pv.type === 'pioche') {
+    const tri = [...p.main].sort((a, b) => force(a) - force(b));
+    const jete = besoin > 0 ? tri.slice(0, pv.nb) : tri.slice(-pv.nb);
+    return jete.map((c) => c.id);
+  }
+  return null; // regarder
+}
+export function ajusteBot(s, i) {
+  const p = s.players[i];
+  const d = p.plis - p.annonce;
+  if (d === 0 || Math.abs(d) > 1) return 0;
+  return d;
 }

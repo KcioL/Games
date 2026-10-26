@@ -121,6 +121,10 @@
           <input type="checkbox" id="reglage-atout">
           <span><strong>Atout libre</strong><small>Le Pavillon noir peut couper à tout moment, même quand on a la couleur demandée. Règle officielle : décoché.</small></span>
         </label>
+        <label class="option">
+          <input type="checkbox" id="reglage-pouvoirs">
+          <span><strong>Pouvoirs des pirates</strong><small>Le pirate qui remporte un pli déclenche son pouvoir (Gunner, Cook, Rogue, Quartermaster, Captain Blood). Voir les règles.</small></span>
+        </label>
       </fieldset>
       <button class="btn" id="btn-reprendre" hidden></button>
     </div>
@@ -201,6 +205,17 @@
           </div>
           <button class="btn-table discret" id="btn-tigresse-annuler">Annuler</button>
         </div>
+        <!-- pouvoir d'un pirate -->
+        <div class="panneau-rc panneau-pouvoir" id="panneau-pouvoir" hidden>
+          <p class="panneau-titre" id="pouvoir-titre"></p>
+          <div id="pouvoir-contenu"></div>
+        </div>
+        <!-- Cook : changer son annonce en fin de manche -->
+        <div class="panneau-rc" id="panneau-ajuste" hidden>
+          <p class="panneau-titre">☠ Cook</p>
+          <p class="pouvoir-texte" id="ajuste-texte"></p>
+          <div class="rangee" id="ajuste-choix"></div>
+        </div>
         <!-- bilan de la manche -->
         <div class="panneau-rc bilan" id="panneau-bilan" hidden>
           <p class="panneau-titre" id="bilan-titre"></p>
@@ -269,6 +284,16 @@
       <li>Bonus (annonce réussie) : chaque 14 de couleur remporté +10, le 14 noir +20, Sirène capturée par un Pirate +20, Pirate capturé par le Skull King +30, Skull King capturé par une Sirène +40, alliance du Butin +20.</li>
     </ul>
     <p>À 8 joueurs, la dernière manche se joue avec 9 cartes (il n'y en a pas assez pour 10).</p>
+    <h3>Pouvoirs des pirates (variante)</h3>
+    <p>Si celui qui crée la partie l'a choisi, le pirate qui remporte un pli déclenche son pouvoir (pas la Tigresse, et aucun pouvoir quand la Baleine blanche ou le Kraken agit) :</p>
+    <ul>
+      <li><strong>Gunner</strong> : tu paries 0, 10 ou 20 points. Annonce réussie à la fin de la manche : tu les gagnes ; ratée : tu les perds.</li>
+      <li><strong>Cook</strong> : à la fin de la manche, tu peux changer ton annonce de 1, en plus ou en moins.</li>
+      <li><strong>Rogue</strong> : tu pioches 2 cartes dans le paquet, puis tu défausses 2 cartes de ta main.</li>
+      <li><strong>Quartermaster</strong> : tu regardes en secret les cartes qui n'ont pas été distribuées.</li>
+      <li><strong>Captain Blood</strong> : tu choisis qui commence le pli suivant (toi ou un autre joueur).</li>
+    </ul>
+    <p>Appui long sur un pirate : son pouvoir s'affiche.</p>
     <button class="btn fermer">Fermer</button>
   </dialog>
   <script src="../commun/service-worker.js"></script>

@@ -15,11 +15,11 @@ les ajouter petit à petit.
 | Fichier | Carte | Exemplaires |
 |---|---|---|
 | `drapeau-blanc.jpg` | Drapeau blanc (la même image pour les 5) | 5 |
-| `pirate-1.jpg` | Pirate n° 1 | 1 |
-| `pirate-2.jpg` | Pirate n° 2 | 1 |
-| `pirate-3.jpg` | Pirate n° 3 | 1 |
-| `pirate-4.jpg` | Pirate n° 4 | 1 |
-| `pirate-5.jpg` | Pirate n° 5 | 1 |
+| `pirate-1.jpg` | Pirate n° 1 : Captain Blood (son pouvoir dans la variante « Pouvoirs des pirates ») | 1 |
+| `pirate-2.jpg` | Pirate n° 2 : Quartermaster (son pouvoir dans la variante « Pouvoirs des pirates ») | 1 |
+| `pirate-3.jpg` | Pirate n° 3 : Rogue (son pouvoir dans la variante « Pouvoirs des pirates ») | 1 |
+| `pirate-4.jpg` | Pirate n° 4 : Cook (son pouvoir dans la variante « Pouvoirs des pirates ») | 1 |
+| `pirate-5.jpg` | Pirate n° 5 : Gunner (son pouvoir dans la variante « Pouvoirs des pirates ») | 1 |
 | `tigresse.jpg` | La Tigresse | 1 |
 | `sirene-1.jpg` | Sirène n° 1 | 1 |
 | `sirene-2.jpg` | Sirène n° 2 | 1 |

@@ -20,7 +20,7 @@ const salon = initSalon({
     const bots = parseInt($(local ? 'local-bots' : 'ligne-bots').value, 10) || 0;
     melanger(NOMS_BOTS).slice(0, bots).forEach((n) => joueurs.push(joueur(n, true, true)));
     // variante choisie par celui qui crée la partie (les autres la voient, sans pouvoir la changer)
-    return { players: joueurs, atoutLibre: $('reglage-atout').checked };
+    return { players: joueurs, atoutLibre: $('reglage-atout').checked, pouvoirs: $('reglage-pouvoirs').checked };
   },
   validerLocal: () => {
     const total = parseInt($('local-nb').value, 10) + parseInt($('local-bots').value, 10);
@@ -47,6 +47,8 @@ const salon = initSalon({
     const joueurs = s.players || [];
     if (joueurs.filter((p) => !p.bot).length <= 1) return -1;
     if (s.status === 'annonces') return joueurs.findIndex((p) => !p.bot && (p.annonce === undefined || p.annonce === null || p.annonce < 0));
+    if (s.status === 'jeu' && s.pouvoir) return joueurs[s.pouvoir.j] && !joueurs[s.pouvoir.j].bot ? s.pouvoir.j : -1;
+    if (s.status === 'ajustement') return joueurs.findIndex((p) => !p.bot && p.ajuste);
     if (s.status === 'jeu' && joueurs[s.active] && !joueurs[s.active].bot) return s.active;
     return -1;
   },
@@ -59,6 +61,8 @@ const agir = (fn) => salon.agir((s) => fn(R.normaliser(s)));
 let botPrevu = '';
 function botAttendu(s) {
   if (s.status === 'annonces') return s.players.findIndex((p) => p.bot && p.annonce < 0);
+  if (s.status === 'jeu' && s.pouvoir) return s.players[s.pouvoir.j] && s.players[s.pouvoir.j].bot ? s.pouvoir.j : -1;
+  if (s.status === 'ajustement') return s.players.findIndex((p) => p.bot && p.ajuste);
   if (s.status === 'jeu' && s.players[s.active] && s.players[s.active].bot) return s.active;
   return -1;
 }
@@ -69,7 +73,8 @@ function planifierBot() {
   botPrevu = cle;
   const coup = etat.coup;
   let delai = 700 + Math.random() * 700;
-  if (etat.status === 'jeu') {
+  if (etat.status === 'ajustement' || (etat.status === 'jeu' && etat.pouvoir)) delai = 2600 + Math.random() * 600; // on laisse voir le pli
+  else if (etat.status === 'jeu') {
     if (!etat.pli.length && etat.dernierPli) delai = 2300 + Math.random() * 500;       // on laisse voir le pli remporté
     else if (!etat.pli.length && etat.numPli === 0) delai = 1600 + Math.random() * 500; // on laisse voir les annonces
     else delai = 850 + Math.random() * 650;
@@ -80,6 +85,8 @@ function planifierBot() {
       const i = botAttendu(s);
       if (i < 0) return false;
       if (s.status === 'annonces') return R.annoncer(s, i, R.annonceBot(s, i));
+      if (s.status === 'ajustement') return R.ajuster(s, i, R.ajusteBot(s, i)) || R.ajuster(s, i, 0);
+      if (s.pouvoir) return R.utiliserPouvoir(s, i, R.pouvoirBot(s, i));
       let ok = false;
       try {
         const c = R.coupBot(s, i);
@@ -108,7 +115,9 @@ setInterval(() => {
 }, 1500);
 
 // ---------- Actions ----------
-const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace;
+const monTour = () => etat && etat.status === 'jeu' && etat.active === maPlace && !etat.pouvoir;
+const monPouvoir = () => etat && etat.status === 'jeu' && etat.pouvoir && etat.pouvoir.j === maPlace ? etat.pouvoir : null;
+let defausse = [];           // Rogue : cartes choisies pour la défausse
 const moi = () => etat.players[maPlace];
 
 function jouerCarte(c, choix) {
@@ -124,6 +133,15 @@ function jouerCarte(c, choix) {
 }
 function clicCarte(c) {
   if (pliFini) return;
+  // Rogue : on choisit les cartes à défausser
+  const pv = monPouvoir();
+  if (pv && pv.type === 'pioche') {
+    if (defausse.includes(c.id)) defausse = defausse.filter((x) => x !== c.id);
+    else if (defausse.length < pv.nb) defausse = [...defausse, c.id];
+    else defausse = [...defausse.slice(1), c.id];
+    rendreMain(); rendrePanneaux();
+    return;
+  }
   if (!monTour()) { toast(etat.status === 'annonces' ? 'Annonce d\'abord tes plis.' : 'Ce n\'est pas ton tour.'); return; }
   if (!R.jouable(moi().main, c, etat.pli, !!etat.atoutLibre)) {
     toast(`Tu dois suivre la couleur demandée (${R.NOMS_COULEURS[R.couleurDemandee(etat.pli)]}).`);
@@ -206,6 +224,7 @@ const trier = (main) => [...main].sort((a, b) => {
 });
 function nomCarte(c) {
   if (c.t === 'n') return `${c.v} ${R.NOMS_COULEURS[c.s]}`;
+  if (c.t === 'pirate') return R.nomPirate(c.k);
   return R.SPECIALES[c.t].nom;
 }
 function icone(couleur, classe) {
@@ -249,7 +268,7 @@ function carteEl(c, { cachee = false, choix = null } = {}) {
     i.draggable = false;
     e.appendChild(i);
   } else {
-    e.append(el('span', 'spec-ico', EMOJIS[c.t]), el('span', 'spec-nom', d.nom));
+    e.append(el('span', 'spec-ico', EMOJIS[c.t]), el('span', 'spec-nom', c.t === 'pirate' ? R.nomPirate(c.k) : d.nom));
   }
   if (c.t === 'tigresse' && choix) e.appendChild(el('span', 'choix-tigresse', choix === 'pirate' ? '☠ Pirate' : '⚐ Drapeau'));
   return e;
@@ -266,7 +285,9 @@ function loupe(c, choix) {
   z.innerHTML = '';
   const carte = carteEl(c, { choix });
   carte.classList.add('zoom');
-  z.append(carte, el('p', 'loupe-nom', nomCarte(c)), el('p', 'loupe-aide', 'Touche pour fermer'));
+  z.append(carte, el('p', 'loupe-nom', nomCarte(c)));
+  if (c.t === 'pirate' && etat && etat.pouvoirs && R.PIRATES[c.k]) z.append(el('p', 'loupe-pouvoir', `Pouvoir : s'il remporte le pli, il ${R.PIRATES[c.k].texte}.`));
+  z.append(el('p', 'loupe-aide', 'Touche pour fermer'));
   z.hidden = false;
 }
 
@@ -291,7 +312,7 @@ function texteBulle(p, i) {
     if (p.annonce < 0) return { t: p.bot ? 'réfléchit…' : 'annonce…', c: 'attente' };
     return { t: i === maPlace ? `Annonce : ${p.annonce}` : '✓ a annoncé', c: 'ok' };
   }
-  if (etat.status === 'jeu' || (etat.status === 'bilan' && pliFini)) {
+  if (etat.status === 'jeu' || etat.status === 'ajustement' || (etat.status === 'bilan' && pliFini)) {
     const c = p.plis === p.annonce ? 'juste' : p.plis > p.annonce ? 'trop' : '';
     return { t: `${p.plis} / ${p.annonce} pli${p.annonce > 1 ? 's' : ''}`, c };
   }
@@ -422,6 +443,12 @@ function rendreMain() {
     const ok = R.jouable(p.main, c, etat.pli, !!etat.atoutLibre);
     if (tour) e.classList.add(ok ? 'jouable' : 'interdite');
     if (c.id === selection) e.classList.add('choisie');
+    const pv = monPouvoir();
+    if (pv && pv.type === 'pioche') {
+      e.classList.add('jouable');
+      if ((pv.pioche || []).includes(c.id)) e.classList.add('piochee');
+      if (defausse.includes(c.id)) e.classList.add('defaussee');
+    }
     e.addEventListener('click', () => {
       if (e.dataset.long) { delete e.dataset.long; return; }
       clicCarte(c);
@@ -471,6 +498,15 @@ function rendrePanneaux() {
   }
   // Tigresse
   montrer('panneau-tigresse', !!tigresseEnAttente && monTour());
+  // pouvoir d'un pirate (après l'affichage du pli remporté)
+  const pv = monPouvoir();
+  montrer('panneau-pouvoir', !!pv && !pliFini);
+  if (pv && !pliFini) rendrePouvoir(pv);
+  if (!pv) defausse = [];
+  // Cook : changer son annonce en fin de manche
+  const aj = etat.status === 'ajustement' && p.ajuste && !pliFini;
+  montrer('panneau-ajuste', aj);
+  if (aj) rendreAjuste();
   // bilan (après l'affichage du dernier pli)
   const bilan = etat.status === 'bilan' && !pliFini && Date.now() >= bilanApres;
   montrer('panneau-bilan', bilan);
@@ -478,6 +514,85 @@ function rendrePanneaux() {
   // fin de partie
   montrer('panneau-fin', etat.status === 'termine');
   if (etat.status === 'termine') rendreFin();
+}
+// message quand un pouvoir de pirate vient d'être utilisé
+let pouvoirAnnonce = '';
+function annoncerPouvoir() {
+  const d = etat.dernierPouvoir;
+  if (!d) return;
+  const cle = `${etat.partie}-${etat.manche}-${etat.numPli}-${d.type}-${d.j}-${d.pari}-${d.meneur}-${d.a}`;
+  if (cle === pouvoirAnnonce) return;
+  const premier = !pouvoirAnnonce;
+  pouvoirAnnonce = cle;
+  if (premier && !precedent) return;
+  const qui = d.j === maPlace ? 'Tu' : etat.players[d.j].name;
+  const moiQui = d.j === maPlace;
+  let t = '';
+  if (d.type === 'pari') t = d.pari ? `☠ Gunner : ${qui} ${moiQui ? 'paries' : 'parie'} ${d.pari} points sur ${moiQui ? 'ton' : 'son'} annonce !` : `☠ Gunner : ${qui} ne ${moiQui ? 'paries' : 'parie'} rien.`;
+  else if (d.type === 'meneur') t = `☠ Captain Blood : ${d.meneur === maPlace ? 'tu commences' : `${etat.players[d.meneur].name} commence`} le prochain pli.`;
+  else if (d.type === 'pioche') t = `☠ Rogue : ${qui} ${moiQui ? 'as pioché' : 'a pioché'} ${d.nb} carte${d.nb > 1 ? 's' : ''} et ${moiQui ? 'en as défaussé' : 'en a défaussé'} autant.`;
+  else if (d.type === 'regarder') t = `☠ Quartermaster : ${qui} ${moiQui ? 'as regardé' : 'a regardé'} les cartes non distribuées.`;
+  else if (d.type === 'ajuste' && d.a === undefined) t = `☠ Cook : ${qui} ${moiQui ? 'pourras' : 'pourra'} changer ${moiQui ? 'ton' : 'son'} annonce de 1 à la fin de la manche.`;
+  else if (d.type === 'ajuste') t = d.a === d.de ? `☠ Cook : ${qui} ${moiQui ? 'gardes' : 'garde'} ${moiQui ? 'ton' : 'son'} annonce.` : `☠ Cook : ${qui} ${moiQui ? 'changes' : 'change'} ${moiQui ? 'ton' : 'son'} annonce : ${d.de} → ${d.a}.`;
+  if (t) setTimeout(() => toast(t, true), 900);
+}
+function rendrePouvoir(pv) {
+  const def = R.PIRATES[pv.k];
+  $('pouvoir-titre').textContent = `☠ ${def.nom}`;
+  const zone = $('pouvoir-contenu');
+  zone.innerHTML = '';
+  const bouton = (texte, cls, fn) => {
+    const b = el('button', `btn-table ${cls || ''}`.trim(), texte);
+    b.type = 'button';
+    b.addEventListener('click', fn);
+    return b;
+  };
+  const utiliser = (choix) => agir((s) => R.utiliserPouvoir(s, maPlace, choix));
+  if (pv.type === 'pari') {
+    zone.append(el('p', 'pouvoir-texte', 'Combien paries-tu sur ton annonce ? Gagné si tu la réussis, perdu sinon.'));
+    const r = el('div', 'rangee');
+    R.PARIS.forEach((x) => r.appendChild(bouton(x ? `${x} pts` : 'Rien', x === 20 ? 'principal' : '', () => utiliser(x))));
+    zone.appendChild(r);
+  } else if (pv.type === 'meneur') {
+    zone.append(el('p', 'pouvoir-texte', 'Qui commence le prochain pli ?'));
+    const r = el('div', 'rangee');
+    etat.players.forEach((q, i) => r.appendChild(bouton(i === maPlace ? 'Moi' : q.name, i === maPlace ? 'principal' : '', () => utiliser(i))));
+    zone.appendChild(r);
+  } else if (pv.type === 'pioche') {
+    zone.append(el('p', 'pouvoir-texte', `Tu as pioché ${pv.nb} carte${pv.nb > 1 ? 's' : ''} (en vert). Touche ${pv.nb} carte${pv.nb > 1 ? 's' : ''} de ta main à défausser.`));
+    const ok = defausse.length === pv.nb;
+    const b = bouton(ok ? `Défausser ${pv.nb > 1 ? 'ces cartes' : 'cette carte'}` : `Choisis ${pv.nb - defausse.length} carte${pv.nb - defausse.length > 1 ? 's' : ''}`, 'principal', () => {
+      if (defausse.length !== pv.nb) return;
+      const ids = [...defausse];
+      defausse = [];
+      utiliser(ids);
+    });
+    b.disabled = !ok;
+    zone.appendChild(b);
+  } else if (pv.type === 'regarder') {
+    zone.append(el('p', 'pouvoir-texte', `Les ${etat.reste.length} cartes qui n'ont pas été distribuées (toi seul les vois) :`));
+    const g = el('div', 'reste-cartes');
+    trier(etat.reste).forEach((c) => {
+      const e = carteEl(c);
+      appuiLong(e, () => loupe(c));
+      g.appendChild(e);
+    });
+    zone.append(g, bouton('J\'ai vu', 'principal', () => utiliser(null)));
+  }
+}
+function rendreAjuste() {
+  const p = moi();
+  $('ajuste-texte').textContent = `Tu as fait ${p.plis} pli${p.plis > 1 ? 's' : ''} pour une annonce de ${p.annonce}. Tu peux changer ton annonce de 1.`;
+  const zone = $('ajuste-choix');
+  zone.innerHTML = '';
+  [[-1, `${p.annonce - 1}`], [0, `Garder ${p.annonce}`], [1, `${p.annonce + 1}`]].forEach(([d, texte]) => {
+    const nouvelle = p.annonce + d;
+    const b = el('button', `btn-table${nouvelle === p.plis ? ' principal' : ''}`, d ? `${d > 0 ? '+1' : '−1'} → ${texte}` : texte);
+    b.type = 'button';
+    b.disabled = nouvelle < 0 || nouvelle > etat.cartesManche;
+    b.addEventListener('click', () => agir((s) => R.ajuster(s, maPlace, d)));
+    zone.appendChild(b);
+  });
 }
 function montrer(id, visible) {
   const e = $(id);
@@ -497,7 +612,11 @@ function rendreBilan() {
   t.appendChild(tete);
   b.lignes.forEach((l, i) => {
     const tr = el('tr', l.reussi ? 'reussi' : 'rate');
-    tr.append(el('td', 'nom', etat.players[i].name), el('td', '', String(l.annonce)), el('td', '', String(l.plis)),
+    const nom = el('td', 'nom', etat.players[i].name);
+    if (l.pari) nom.appendChild(el('small', 'note-pouvoir', ` pari ${l.pari > 0 ? '+' : '−'}${Math.abs(l.pari)}`));
+    const ann = el('td', '', String(l.annonce));
+    if (l.ajustee !== null && l.ajustee !== undefined) ann.title = `annonce changée par le Cook (${l.ajustee} → ${l.annonce})`, ann.classList.add('ajustee');
+    tr.append(nom, ann, el('td', '', String(l.plis)),
       el('td', '', l.bonus ? `+${l.bonus}` : '–'), el('td', 'points', `${l.points > 0 ? '+' : ''}${l.points}`), el('td', 'total', String(etat.players[i].score)));
     t.appendChild(tr);
   });
@@ -549,8 +668,16 @@ function rendreCentre() {
     const couleur = R.couleurDemandee(etat.pli);
     const suite = couleur && !pliFini ? ` · couleur : ${R.NOMS_COULEURS[couleur]}` : '';
     if (pliFini) texte = '';
-    else if (monTour()) texte = (etat.pli.length ? 'À toi de jouer' : 'À toi d\'ouvrir le pli') + suite;
+    else if (etat.pouvoir) {
+      const pv = etat.pouvoir;
+      const qui = pv.j === maPlace ? 'à toi' : etat.players[pv.j].name;
+      const quoi = { pari: 'pari', meneur: 'qui commence ?', pioche: 'pioche et défausse', regarder: 'regarde les cartes restantes' }[pv.type];
+      texte = `☠ ${R.nomPirate(pv.k)} : ${quoi} (${qui})`;
+    } else if (monTour()) texte = (etat.pli.length ? 'À toi de jouer' : 'À toi d\'ouvrir le pli') + suite;
     else texte = `Au tour ${de(etat.players[etat.active].name)}…${suite}`;
+  } else if (etat.status === 'ajustement') {
+    const q = etat.players.find((x) => x.ajuste);
+    texte = pliFini ? '' : (moi().ajuste ? 'Cook : change ton annonce ?' : `Cook : ${q ? q.name : ''} peut changer son annonce…`);
   } else if (etat.status === 'bilan') texte = pliFini ? '' : 'Fin de la manche';
   $('message').textContent = texte;
   $('message').classList.toggle('vide', !texte);
@@ -674,6 +801,7 @@ function rendre(sansAnim = false) {
   rendreMain();
   rendreCentre();
   rendrePanneaux();
+  annoncerPouvoir();
   if (!sansAnim) animer(prev, avant);
   else A.scores.forEach(({ e, de, a }) => compter(e, de, a, 200));
   precedent = etatLogique();
