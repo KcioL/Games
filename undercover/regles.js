@@ -51,7 +51,8 @@ export function composition(n, r) {
 // Tire une paire de mots pas encore jouée dans ce salon
 function choisirPaire(s) {
   let theme = s.reglages.theme;
-  if (!THEMES[theme]) theme = Math.random() < 0.5 ? 'general' : 'anime';
+  // « Tous les thèmes » (ou thème disparu du fichier) : un thème au hasard
+  if (!THEMES[theme]) { const ids = Object.keys(THEMES); theme = ids[Math.floor(Math.random() * ids.length)]; }
   const paires = THEMES[theme].paires;
   let deja = s.utilises[theme] || [];
   if (deja.length >= paires.length) deja = [];

@@ -71,11 +71,8 @@
       <!-- Réglages : choisis par celui qui crée la partie -->
       <fieldset class="reglages" id="reglages">
         <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
-        <div class="themes" role="radiogroup" aria-label="Thème des mots">
-          <label class="theme"><input type="radio" name="theme" value="general" checked><span><strong>Général</strong><small>Animaux, cuisine, objets, métiers…</small></span></label>
-          <label class="theme"><input type="radio" name="theme" value="anime"><span><strong>Anime · Jeux vidéo · Manga</strong><small>Personnages, séries, consoles…</small></span></label>
-          <label class="theme"><input type="radio" name="theme" value="melange"><span><strong>Les deux</strong><small>Un thème au hasard à chaque partie</small></span></label>
-        </div>
+        <!-- les thèmes viennent de paires.txt -->
+        <div class="themes" id="themes" role="radiogroup" aria-label="Thème des mots"></div>
         <div class="ligne-reglages">
           <label>Undercover
             <select id="reglage-undercover">

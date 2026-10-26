@@ -1,0 +1,851 @@
+# ==========================================================================
+# Undercover : les paires de mots
+# ==========================================================================
+# Pour ajouter une paire : une nouvelle ligne   mot 1 / mot 2
+#   (deux mots proches mais différents ; on tire au sort lequel va aux civils)
+# Pour ajouter un thème : une ligne   == identifiant | Nom affiché | petite description
+#   puis ses paires en dessous. L'identifiant : minuscules, sans accents ni espaces.
+# Les lignes qui commencent par # sont des commentaires, les lignes vides sont ignorées.
+# Le menu de l'Undercover affiche automatiquement les thèmes de ce fichier.
+
+== general | Général | Animaux, objets, métiers, lieux…
+Chat / Chien
+Café / Thé
+Plage / Piscine
+Pizza / Burger
+Avion / Hélicoptère
+Train / Métro
+Vélo / Trottinette
+Pomme / Poire
+Orange / Mandarine
+Fraise / Framboise
+Citron / Pamplemousse
+Lion / Tigre
+Loup / Renard
+Requin / Dauphin
+Abeille / Guêpe
+Papillon / Libellule
+Montagne / Colline
+Lac / Étang
+Mer / Océan
+Neige / Grêle
+Soleil / Lune
+Étoile / Planète
+Pluie / Orage
+Forêt / Jungle
+Désert / Savane
+Château / Palais
+Église / Cathédrale
+Hôpital / Clinique
+École / Collège
+Professeur / Directeur
+Médecin / Infirmier
+Pompier / Policier
+Boulanger / Pâtissier
+Cuisinier / Serveur
+Guitare / Violon
+Piano / Orgue
+Batterie / Tambour
+Football / Rugby
+Tennis / Badminton
+Basket / Handball
+Ski / Snowboard
+Natation / Plongée
+Boxe / Karaté
+Échecs / Dames
+Cinéma / Théâtre
+Livre / Magazine
+Journal / Radio
+Télévision / Ordinateur
+Téléphone / Tablette
+Stylo / Crayon
+Cahier / Classeur
+Chaise / Tabouret
+Canapé / Fauteuil
+Lit / Hamac
+Lampe / Bougie
+Fourchette / Cuillère
+Couteau / Ciseaux
+Assiette / Bol
+Verre / Tasse
+Bouteille / Gourde
+Chaussure / Botte
+Pull / Gilet
+Manteau / Veste
+Chapeau / Casquette
+Lunettes / Lentilles
+Montre / Bracelet
+Bague / Collier
+Parfum / Déodorant
+Savon / Shampoing
+Douche / Baignoire
+Croissant / Pain au chocolat
+Crêpe / Gaufre
+Glace / Sorbet
+Chocolat / Caramel
+Bonbon / Chewing-gum
+Fromage / Yaourt
+Beurre / Margarine
+Sel / Poivre
+Ketchup / Mayonnaise
+Frites / Chips
+Pâtes / Riz
+Soupe / Purée
+Sushi / Maki
+Tacos / Kebab
+Vin / Bière
+Champagne / Cidre
+Jus d'orange / Limonade
+Noël / Halloween
+Anniversaire / Mariage
+Vacances / Week-end
+Paris / Londres
+Italie / Espagne
+Tour Eiffel / Arc de Triomphe
+Facebook / Instagram
+WhatsApp / Messenger
+Netflix / YouTube
+Voiture / Moto
+Camion / Bus
+Bateau / Sous-marin
+Fusée / Satellite
+Roi / Président
+Prince / Chevalier
+Sorcière / Fée
+Vampire / Zombie
+Fantôme / Squelette
+Dragon / Licorne
+Pirate / Viking
+Cowboy / Shérif
+Clown / Magicien
+Cirque / Zoo
+Parapluie / Imperméable
+Clé / Cadenas
+Marteau / Tournevis
+Escalier / Ascenseur
+Fenêtre / Porte
+Jardin / Parc
+Rose / Tulipe
+Cactus / Palmier
+Hiver / Automne
+Printemps / Été
+Rêve / Cauchemar
+Bisou / Câlin
+Sac à dos / Valise
+Tente / Caravane
+Banque / Poste
+Supermarché / Marché
+Restaurant / Cantine
+Musée / Bibliothèque
+Plombier / Électricien
+Carte bancaire / Chèque
+Euro / Dollar
+Or / Argent
+Diamant / Rubis
+Miroir / Vitre
+Brosse à dents / Dentifrice
+Oreiller / Couette
+Four / Micro-ondes
+Frigo / Congélateur
+Aspirateur / Balai
+Ballon / Bulle
+Poupée / Peluche
+Lego / Puzzle
+Cerf-volant / Montgolfière
+Volcan / Geyser
+Île / Presqu'île
+Grenouille / Crapaud
+Tortue / Escargot
+Cheval / Âne
+Vache / Mouton
+Poule / Canard
+Hibou / Chouette
+Aigle / Faucon
+Souris / Hamster
+Lapin / Lièvre
+Singe / Gorille
+Léopard / Guépard
+Crocodile / Alligator
+Pingouin / Manchot
+Phoque / Otarie
+Baleine / Orque
+Pieuvre / Calamar
+Crabe / Homard
+Moustique / Mouche
+Fourmi / Termite
+Araignée / Scorpion
+Serpent / Lézard
+Chameau / Dromadaire
+Zèbre / Girafe
+Éléphant / Rhinocéros
+Koala / Panda
+Kangourou / Wallaby
+Écureuil / Castor
+Hérisson / Porc-épic
+Perroquet / Toucan
+Pigeon / Corbeau
+Moineau / Mésange
+Cygne / Oie
+Flamant rose / Héron
+Paon / Dinde
+Cochon / Sanglier
+Chèvre / Brebis
+Taureau / Bison
+Chiot / Chaton
+Poisson rouge / Poisson-clown
+Méduse / Étoile de mer
+Écouteurs / Casque
+Clé USB / Disque dur
+Imprimante / Scanner
+Agrafeuse / Trombone
+Colle / Scotch
+Gomme / Taille-crayon
+Sac à main / Portefeuille
+Écharpe / Foulard
+Gants / Moufles
+Short / Bermuda
+Jean / Jogging
+Robe / Jupe
+Chemise / T-shirt
+Cravate / Nœud papillon
+Pyjama / Peignoir
+Chaussettes / Collants
+Tongs / Sandales
+Baskets / Mocassins
+Ceinture / Bretelles
+Maquillage / Vernis à ongles
+Rouge à lèvres / Mascara
+Coiffeur / Barbier
+Tatouage / Henné
+Brosse / Peigne
+Sèche-cheveux / Fer à lisser
+Rasoir / Tondeuse
+Serviette / Gant de toilette
+Lave-linge / Lave-vaisselle
+Grille-pain / Bouilloire
+Cafetière / Théière
+Casserole / Poêle
+Spatule / Louche
+Nappe / Set de table
+Rideau / Store
+Tapis / Moquette
+Étagère / Placard
+Armoire / Commode
+Bureau / Table
+Radiateur / Cheminée
+Ventilateur / Climatiseur
+Ampoule / Néon
+Interrupteur / Prise
+Sonnette / Interphone
+Enveloppe / Timbre
+Carte postale / Lettre
+Aéroport / Gare
+Port / Marina
+Autoroute / Nationale
+Pont / Tunnel
+Rond-point / Carrefour
+Feu rouge / Panneau stop
+Parking / Garage
+Station-service / Péage
+Pharmacie / Parapharmacie
+Mairie / Préfecture
+Prison / Commissariat
+Stade / Gymnase
+Bowling / Billard
+Discothèque / Bar
+Hôtel / Auberge
+Camping / Gîte
+Ferme / Grange
+Usine / Entrepôt
+Cimetière / Crypte
+Phare / Moulin
+Avocat / Juge
+Pilote / Hôtesse de l'air
+Facteur / Livreur
+Dentiste / Orthodontiste
+Vétérinaire / Éleveur
+Architecte / Ingénieur
+Journaliste / Écrivain
+Peintre / Sculpteur
+Photographe / Cameraman
+Acteur / Chanteur
+Danseur / Gymnaste
+Astronaute / Astronome
+Agriculteur / Jardinier
+Boucher / Charcutier
+Poissonnier / Fromager
+Mécanicien / Garagiste
+Maçon / Charpentier
+Caissier / Vendeur
+Chauffeur de taxi / Chauffeur de bus
+Militaire / Gendarme
+Espion / Détective
+Voleur / Cambrioleur
+Sauna / Hammam
+Yoga / Pilates
+Course à pied / Saut à la corde
+Pique-nique / Barbecue
+Randonnée / Escalade
+Pêche / Chasse
+Jardinage / Bricolage
+Dessin / Peinture
+Tricot / Couture
+Sieste / Grasse matinée
+Réveil / Alarme
+Matin / Soir
+Midi / Minuit
+Lundi / Vendredi
+Janvier / Décembre
+Pâques / Carnaval
+Saint-Valentin / Fête des mères
+Nouvel An / 14 juillet
+Feu d'artifice / Pétard
+Confettis / Serpentins
+Cadeau / Surprise
+Gâteau / Tarte
+Amour / Amitié
+Rire / Sourire
+Mensonge / Secret
+Chance / Hasard
+Salaire / Prime
+Taxi / VTC
+Tramway / Trolleybus
+Scooter / Mobylette
+Camping-car / Van
+Jet-ski / Paddle
+Planche à voile / Kitesurf
+Skateboard / Rollers
+Ambulance / Camion de pompiers
+Tracteur / Moissonneuse
+Arc-en-ciel / Aurore boréale
+Brouillard / Nuage
+Tornade / Ouragan
+Tremblement de terre / Tsunami
+Rivière / Fleuve
+Cascade / Fontaine
+Grotte / Mine
+Sable / Galet
+Coquillage / Perle
+Feuille / Fleur
+Arbre / Buisson
+Chêne / Sapin
+Tournesol / Marguerite
+Muguet / Lilas
+Nez / Bouche
+Cheveux / Barbe
+Genou / Coude
+Doigt / Orteil
+Dent / Langue
+Wi-Fi / Bluetooth
+SMS / Mail
+Mot de passe / Code PIN
+Appareil photo / Caméra
+Drone / Avion télécommandé
+GPS / Carte routière
+Batterie externe / Chargeur
+Coca-Cola / Pepsi
+McDonald's / Burger King
+Nike / Adidas
+Apple / Samsung
+Google / Wikipédia
+Amazon / Leboncoin
+TikTok / Snapchat
+Spotify / Deezer
+Disney / Pixar
+Barbie / Ken
+Père Noël / Lapin de Pâques
+Mickey / Donald
+Ange / Démon
+Momie / Loup-garou
+Sirène / Nymphe
+Géant / Ogre
+Lutin / Elfe
+Trésor / Butin
+Carte au trésor / Boussole
+Bouée / Gilet de sauvetage
+Château de sable / Seau
+Crème solaire / Parasol
+Lunettes de soleil / Casquette de plage
+Maillot de bain / Bikini
+Doudoune / Parka
+
+== anime | Anime · Jeux vidéo · Manga | Personnages, séries, consoles…
+Naruto / Sasuke
+Goku / Vegeta
+Luffy / Zoro
+Nami / Robin
+Shanks / Barbe Blanche
+Pikachu / Évoli
+Dracaufeu / Dracolosse
+Mewtwo / Mew
+Pokéball / Master Ball
+Pokémon / Digimon
+Mario / Luigi
+Peach / Daisy
+Bowser / Ganondorf
+Yoshi / Toad
+Donkey Kong / Diddy Kong
+Link / Zelda
+Sonic / Tails
+Kirby / Rondoudou
+Pac-Man / Tetris
+Mario Kart / Crash Team Racing
+Minecraft / Roblox
+Fortnite / Apex Legends
+League of Legends / Dota
+Call of Duty / Battlefield
+FIFA / PES
+GTA / Red Dead Redemption
+The Witcher / Skyrim
+Dark Souls / Elden Ring
+Street Fighter / Tekken
+Super Smash Bros / Brawlhalla
+Resident Evil / Silent Hill
+Halo / Destiny
+Overwatch / Valorant
+Counter-Strike / Rainbow Six
+Clash Royale / Clash of Clans
+Animal Crossing / Stardew Valley
+Les Sims / SimCity
+Among Us / Fall Guys
+Candy Crush / Bejeweled
+Final Fantasy / Dragon Quest
+Cloud / Sephiroth
+Genshin Impact / Honkai Star Rail
+Lara Croft / Nathan Drake
+Samus / Master Chief
+Kratos / Dante
+PlayStation / Xbox
+Nintendo Switch / Game Boy
+Manette / Joystick
+Clavier / Souris
+Steam / Epic Games
+Twitch / YouTube
+Streamer / YouTubeur
+Boss / Mini-boss
+Speedrun / Let's play
+Pixel / Polygone
+Sauvegarde / Checkpoint
+Game over / Continue
+Arcade / Borne
+Manga / Webtoon
+Anime / Dessin animé
+Cosplay / Déguisement
+Otaku / Geek
+Shōnen / Seinen
+Japan Expo / Comic Con
+Mangaka / Dessinateur
+Dragon Ball / One Piece
+Death Note / Code Geass
+L / Light
+L'Attaque des Titans / Kaiju n°8
+Eren / Livaï
+Demon Slayer / Jujutsu Kaisen
+Tanjiro / Zenitsu
+Gojo / Sukuna
+Kakashi / Jiraiya
+Itachi / Madara
+Sakura / Hinata
+Kamehameha / Rasengan
+Super Saiyan / Mode Ermite
+Freezer / Cell
+Piccolo / Gohan
+Saitama / Genos
+Deku / Bakugo
+All Might / Endeavor
+Gon / Kirua
+Hunter x Hunter / Fairy Tail
+Ichigo / Rukia
+Bleach / Black Clover
+Edward / Alphonse
+Totoro / Ponyo
+Le Voyage de Chihiro / Princesse Mononoké
+Sailor Moon / Sakura chasseuse de cartes
+Les Chevaliers du Zodiaque / Ken le Survivant
+Olive et Tom / Inazuma Eleven
+Haikyu / Kuroko's Basket
+Vinland Saga / Berserk
+Tokyo Ghoul / Parasite
+Chainsaw Man / Fire Force
+Spy x Family / Kaguya-sama
+Anya / Loid
+Jojo / Dio
+Détective Conan / Lupin III
+Doraemon / Hamtaro
+Goldorak / Astro Boy
+Albator / Capitaine Flam
+Nicky Larson / Cobra
+Mob Psycho 100 / One Punch Man
+Solo Leveling / Tower of God
+Frieren / Dungeon Meshi
+Pokédex / Encyclopédie
+Rubis / Saphir
+Triforce / Master Sword
+Champignon / Étoile
+Pièce d'or / Rubis vert
+Hyrule / Royaume Champignon
+Pikmin / Lemmings
+Hollow Knight / Celeste
+Undertale / Deltarune
+Kingdom Hearts / Tales of
+Sora / Riku
+Monster Hunter / God Eater
+Assassin's Creed / Hitman
+Uncharted / Tomb Raider
+Metal Gear / Splinter Cell
+Spyro / Crash Bandicoot
+Rayman / Banjo-Kazooie
+Mega Man / Castlevania
+Cuphead / Shovel Knight
+Hades / Dead Cells
+Terraria / Starbound
+Portal / Half-Life
+Doom / Quake
+Wii / GameCube
+Nintendo DS / PSP
+Rocket League / Trackmania
+Mario Party / Wii Sports
+Just Dance / Guitar Hero
+Tamagotchi / Furby
+Bulbizarre / Salamèche
+Carapuce / Psykokwak
+Ronflex / Lokhlass
+Rattata / Roucool
+Sacha / Ondine
+Team Rocket / Team Magma
+Ectoplasma / Spectrum
+Sanji / Usopp
+Chopper / Brook
+Ace / Sabo
+Kaido / Big Mom
+Krilin / Yamcha
+Boo / Broly
+Trunks / Goten
+Gaara / Rock Lee
+Orochimaru / Pain
+Todoroki / Kirishima
+Mikasa / Armin
+Nezuko / Inosuke
+Rengoku / Giyu
+Yuji / Megumi
+Ryuk / Rem
+Hisoka / Kurapika
+Aizen / Byakuya
+Yor / Bond
+Zelda Breath of the Wild / Zelda Tears of the Kingdom
+
+== cuisine | Cuisine & boissons | Plats, desserts, fromages, cocktails…
+Baguette / Pain de mie
+Brioche / Pain au lait
+Raclette / Fondue
+Tartiflette / Gratin dauphinois
+Crêpe / Galette
+Omelette / Œuf au plat
+Steak / Côtelette
+Poulet / Dinde
+Saucisse / Merguez
+Jambon / Saucisson
+Lasagnes / Cannellonis
+Spaghetti / Tagliatelles
+Ravioli / Gnocchi
+Couscous / Tajine
+Paella / Risotto
+Hamburger / Hot-dog
+Croque-monsieur / Panini
+Sandwich / Wrap
+Salade / Taboulé
+Hachis parmentier / Moussaka
+Bœuf bourguignon / Pot-au-feu
+Blanquette / Coq au vin
+Ratatouille / Piperade
+Escargots / Cuisses de grenouille
+Huîtres / Moules
+Saumon / Thon
+Sardine / Maquereau
+Crevette / Gambas
+Carotte / Navet
+Courgette / Concombre
+Tomate / Poivron
+Oignon / Ail
+Brocoli / Chou-fleur
+Petits pois / Haricots verts
+Pomme de terre / Patate douce
+Champignon / Cèpe
+Potiron / Courge
+Banane / Mangue
+Ananas / Noix de coco
+Cerise / Prune
+Pêche / Abricot
+Raisin / Groseille
+Melon / Pastèque
+Kiwi / Fruit de la passion
+Myrtille / Cassis
+Noix / Noisette
+Amande / Cacahuète
+Miel / Confiture
+Nutella / Beurre de cacahuète
+Éclair / Religieuse
+Macaron / Meringue
+Tiramisu / Panna cotta
+Mousse au chocolat / Crème brûlée
+Cookie / Brownie
+Muffin / Cupcake
+Donut / Beignet
+Tarte aux pommes / Tarte Tatin
+Mille-feuille / Paris-Brest
+Madeleine / Financier
+Chantilly / Crème fraîche
+Camembert / Brie
+Comté / Emmental
+Mozzarella / Burrata
+Chèvre / Feta
+Expresso / Cappuccino
+Chocolat chaud / Café au lait
+Thé vert / Infusion
+Smoothie / Milkshake
+Eau plate / Eau gazeuse
+Soda / Jus de fruits
+Mojito / Margarita
+Whisky / Rhum
+Vodka / Gin
+Rosé / Vin blanc
+Pastis / Martini
+Apéro / Goûter
+Petit-déjeuner / Brunch
+Moutarde / Wasabi
+Vinaigre / Huile d'olive
+Sucre / Édulcorant
+Farine / Levure
+Popcorn / Barbe à papa
+Pomme d'amour / Churros
+Nems / Samoussas
+Ramen / Udon
+Curry / Chili con carne
+Fajitas / Burritos
+Bagel / Bretzel
+Pad thaï / Riz cantonais
+Quiche / Tarte flambée
+
+== cinema | Films & séries | Héros, dessins animés, sagas…
+Titanic / Avatar
+Star Wars / Star Trek
+Dark Vador / Voldemort
+Harry Potter / Le Seigneur des anneaux
+Gandalf / Dumbledore
+Frodon / Bilbon
+Hermione / Ron
+Batman / Superman
+Spider-Man / Iron Man
+Hulk / Thor
+Captain America / Black Panther
+Joker / Thanos
+Marvel / DC
+Avengers / X-Men
+Wolverine / Deadpool
+Jurassic Park / King Kong
+Le Roi lion / Le Livre de la jungle
+La Reine des neiges / Raiponce
+Elsa / Anna
+Toy Story / Cars
+Woody / Buzz l'Éclair
+Shrek / Fiona
+Nemo / Dory
+Les Minions / Gru
+Astérix / Obélix
+Tintin / Spirou
+Les Simpson / Les Griffin
+Bob l'éponge / Patrick
+Scooby-Doo / Garfield
+Friends / How I Met Your Mother
+Game of Thrones / Vikings
+Breaking Bad / La Casa de Papel
+Stranger Things / Dark
+The Walking Dead / The Last of Us
+Squid Game / Alice in Borderland
+Lupin / Sherlock
+Peaky Blinders / Narcos
+Grey's Anatomy / Dr House
+Kaamelott / Les Visiteurs
+Les Bronzés / Camping
+Bienvenue chez les Ch'tis / Intouchables
+Le Dîner de cons / La Grande Vadrouille
+James Bond / Mission impossible
+Indiana Jones / Pirates des Caraïbes
+Rocky / Rambo
+Terminator / RoboCop
+Matrix / Inception
+Fast and Furious / Taxi
+Retour vers le futur / Interstellar
+Le Parrain / Scarface
+Les Dents de la mer / Alien
+Annabelle / Chucky
+Scream / Saw
+Oscar / César
+Hollywood / Bollywood
+Réalisateur / Producteur
+Bande-annonce / Générique
+Sous-titres / Doublage
+Série / Saga
+Wednesday / La Famille Addams
+Mulan / Pocahontas
+Aladdin / Hercule
+Cendrillon / Blanche-Neige
+Ratatouille / Là-haut
+Kung Fu Panda / Madagascar
+Les Indestructibles / Monstres et Cie
+
+== sport | Sport | Sportifs, disciplines, compétitions…
+Messi / Ronaldo
+Mbappé / Neymar
+Zidane / Platini
+PSG / OM
+Real Madrid / FC Barcelone
+Coupe du monde / Euro
+Arbitre / Entraîneur
+Gardien / Défenseur
+Penalty / Coup franc
+Carton jaune / Carton rouge
+Hors-jeu / Faute
+But / Panier
+Tir à l'arc / Fléchettes
+Golf / Mini-golf
+Ping-pong / Squash
+Volley / Beach-volley
+Judo / Lutte
+Escrime / Kendo
+Sumo / Catch
+Formule 1 / Rallye
+Moto GP / Motocross
+Tour de France / Paris-Roubaix
+Marathon / Sprint
+Saut en hauteur / Saut en longueur
+Javelot / Lancer de disque
+Haltérophilie / Musculation
+Crossfit / Fitness
+Surf / Bodyboard
+Voile / Aviron
+Canoë / Kayak
+Patinage / Hockey
+Curling / Pétanque
+Médaille d'or / Médaille d'argent
+Podium / Trophée
+Supporter / Ultra
+Échauffement / Étirements
+Sifflet / Chronomètre
+Usain Bolt / Michael Phelps
+Nadal / Federer
+LeBron James / Michael Jordan
+Teddy Riner / Tony Parker
+Zlatan / Benzema
+Équitation / Polo
+Parachute / Parapente
+Jeux olympiques / Coupe du monde de rugby
+Ballon d'or / Soulier d'or
+Roland-Garros / Wimbledon
+NBA / NFL
+Water-polo / Natation synchronisée
+Triathlon / Décathlon
+Trail / Ultra-trail
+Snooker / Billard américain
+BMX / VTT
+Tatami / Ring
+
+== musique | Musique | Artistes, styles, instruments…
+Rap / Rock
+Jazz / Blues
+Reggae / Ska
+Pop / Électro
+Techno / House
+Opéra / Comédie musicale
+Mozart / Beethoven
+Bach / Vivaldi
+Michael Jackson / Prince
+Beyoncé / Rihanna
+Madonna / Lady Gaga
+Elvis Presley / Johnny Hallyday
+Stromae / Angèle
+Jul / Ninho
+Booba / Kaaris
+Daft Punk / David Guetta
+Les Beatles / Les Rolling Stones
+Queen / ABBA
+Eminem / 50 Cent
+Céline Dion / Mylène Farmer
+Aya Nakamura / Dua Lipa
+Taylor Swift / Ariana Grande
+Ed Sheeran / Bruno Mars
+Saxophone / Trompette
+Flûte / Clarinette
+Harpe / Lyre
+Accordéon / Harmonica
+Violoncelle / Contrebasse
+Micro / Ampli
+Vinyle / CD
+Concert / Festival
+Chorale / Orchestre
+Chef d'orchestre / DJ
+Refrain / Couplet
+Album / Single
+Clip / Live
+Platine / Table de mixage
+Eurovision / The Voice
+Fête de la musique / Bal populaire
+Hymne national / Comptine
+Paroles / Mélodie
+Xylophone / Triangle
+Ukulélé / Banjo
+Métronome / Diapason
+Solfège / Partition
+Rappeur / Slameur
+Groupie / Fan
+Casque audio / Enceinte
+
+== lieux | Pays & voyages | Pays, villes, monuments…
+France / Belgique
+Suisse / Autriche
+Allemagne / Pays-Bas
+Portugal / Brésil
+Japon / Chine
+Corée / Thaïlande
+Inde / Népal
+Égypte / Maroc
+États-Unis / Canada
+Mexique / Argentine
+Australie / Nouvelle-Zélande
+Grèce / Turquie
+Irlande / Écosse
+Islande / Groenland
+New York / Los Angeles
+Rome / Venise
+Barcelone / Madrid
+Berlin / Vienne
+Tokyo / Séoul
+Dubaï / Las Vegas
+Marseille / Nice
+Lyon / Bordeaux
+Lille / Strasbourg
+Bretagne / Normandie
+Corse / Sardaigne
+Alpes / Pyrénées
+Mont-Saint-Michel / Château de Versailles
+Statue de la Liberté / Big Ben
+Pyramides / Sphinx
+Colisée / Tour de Pise
+Muraille de Chine / Machu Picchu
+Taj Mahal / Angkor
+Everest / Mont Blanc
+Nil / Amazone
+Méditerranée / Atlantique
+Pôle Nord / Pôle Sud
+Disneyland / Parc Astérix
+Passeport / Carte d'identité
+Billet d'avion / Billet de train
+Croisière / Road trip
+Safari / Trek
+Souvenir / Magnet
+Douane / Frontière
+Hawaï / Tahiti
+Maldives / Seychelles
+Sahara / Atacama
+Bruges / Amsterdam
+Montréal / Québec

@@ -1,5 +1,5 @@
 import { $, el, initSalon, initRegles, de } from '../commun/salon.js';
-import { THEMES } from './mots.js';
+import { THEMES, chargerThemes } from './mots.js';
 import {
   NOMS_ROLES, normaliser, compositionDemandee, erreurComposition, nouvellePartie, vivants, peutVoterPour,
   actVu, actIndice, actVote, actEliminer, actDeviner, actTourSuivant, actNouvellePartie,
@@ -35,7 +35,26 @@ function majApercu() {
   $('compo-apercu').classList.toggle('erreur', !!err);
 }
 ['nb-joueurs', 'local-nb', 'reglage-undercover', 'reglage-mrwhite'].forEach((id) => $(id).addEventListener('change', majApercu));
-document.querySelectorAll('input[name="theme"]').forEach((x) => x.addEventListener('change', majApercu));
+// Les thèmes (et leurs paires) sont lus dans paires.txt
+function construireThemes() {
+  const zone = $('themes');
+  const avant = (document.querySelector('input[name="theme"]:checked') || {}).value || 'general';
+  zone.innerHTML = '';
+  const choix = [...Object.entries(THEMES).map(([id, th]) => [id, th.nom, `${th.desc ? `${th.desc} · ` : ''}${th.paires.length} paires`]),
+    ['melange', 'Tous les thèmes', 'Un thème au hasard à chaque partie']];
+  choix.forEach(([id, nom, desc]) => {
+    const l = el('label', 'theme');
+    const r = el('input');
+    r.type = 'radio'; r.name = 'theme'; r.value = id;
+    r.checked = id === avant || (!THEMES[avant] && avant !== 'melange' && id === Object.keys(THEMES)[0]);
+    r.addEventListener('change', majApercu);
+    const sp = el('span');
+    sp.append(el('strong', '', nom), el('small', '', desc));
+    l.append(r, sp);
+    zone.appendChild(l);
+  });
+}
+chargerThemes().then(construireThemes);
 document.querySelectorAll('.onglets [role="tab"]').forEach((o) => o.addEventListener('click', () => setTimeout(majApercu)));
 majApercu();
 // les réglages se placent juste au-dessus du bouton qui lance la partie (« Créer un salon » ou « Commencer »)
@@ -426,7 +445,7 @@ function rendreFin(zone) {
   // thème de la partie suivante
   const choix = el('label', 'uc-fin-theme', 'Thème de la prochaine partie');
   const sel = el('select');
-  [['general', 'Général'], ['anime', 'Anime · Jeux vidéo · Manga'], ['melange', 'Les deux']].forEach(([v, t]) => {
+  [...Object.entries(THEMES).map(([id, th]) => [id, th.nom]), ['melange', 'Tous les thèmes']].forEach(([v, t]) => {
     const o = el('option', '', t);
     o.value = v;
     if (v === s.reglages.theme) o.selected = true;

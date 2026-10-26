@@ -10,7 +10,7 @@
 .reglages { border: 1px solid var(--nuit-3); border-radius: 14px; padding: 12px 14px 14px; display: grid; gap: 12px; min-width: 0; }
 .reglages legend { font-weight: 700; padding: 0 6px; }
 .reglages legend small { color: var(--brume); font-weight: 400; }
-.themes { display: grid; gap: 8px; }
+.themes { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 .carte-salon label.theme { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--nuit); border: 2px solid var(--nuit-3); cursor: pointer; font-weight: 400; }
 .carte-salon label.theme input { width: auto; accent-color: var(--or); flex: none; }
 .theme span { display: grid; gap: 1px; }
