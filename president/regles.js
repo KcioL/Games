@@ -142,8 +142,10 @@ export function aBattre(s) {
 }
 
 // Le carré en cours : la valeur posée en dernier et le nombre de cartes qui manquent pour faire 4 (null : rien à compléter)
+// règle « Carré qui ferme le pli » (active par défaut, et dans les parties créées avant cette option)
+export const carreFerme = (s) => !s.options || s.options.carre !== false;
 export function manquePourCarre(s) {
-  if (!s.tas.length) return null;
+  if (!s.tas.length || !carreFerme(s)) return null;
   const v = valeurDe(s.tas[s.tas.length - 1].cartes[0]);
   let n = 0;
   for (let k = s.tas.length - 1; k >= 0 && valeurDe(s.tas[k].cartes[0]) === v; k--) n += s.tas[k].cartes.length;
@@ -200,15 +202,15 @@ export function jouer(s, i, ids) {
     p.fini = s.classement.length + 1;
     s.classement.push(i);
   }
-  // carré avec la révolution : l'ordre des cartes s'inverse
+  // un carré posé d'un coup ferme le pli (règle « Carré qui ferme le pli ») ; avec la révolution, l'ordre s'inverse
   let ferme = false;
   if (ids.length === 4) {
-    ferme = true;
+    if (carreFerme(s)) ferme = true;
     if (s.options.revolution) { s.revolution = !s.revolution; s.evenement = { type: 'revolution', j: i, actif: s.revolution }; }
   }
   if (v === plusForte(s.revolution) && !(ids.length === 4 && s.options.revolution)) ferme = true;
   // celui qui complète le carré ramasse le pli et rejoue
-  if (carreComplete) { ferme = true; s.evenement = { type: 'carre', j: i, v, nb: ids.length, rapide: horsTour, coupe: horsTour ? s.active : -1 }; }
+  if (carreComplete && carreFerme(s)) { ferme = true; s.evenement = { type: 'carre', j: i, v, nb: ids.length, rapide: horsTour, coupe: horsTour ? s.active : -1 }; }
   if (finSiPossible(s)) return true;
   if (ferme) { fermerPli(s, i); return true; }
   s.active = suivant(s, i);

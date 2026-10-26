@@ -22,7 +22,8 @@ const salon = initSalon({
       revolution: false, // (l'ancienne variante « carré qui inverse l'ordre » n'est plus proposée)
       revolutionTrou: $('opt-revolution-trou').checked,
       ouRien: $('opt-ourien').checked,
-      rapidite: $('opt-rapidite').checked,
+      carre: $('opt-carre').checked,
+      rapidite: $('opt-carre').checked && $('opt-rapidite').checked,
       manches: parseInt($('opt-manches').value, 10) || 0,
     };
     return { players: joueurs, options };
@@ -63,6 +64,15 @@ const salon = initSalon({
   secret: true,
 });
 initRegles();
+// la rapidité sert à finir un carré : sans la règle du carré, elle n'a pas de sens
+function majOptionsCarre() {
+  const r = $('opt-rapidite');
+  r.disabled = !$('opt-carre').checked;
+  if (r.disabled) r.checked = false;
+  r.closest('.option').classList.toggle('desactivee', r.disabled);
+}
+$('opt-carre').addEventListener('change', majOptionsCarre);
+majOptionsCarre();
 const agir = (fn) => salon.agir((s) => fn(R.normaliser(s)));
 
 // ---------- Bots ----------
