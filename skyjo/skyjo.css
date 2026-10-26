@@ -144,6 +144,7 @@
 .tableau-scores td { padding: 8px 6px; border-top: 1px solid var(--nuit-3); font-weight: 700; }
 .tableau-scores td:not(:first-child), .tableau-scores th:not(:first-child) { text-align: right; }
 .tableau-scores tr.moi td { color: var(--or); }
+.tableau-scores td.victoires { color: var(--or-clair); }
 
 @media (max-width: 480px) {
   .adversaire { width: 140px; }
@@ -226,4 +227,18 @@
   .multi .grille-cartes.mini .carte { font-size: clamp(.9rem, 1.4vw, 1.25rem); border-radius: 6px; }
   /* mon jeu : la place qui reste sous la rangée des adversaires */
   .multi .mon-jeu { width: min(420px, calc(100vh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); width: min(420px, calc(100svh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); }
+}
+
+/* parties gagnées, à côté du nom */
+.trophees {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(242, 182, 50, .18);
+  border: 1px solid rgba(242, 182, 50, .55);
+  color: var(--or-clair);
+  font-size: .75rem; font-weight: 700;
+  vertical-align: 1px;
+  white-space: nowrap;
 }

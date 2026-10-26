@@ -483,6 +483,27 @@
   .btn-table.principal { padding: 7px 14px; }
 }
 
+/* ---------- Rapidité : un gros bouton au-dessus de la main, pour réagir vite ---------- */
+.btn-rapide {
+  position: absolute; z-index: 9;
+  left: 50%; bottom: calc(100% + 10px); translate: -50% 0;
+  width: min(92vw, 460px);
+  padding: 16px 20px;
+  border-radius: 20px;
+  border: 3px solid #8A5A1E;
+  background: linear-gradient(180deg, #FFE98A, #F2B632 55%, #D9921C);
+  color: #3A1E08;
+  font: 900 clamp(1.15rem, 4.6vw, 1.6rem)/1.15 var(--police);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+  box-shadow: 0 6px 0 #8A5A1E, 0 14px 30px rgba(70, 35, 10, .5);
+  cursor: pointer;
+  animation: rapide-entre .25s cubic-bezier(.3, 1.6, .5, 1), rapide-pulse .5s .25s ease-in-out infinite alternate;
+}
+.btn-rapide[hidden] { display: none; }
+.btn-rapide:active { translate: -50% 4px; box-shadow: 0 2px 0 #8A5A1E, 0 8px 18px rgba(70, 35, 10, .5); }
+@keyframes rapide-entre { from { transform: scale(.4); opacity: 0; } }
+@keyframes rapide-pulse { to { transform: scale(1.05); box-shadow: 0 6px 0 #8A5A1E, 0 0 0 6px rgba(255, 224, 102, .6), 0 0 34px rgba(255, 200, 60, .9); } }
+
 @media (prefers-reduced-motion: reduce) {
   .siege-pr.actif .plaque-pr, .moi-pr.actif .plaque-pr, .bandeau { animation: none; }
 }

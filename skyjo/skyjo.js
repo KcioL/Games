@@ -17,7 +17,7 @@ function normaliser(s) {
   s.deck = s.deck || [];
   s.discard = s.discard || [];
   s.players = s.players || [];
-  s.players.forEach((p) => { p.grid = p.grid || []; p.total = p.total || 0; });
+  s.players.forEach((p) => { p.grid = p.grid || []; p.total = p.total || 0; p.victoires = p.victoires || 0; });
   if (s.finisher === undefined || s.finisher === null) s.finisher = -1;
   s.held = s.held || null;
   return s;
@@ -77,6 +77,12 @@ function finDeManche(s, messages) {
   s.players.forEach((p, i) => { p.total += scores[i]; });
   s.bilan = { scores, double, finisher: f };
   s.status = s.players.some((p) => p.total >= SCORE_FIN) ? 'finished' : 'roundEnd';
+  if (s.status === 'finished') {
+    // partie gagnée : le plus petit total (tous les ex æquo gagnent)
+    const meilleur = Math.min(...s.players.map((p) => p.total));
+    s.players.forEach((p) => { if (p.total === meilleur) p.victoires = (p.victoires || 0) + 1; });
+    s.parties = (s.parties || 0) + 1;
+  }
   s.held = null;
 }
 
@@ -107,9 +113,9 @@ let statutPrecedent = null;
 const salon = initSalon({
   jeu: 'skyjo',
   etatInitial: (nom, nb, { local }) => {
-    const joueurs = Array.from({ length: nb }, (_, i) => ({ name: i === 0 ? nom : 'En attente', joined: i === 0, total: 0, bot: false }));
+    const joueurs = Array.from({ length: nb }, (_, i) => ({ name: i === 0 ? nom : 'En attente', joined: i === 0, total: 0, victoires: 0, bot: false }));
     const bots = parseInt($(local ? 'local-bots' : 'nb-bots').value, 10) || 0;
-    for (let k = 1; k <= bots; k++) joueurs.push({ name: `Bot ${k}`, joined: true, total: 0, bot: true });
+    for (let k = 1; k <= bots; k++) joueurs.push({ name: `Bot ${k}`, joined: true, total: 0, victoires: 0, bot: true });
     return { players: joueurs };
   },
   validerLocal: () => {
@@ -426,6 +432,7 @@ function famille(v) {
   return 'f-rouge';
 }
 
+// les parties gagnées s'affichent en petit badge à côté du nom, dès la première victoire
 function rendreAdversaires() {
   const zone = $('adversaires');
   zone.innerHTML = '';
@@ -437,7 +444,9 @@ function rendreAdversaires() {
     if (etat.status === 'playing' && etat.active === idx) bloc.classList.add('actif');
     if (etat.finisher === idx) bloc.classList.add('fini');
     const tete = el('div', 'adv-tete');
-    tete.appendChild(el('strong', '', p.name));
+    const nom = el('strong', '', p.name);
+    if (p.victoires) nom.appendChild(el('span', 'trophees', `🏆 ${p.victoires}`));
+    tete.appendChild(nom);
     tete.appendChild(el('span', '', `${sommeVisible(p.grid)} pts visibles, total ${p.total}`));
     const g = el('div', 'grille-cartes mini');
     p.grid.forEach((c) => g.appendChild(carteEl(c)));
@@ -477,6 +486,7 @@ function rendreMonJeu() {
   const moi = etat.players[maPlace];
   $('mon-nom').textContent = salon.estLocal() ? `Jeu ${de(moi.name)}` : `${moi.name} (toi)`;
   $('mon-score').textContent = `${sommeVisible(moi.grid)} pts visibles, total ${moi.total}`;
+  if (moi.victoires) $('mon-nom').appendChild(el('span', 'trophees', `🏆 ${moi.victoires}`));
   const g = $('ma-grille');
   g.innerHTML = '';
   const tour = monTour(etat);
@@ -576,13 +586,15 @@ function rendreBilan() {
     const sc = b.scores ? b.scores[i] : 0;
     tr.appendChild(el('td', '', (sc > 0 ? '+' : '') + sc + (b.double && i === b.finisher ? ' (×2)' : '')));
     tr.appendChild(el('td', '', String(p.total)));
+    tr.appendChild(el('td', 'victoires', String(p.victoires || 0)));
     lignes.appendChild(tr);
   });
 
   if (etat.status === 'finished') {
     const gagnant = etat.players[ordre[0]];
     $('bilan-titre').textContent = ordre[0] === maPlace && !salon.estLocal() ? 'Tu as gagné !' : `${gagnant.name} gagne !`;
-    $('bilan-texte').textContent = `Quelqu'un a dépassé ${SCORE_FIN} points : le plus petit total l'emporte.`;
+    const n = etat.parties || 1;
+    $('bilan-texte').textContent = `Quelqu'un a dépassé ${SCORE_FIN} points : le plus petit total l'emporte. ${n} partie${n > 1 ? 's' : ''} jouée${n > 1 ? 's' : ''} dans ce salon.`;
     $('btn-suite').textContent = 'Nouvelle partie';
   } else {
     $('bilan-titre').textContent = `Fin de la manche ${etat.round || 1}`;

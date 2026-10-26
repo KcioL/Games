@@ -163,15 +163,19 @@ function clicCarte(c) {
   const v = R.valeurDe(c);
   const memes = R.trierMain(moi().main.filter((x) => R.valeurDe(x) === v));
   const b = R.aBattre(etat);
+  // si ces cartes peuvent finir le carré, c'est ce qui est proposé d'abord
+  const m = b && R.manquePourCarre(etat);
+  const nbVoulu = b ? (m && m.v === v && memes.length >= m.nb ? m.nb : b.nb) : 0;
+  const nbMax = b ? Math.max(b.nb, nbVoulu) : 4;
   if (selection.includes(c)) {
     selection = selection.filter((x) => x !== c);
   } else if (selection.length && R.valeurDe(selection[0]) === v) {
     selection = [...selection, c];
   } else {
     // on touche une valeur : la combinaison demandée est choisie d'un coup (ou toutes ces cartes, si on ouvre)
-    selection = b ? [c, ...memes.filter((x) => x !== c)].slice(0, b.nb) : memes;
+    selection = b ? [c, ...memes.filter((x) => x !== c)].slice(0, nbVoulu) : memes;
   }
-  if (b && selection.length > b.nb) selection = selection.slice(-b.nb);
+  if (selection.length > nbMax) selection = selection.slice(-nbMax);
   rendreMain(); rendreBoutons();
 }
 $('btn-jouer').addEventListener('click', () => {
