@@ -43,7 +43,7 @@ export function normaliser(s) {
   s.tas.forEach((t) => { t.cartes = t.cartes || []; });
   s.classement = s.classement || [];
   s.dons = s.dons || [];
-  s.options = s.options || { revolution: true, revolutionTrou: true, ouRien: true, manches: 0 };
+  s.options = s.options || { revolution: false, revolutionTrou: true, ouRien: true, manches: 0 };
   if (s.dernierPli) s.dernierPli.cartes = s.dernierPli.cartes || [];
   return s;
 }
@@ -147,7 +147,9 @@ export function manquePourCarre(s) {
   const v = valeurDe(s.tas[s.tas.length - 1].cartes[0]);
   let n = 0;
   for (let k = s.tas.length - 1; k >= 0 && valeurDe(s.tas[k].cartes[0]) === v; k--) n += s.tas[k].cartes.length;
-  return n >= 4 ? null : { v, nb: 4 - n };
+  // on complète avec une combinaison au moins aussi forte que la dernière posée (pas un seul Roi sur un brelan de Rois)
+  const dernier = s.tas[s.tas.length - 1].cartes.length;
+  return n >= 4 || 4 - n < dernier ? null : { v, nb: 4 - n };
 }
 // ces cartes complètent-elles le carré ? (ex. un 6, un 6, puis une paire de 6)
 export function completeCarre(s, ids) {
@@ -187,8 +189,8 @@ export function jouer(s, i, ids) {
   p.aPasse = false;
   s.coup = (s.coup || 0) + 1;
   s.evenement = null;
-  // « … ou rien » : après une valeur égale, les suivants doivent poser la même valeur ou passer
-  // (« Roi ou rien ! »), jusqu'à ce que le pli soit ramassé
+  // « … ou rien » : après une valeur égale, le joueur suivant doit poser la même valeur ou passer (« Roi ou rien ! ») ;
+  // s'il la pose, l'obligation passe au suivant ; s'il passe, le jeu reprend normalement
   s.ouRien = s.options.ouRien && precedent && precedent.v === v ? v : null;
   // carré complété : 4 cartes de la même valeur posées à la suite (en un ou plusieurs coups)
   let memeValeur = 0;
@@ -218,6 +220,7 @@ export function jouer(s, i, ids) {
 export function passer(s, i) {
   if (s.status !== 'jeu' || s.active !== i || !s.tas.length) return false; // on ne passe pas quand on ouvre
   s.passes += 1;
+  s.ouRien = null; // « Roi ou rien » ne vaut que pour le joueur suivant
   s.players[i].aPasse = true;
   s.coup = (s.coup || 0) + 1;
   s.evenement = null;

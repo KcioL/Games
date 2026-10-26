@@ -19,7 +19,7 @@ const salon = initSalon({
     melanger(NOMS_BOTS).slice(0, bots).forEach((n) => joueurs.push(joueur(n, true, true)));
     // variantes choisies par celui qui crée la partie
     const options = {
-      revolution: $('opt-revolution').checked,
+      revolution: false, // (l'ancienne variante « carré qui inverse l'ordre » n'est plus proposée)
       revolutionTrou: $('opt-revolution-trou').checked,
       ouRien: $('opt-ourien').checked,
       rapidite: $('opt-rapidite').checked,

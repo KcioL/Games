@@ -89,12 +89,8 @@
           <span><strong>Révolution du Trou du cul</strong><small>Si le Trou du cul finit Président à la manche suivante, le nouveau Trou du cul lui donne ses 4 meilleures cartes (au lieu de 2), et le Président lui en rend 4 de son choix.</small></span>
         </label>
         <label class="option">
-          <input type="checkbox" id="opt-revolution" checked>
-          <span><strong>Carré qui inverse l'ordre</strong><small>Poser un carré inverse l'ordre des cartes : le 3 devient la plus forte, le 2 la plus faible.</small></span>
-        </label>
-        <label class="option">
           <input type="checkbox" id="opt-ourien" checked>
-          <span><strong>« Roi ou rien »</strong><small>Si on pose la même valeur que le joueur précédent, les suivants doivent poser cette valeur ou passer (« Roi ou rien ! », « 7 ou rien ! »…).</small></span>
+          <span><strong>« Roi ou rien »</strong><small>Si on pose la même valeur que le joueur précédent, le joueur suivant doit poser cette valeur ou passer (« Roi ou rien ! », « 7 ou rien ! »…). S'il passe, le suivant joue normalement.</small></span>
         </label>
         <label class="option">
           <input type="checkbox" id="opt-rapidite">
@@ -209,7 +205,7 @@
       <li>Quand tout le monde passe, le pli est ramassé : celui qui a posé en dernier rejoue ce qu'il veut.</li>
       <li>Poser un 2 ferme le pli tout de suite : personne ne joue sur un 2, et celui qui l'a posé rejoue.</li>
       <li>Un carré ferme aussi le pli, qu'il soit posé d'un coup ou <strong>complété</strong> à plusieurs : celui qui pose la 4e carte ramasse le pli et rejoue.</li>
-      <li>Pour compléter un carré, on peut poser plus de cartes que le coup précédent : après un 6 puis un 6, une paire de 6 ; après un Roi, un brelan de Rois.</li>
+      <li>Pour compléter un carré, on peut poser plus de cartes que le coup précédent (après un 6 puis un 6, une paire de 6 ; après un Roi, un brelan de Rois), mais jamais moins : on ne finit pas un brelan avec une seule carte.</li>
       <li>1re manche : la Dame de cœur commence. Ensuite, c'est le Trou du cul.</li>
     </ul>
     <h3>Rôles et échanges</h3>
@@ -221,9 +217,8 @@
     <h3>Variantes (choisies par celui qui crée la partie)</h3>
     <ul>
       <li><strong>Révolution du Trou du cul</strong> : si le Trou du cul de la manche précédente finit Président, l'échange suivant se fait à 4 cartes : le nouveau Trou du cul donne ses 4 meilleures cartes, le Président lui en rend 4 de son choix (le Vice-trou du cul n'est pas concerné).</li>
-      <li><strong>Carré qui inverse l'ordre</strong> : un carré inverse l'ordre des cartes jusqu'au prochain carré (le 3 devient la plus forte).</li>
       <li><strong>Rapidité</strong> (désactivée par défaut) : si tu as de quoi compléter le carré, le bouton ⚡ te permet de poser tes cartes sans attendre ton tour, à condition d'être plus rapide que le joueur qui doit jouer. Tu ramasses alors le pli et tu rejoues.</li>
-      <li><strong>« Roi ou rien »</strong> : si on pose la même valeur que le joueur précédent, les suivants doivent poser cette valeur ou passer (« Roi ou rien ! » pour des Rois, « 7 ou rien ! » pour des 7…), jusqu'à ce que le pli soit ramassé.</li>
+      <li><strong>« Roi ou rien »</strong> : si on pose la même valeur que le joueur précédent (« Roi ou rien ! » pour des Rois, « 7 ou rien ! » pour des 7…), le joueur suivant doit poser cette valeur ou passer. S'il la pose, l'obligation passe au joueur d'après ; s'il passe, le suivant joue normalement.</li>
     </ul>
     <button class="btn fermer">Fermer</button>
   </dialog>
