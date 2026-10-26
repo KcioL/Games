@@ -244,6 +244,7 @@
 .btn-table:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.04); }
 .btn-table:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 #C09A6E, 0 3px 8px rgba(70, 35, 10, .3); }
 .btn-table:disabled { opacity: .55; cursor: default; }
+#btn-passer:disabled { opacity: .35; filter: grayscale(1); box-shadow: none; transform: none; }
 .btn-table.principal {
   color: #fff; border-color: #C25E22; border-radius: 999px; padding: 10px 24px;
   background: linear-gradient(180deg, #F08A4B 0%, #D9672B 100%);

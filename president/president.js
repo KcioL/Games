@@ -206,7 +206,7 @@ $('btn-rapide').addEventListener('click', () => {
   agir((s) => { ok = R.jouer(s, maPlace, ids); return ok; }).then(() => { if (!ok) toast('Trop tard ! Quelqu\'un a joué avant toi.'); });
 });
 $('btn-passer').addEventListener('click', () => {
-  if (!monTour()) return;
+  if (!monTour() || selection.length) return;
   selection = [];
   agir((s) => R.passer(s, maPlace));
 });
@@ -537,6 +537,9 @@ function rendreBoutons() {
   const tour = monTour();
   jouer.hidden = !tour;
   passer.hidden = !tour || !etat.tas.length;
+  // des cartes sont choisies : on ne peut pas passer par erreur (il faut d'abord les reposer)
+  passer.disabled = selection.length > 0;
+  passer.title = passer.disabled ? 'Retouche tes cartes choisies pour les reposer, puis tu pourras passer' : '';
   if (!tour) return;
   const ok = selection.length > 0 && R.coupValide(etat, maPlace, selection);
   jouer.disabled = !ok;
