@@ -19,7 +19,6 @@ Vélo / Trottinette
 Pomme / Poire
 Orange / Mandarine
 Fraise / Framboise
-Citron / Pamplemousse
 Lion / Tigre
 Loup / Renard
 Requin / Dauphin
@@ -79,7 +78,7 @@ Bague / Collier
 Parfum / Déodorant
 Savon / Shampoing
 Douche / Baignoire
-Croissant / Pain au chocolat
+Croissant / chocolatine
 Crêpe / Gaufre
 Glace / Sorbet
 Chocolat / Caramel
@@ -132,7 +131,7 @@ Printemps / Été
 Rêve / Cauchemar
 Bisou / Câlin
 Sac à dos / Valise
-Tente / Caravane
+Tente / Mobile-Home
 Banque / Poste
 Supermarché / Marché
 Restaurant / Cantine
