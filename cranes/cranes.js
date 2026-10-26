@@ -399,8 +399,8 @@ function rendrePli() {
     else {
       const g = etat.players[d.gagnant];
       t = `${g.name} remporte le pli`;
-      if (d.raison === 'sirene-roi') t += ' : la Sirène capture le Roi !';
-      else if (d.raison === 'roi' && d.bonus >= 30) t += ' : le Roi capture les pirates !';
+      if (d.raison === 'sirene-roi') t += ' : la Sirène capture le Skull King !';
+      else if (d.raison === 'roi' && d.bonus >= 30) t += ' : le Skull King capture les pirates !';
       else if (d.raison === 'pirate' && d.bonus >= 20) t += ' : capture de sirène !';
       if (d.bonus > 0) t += ` (bonus +${d.bonus})`;
       if (d.allies && d.allies.length) t += ` · alliance du Butin avec ${d.allies.map((b) => etat.players[b].name).join(', ')}`;
@@ -505,7 +505,7 @@ function rendreBilan() {
 }
 function rendreFin() {
   const cl = R.classement(etat);
-  $('fin-titre').textContent = `${cl[0].nom} est le Roi des Crânes !`;
+  $('fin-titre').textContent = `${cl[0].nom} est le Skull King !`;
   const ol = $('podium');
   ol.innerHTML = '';
   cl.forEach((x, k) => {

@@ -1,4 +1,4 @@
-// Le Roi des Crânes : règles (sans affichage), extensions comprises (Kraken, Baleine blanche, Butin).
+// Skull King : règles (sans affichage), extensions comprises (Kraken, Baleine blanche, Butin).
 // Jeu de plis à annonces : 10 manches, à la manche n chacun reçoit n cartes et annonce combien de plis il fera.
 
 export const COULEURS = ['perroquet', 'coffre', 'carte', 'pavillon']; // pavillon (noir) = atout
@@ -11,7 +11,7 @@ export const SPECIALES = {
   pirate: { n: 5, nom: 'Pirate', image: (k) => `pirate-${k}` },
   tigresse: { n: 1, nom: 'La Tigresse', image: () => 'tigresse' },
   sirene: { n: 2, nom: 'Sirène', image: (k) => `sirene-${k}` },
-  roi: { n: 1, nom: 'Le Roi des Crânes', image: () => 'roi' },
+  roi: { n: 1, nom: 'Skull King', image: () => 'roi' },
   kraken: { n: 1, nom: 'Le Kraken', image: () => 'kraken' },
   baleine: { n: 1, nom: 'La Baleine blanche', image: () => 'baleine' },
   butin: { n: 2, nom: 'Butin', image: (k) => 'butin' },
@@ -169,8 +169,8 @@ export function resultatPli(pli) {
   const gagnant = pli[g.k].j;
   let bonus = bonus14(pli);
   const nb = (t) => pli.filter((e) => typeJoue(e) === t).length;
-  if (g.motif === 'sirene-roi') bonus += 40;          // la Sirène capture le Roi des Crânes
-  else if (g.motif === 'roi') bonus += 30 * nb('pirate'); // le Roi capture les pirates
+  if (g.motif === 'sirene-roi') bonus += 40;          // la Sirène capture le Skull King
+  else if (g.motif === 'roi') bonus += 30 * nb('pirate'); // le Skull King capture les pirates
   else if (g.motif === 'pirate') bonus += 20 * nb('sirene'); // un pirate capture les sirènes
   return { gagnant, meneur: gagnant, detruit: false, raison: g.motif, bonus, allies: alliesButin(pli, gagnant), k: g.k };
 }

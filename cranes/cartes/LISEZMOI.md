@@ -1,4 +1,4 @@
-# Le Roi des Crânes : illustrations des cartes spéciales
+# Skull King : illustrations des cartes spéciales
 
 Dépose ici les images **complètes** des cartes spéciales (cadre, nom, dessin : tout est dans l'image).
 Le jeu les utilise automatiquement. Une carte sans image garde son dessin par défaut, donc tu peux
@@ -23,7 +23,7 @@ les ajouter petit à petit.
 | `tigresse.jpg` | La Tigresse | 1 |
 | `sirene-1.jpg` | Sirène n° 1 | 1 |
 | `sirene-2.jpg` | Sirène n° 2 | 1 |
-| `roi.jpg` | Le Roi des Crânes | 1 |
+| `roi.jpg` | Skull King | 1 |
 | `kraken.jpg` | Le Kraken | 1 |
 | `baleine.jpg` | La Baleine blanche | 1 |
 | `butin.jpg` | Butin (la même image pour les 2) | 2 |

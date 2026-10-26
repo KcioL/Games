@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Le Roi des Crânes</title>
+  <title>Skull King</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>☠</text></svg>">
   <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
   <link rel="manifest" href="../manifest.webmanifest">
@@ -56,7 +56,7 @@
 
   <header class="barre">
     <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
-    <h1>Le Roi des Crânes</h1>
+    <h1>Skull King</h1>
     <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
     <button class="btn btn-discret" id="btn-regles">Règles</button>
     <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
@@ -173,7 +173,7 @@
           </svg>
           <svg class="inscription" viewBox="0 0 1000 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
             <defs><path id="arc-rc" d="M 60 40 Q 500 210 940 40" /></defs>
-            <text class="ins-grande"><textPath href="#arc-rc" startOffset="50%" text-anchor="middle">LE ROI DES CRÂNES</textPath></text>
+            <text class="ins-grande"><textPath href="#arc-rc" startOffset="50%" text-anchor="middle">SKULL KING</textPath></text>
           </svg>
           <div class="centre-rc">
             <p class="manche-info" id="manche-info"></p>
@@ -239,7 +239,7 @@
   </dialog>
 
   <dialog class="regles" id="regles">
-    <h2>Le Roi des Crânes</h2>
+    <h2>Skull King</h2>
     <p>Un jeu de plis à annonces, en 10 manches. À la manche 1 chacun reçoit 1 carte, à la manche 2 deux cartes… jusqu'à 10. À chaque manche, il faut annoncer exactement combien de plis on va remporter.</p>
     <h3>Les cartes</h3>
     <ul>
@@ -248,8 +248,8 @@
       <li><strong>Drapeau blanc</strong> (×5) : perd toujours (sauf si tout le monde en joue : le premier gagne).</li>
       <li><strong>Pirates</strong> (×5) : battent toutes les cartes numérotées et les Sirènes.</li>
       <li><strong>La Tigresse</strong> : au moment de la jouer, on choisit : Pirate ou Drapeau blanc.</li>
-      <li><strong>Sirènes</strong> (×2) : battent les cartes numérotées, perdent contre les Pirates… mais capturent le Roi des Crânes.</li>
-      <li><strong>Le Roi des Crânes</strong> : bat tout, Pirates compris, sauf une Sirène.</li>
+      <li><strong>Sirènes</strong> (×2) : battent les cartes numérotées, perdent contre les Pirates… mais capturent le Skull King.</li>
+      <li><strong>Skull King</strong> : bat tout, Pirates compris, sauf une Sirène.</li>
       <li><strong>Le Kraken</strong> : le pli est englouti, personne ne le gagne. Celui qui l'aurait remporté ouvre le pli suivant.</li>
       <li><strong>La Baleine blanche</strong> : toutes les cartes spéciales perdent leur pouvoir, le plus gros chiffre gagne, quelle que soit sa couleur. S'il n'y a aucun chiffre, le pli est perdu et celui qui a joué la Baleine ouvre le suivant. Kraken et Baleine dans le même pli : c'est la dernière jouée des deux qui agit.</li>
       <li><strong>Butin</strong> (×2) : compte comme un Drapeau blanc, et fait alliance avec celui qui remporte le pli : si les deux réussissent leur annonce, chacun gagne 20 points.</li>
@@ -258,7 +258,7 @@
     <ul>
       <li>Il faut suivre la couleur demandée (celle de la première carte numérotée) si on peut. Les cartes spéciales peuvent toujours être jouées.</li>
       <li>Le Pavillon noir est une couleur comme les autres : on ne coupe que si on n'a pas la couleur demandée. Variante « Atout libre » (choisie par celui qui crée la partie) : le Pavillon noir peut se jouer à tout moment.</li>
-      <li>Si un personnage (Pirate, Sirène, Roi) ouvre le pli, il n'y a pas de couleur à suivre.</li>
+      <li>Si un personnage (Pirate, Sirène, Skull King) ouvre le pli, il n'y a pas de couleur à suivre.</li>
       <li>À égalité entre cartes spéciales identiques, la première jouée gagne. Le gagnant du pli ouvre le suivant.</li>
     </ul>
     <h3>Points</h3>
@@ -266,7 +266,7 @@
       <li>Annonce réussie : 20 points par pli annoncé, plus les bonus.</li>
       <li>Annonce ratée : −10 points par pli d'écart (aucun bonus).</li>
       <li>Annonce de zéro pli : réussie, 10 × le nombre de cartes de la manche ; ratée, −10 × ce nombre.</li>
-      <li>Bonus (annonce réussie) : chaque 14 de couleur remporté +10, le 14 noir +20, Sirène capturée par un Pirate +20, Pirate capturé par le Roi +30, Roi capturé par une Sirène +40, alliance du Butin +20.</li>
+      <li>Bonus (annonce réussie) : chaque 14 de couleur remporté +10, le 14 noir +20, Sirène capturée par un Pirate +20, Pirate capturé par le Skull King +30, Skull King capturé par une Sirène +40, alliance du Butin +20.</li>
     </ul>
     <p>À 8 joueurs, la dernière manche se joue avec 9 cartes (il n'y en a pas assez pour 10).</p>
     <button class="btn fermer">Fermer</button>
