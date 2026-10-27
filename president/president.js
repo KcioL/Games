@@ -43,6 +43,8 @@ const salon = initSalon({
   demarrer: (s) => R.nouvellePartie(s),
   afficher: (s, place) => {
     if (place !== maPlace) selection = [];
+    // quelqu'un a joué entre-temps (rapidité, pli ramassé…) : la sélection en cours n'a plus de sens
+    if (etat && s.status === 'jeu' && (s.coup !== etat.coup || s.active !== etat.active)) selection = [];
     etat = R.normaliser(s);
     maPlace = place;
     noterChangement();
@@ -206,7 +208,7 @@ $('btn-rapide').addEventListener('click', () => {
   agir((s) => { ok = R.jouer(s, maPlace, ids); return ok; }).then(() => { if (!ok) toast('Trop tard ! Quelqu\'un a joué avant toi.'); });
 });
 $('btn-passer').addEventListener('click', () => {
-  if (!monTour() || selection.length) return;
+  if (!monTour() || (selection.length && R.coupValide(etat, maPlace, selection))) return;
   selection = [];
   agir((s) => R.passer(s, maPlace));
 });
@@ -412,6 +414,8 @@ function rendreMain() {
       const ok = !b || (m && m.v === v && cs.length >= m.nb) || (cs.length >= b.nb && (b.ouRien ? v === b.ouRien : R.force(v, etat.revolution) >= R.force(b.v, etat.revolution)));
       if (ok) cs.forEach((c) => jouables.add(c));
     });
+    // une carte choisie qui n'est plus jouable (le pli a changé) est reposée
+    selection = selection.filter((c) => jouables.has(c));
   }
   R.trierMain(p.main, etat.revolution).forEach((c) => {
     const e = carteEl(c);
@@ -538,7 +542,8 @@ function rendreBoutons() {
   jouer.hidden = !tour;
   passer.hidden = !tour || !etat.tas.length;
   // des cartes sont choisies : on ne peut pas passer par erreur (il faut d'abord les reposer)
-  passer.disabled = selection.length > 0;
+  // on ne peut pas passer par erreur avec une combinaison jouable sélectionnée (une sélection impossible ne bloque jamais)
+  passer.disabled = selection.length > 0 && R.coupValide(etat, maPlace, selection);
   passer.title = passer.disabled ? 'Retouche tes cartes choisies pour les reposer, puis tu pourras passer' : '';
   if (!tour) return;
   const ok = selection.length > 0 && R.coupValide(etat, maPlace, selection);

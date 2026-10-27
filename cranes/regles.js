@@ -57,6 +57,7 @@ export function normaliser(s) {
     p.bonus = p.bonus || 0;
     if (p.annonce === undefined || p.annonce === null) p.annonce = -1;
     p.pari = p.pari || 0;
+    p.details = p.details || [];
     p.ajuste = !!p.ajuste;
   });
   s.reste = s.reste || [];
@@ -83,7 +84,7 @@ function demarrerManche(s) {
   const n = s.players.length;
   const nb = cartesPourManche(s.manche, n);
   const paquet = nouveauPaquet();
-  s.players.forEach((p) => Object.assign(p, { main: [], annonce: -1, plis: 0, bonus: 0, allies: [], pari: 0, ajuste: false, annonceDepart: null }));
+  s.players.forEach((p) => Object.assign(p, { main: [], annonce: -1, plis: 0, bonus: 0, allies: [], pari: 0, ajuste: false, annonceDepart: null, details: [] }));
   for (let k = 0; k < nb; k++) {
     for (let o = 1; o <= n; o++) s.players[(s.donneur + o) % n].main.push(paquet.pop());
   }
@@ -182,19 +183,25 @@ export function resultatPli(pli) {
     let m = nums[0];
     nums.forEach((x) => { if (x[0].c.v > m[0].c.v) m = x; });
     const gagnant = pli[m[1]].j;
-    return { gagnant, meneur: gagnant, detruit: false, raison: 'baleine', bonus: bonus14(pli), allies: alliesButin(pli, gagnant), k: m[1] };
+    const d14 = details14(pli);
+    return { gagnant, meneur: gagnant, detruit: false, raison: 'baleine', bonus: somme(d14), details: d14, allies: alliesButin(pli, gagnant), k: m[1] };
   }
   const g = gagnantNormal(pli);
   const gagnant = pli[g.k].j;
-  let bonus = bonus14(pli);
+  const details = details14(pli);
   const nb = (t) => pli.filter((e) => typeJoue(e) === t).length;
-  if (g.motif === 'sirene-roi') bonus += 40;          // la Sirène capture le Skull King
-  else if (g.motif === 'roi') bonus += 30 * nb('pirate'); // le Skull King capture les pirates
-  else if (g.motif === 'pirate') bonus += 20 * nb('sirene'); // un pirate capture les sirènes
-  return { gagnant, meneur: gagnant, detruit: false, raison: g.motif, bonus, allies: alliesButin(pli, gagnant), k: g.k };
+  const pl = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+  if (g.motif === 'sirene-roi') details.push({ t: 'La Sirène capture le Skull King', pts: 40 });
+  else if (g.motif === 'roi' && nb('pirate')) details.push({ t: `Le Skull King capture ${pl(nb('pirate'), 'pirate')}`, pts: 30 * nb('pirate') });
+  else if (g.motif === 'pirate' && nb('sirene')) details.push({ t: `Le pirate capture ${pl(nb('sirene'), 'sirène')}`, pts: 20 * nb('sirene') });
+  return { gagnant, meneur: gagnant, detruit: false, raison: g.motif, bonus: somme(details), details, allies: alliesButin(pli, gagnant), k: g.k };
 }
-function bonus14(pli) {
-  return pli.reduce((a, e) => a + (e.c.t === 'n' && e.c.v === 14 ? (e.c.s === 'pavillon' ? 20 : 10) : 0), 0);
+const somme = (d) => d.reduce((a, x) => a + x.pts, 0);
+const NOMS_14 = { perroquet: 'Perroquet', coffre: 'Coffre', carte: 'Carte au trésor', pavillon: 'Pavillon noir' };
+// les 14 remportés : +10 (couleur), +20 (Pavillon noir)
+function details14(pli) {
+  return pli.filter((e) => e.c.t === 'n' && e.c.v === 14)
+    .map((e) => ({ t: `14 ${NOMS_14[e.c.s]}`, pts: e.c.s === 'pavillon' ? 20 : 10 }));
 }
 function alliesButin(pli, gagnant) {
   return pli.filter((e) => e.c.t === 'butin' && e.j !== gagnant).map((e) => e.j);
@@ -223,6 +230,7 @@ export function jouer(s, i, id, choix) {
     const g = s.players[r.gagnant];
     g.plis += 1;
     g.bonus += r.bonus;
+    g.details.push(...(r.details || []));
     r.allies.forEach((b) => {
       s.players[b].allies.push(r.gagnant);
       g.allies.push(b);
@@ -316,20 +324,34 @@ export function pointsManche(s) {
   const cartes = s.cartesManche;
   const reussi = s.players.map((p) => p.annonce === p.plis);
   return s.players.map((p, i) => {
+    const pl = (n, mot) => `${n} ${mot}${n > 1 ? 's' : ''}`;
+    const detail = [];
     // alliances du Butin : +20 chacun si les deux ont réussi leur annonce
-    const allies = reussi[i] ? p.allies.filter((b) => reussi[b]).length * 20 : 0;
+    const alliesOk = reussi[i] ? p.allies.filter((b) => reussi[b]) : [];
+    const allies = alliesOk.length * 20;
+    alliesOk.forEach((b) => detail.push({ t: `Alliance du Butin avec ${s.players[b].name}`, pts: 20 }));
     // pari du Gunner : gagné si l'annonce est réussie, perdu sinon
     const pari = p.pari ? (reussi[i] ? p.pari : -p.pari) : 0;
+    if (p.pari) detail.push({ t: `Pari du Gunner ${reussi[i] ? 'gagné' : 'perdu'}`, pts: pari });
     const extra = { pari, ajustee: p.annonceDepart !== null && p.annonceDepart !== undefined && p.annonceDepart !== p.annonce ? p.annonceDepart : null };
+    if (extra.ajustee !== null) detail.unshift({ t: `Annonce changée par le Cook (${extra.ajustee} → ${p.annonce})`, pts: 0 });
+    const bonusPlis = p.details || [];
     if (p.annonce === 0) {
       const base = p.plis === 0 ? 10 * cartes : -10 * cartes;
-      return { annonce: 0, plis: p.plis, bonus: (p.plis === 0 ? allies : 0) + pari, points: base + (p.plis === 0 ? allies : 0) + pari, reussi: reussi[i], ...extra };
+      detail.unshift({ t: p.plis === 0 ? `Annonce de 0 réussie (10 × ${pl(cartes, 'carte')})` : `Annonce de 0 ratée (−10 × ${pl(cartes, 'carte')})`, pts: base });
+      if (p.plis !== 0 && bonusPlis.length) detail.push({ t: `Bonus perdus : ${somme(bonusPlis)} pts (annonce ratée)`, pts: 0 });
+      return { annonce: 0, plis: p.plis, bonus: (p.plis === 0 ? allies : 0) + pari, points: base + (p.plis === 0 ? allies : 0) + pari, reussi: reussi[i], detail, ...extra };
     }
     if (reussi[i]) {
       const bonus = p.bonus + allies + pari;
-      return { annonce: p.annonce, plis: p.plis, bonus, points: 20 * p.annonce + bonus, reussi: true, ...extra };
+      detail.unshift(...bonusPlis);
+      detail.unshift({ t: `Annonce de ${p.annonce} réussie (20 × ${pl(p.annonce, 'pli')})`, pts: 20 * p.annonce });
+      return { annonce: p.annonce, plis: p.plis, bonus, points: 20 * p.annonce + bonus, reussi: true, detail, ...extra };
     }
-    return { annonce: p.annonce, plis: p.plis, bonus: pari, points: -10 * Math.abs(p.plis - p.annonce) + pari, reussi: false, ...extra };
+    const ecart = Math.abs(p.plis - p.annonce);
+    detail.unshift({ t: `Annonce ratée de ${pl(ecart, 'pli')} (−10 × ${ecart})`, pts: -10 * ecart });
+    if (bonusPlis.length) detail.push({ t: `Bonus perdus : ${somme(bonusPlis)} pts (annonce ratée)`, pts: 0 });
+    return { annonce: p.annonce, plis: p.plis, bonus: pari, points: -10 * ecart + pari, reussi: false, detail, ...extra };
   });
 }
 

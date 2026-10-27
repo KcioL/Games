@@ -613,12 +613,25 @@ function rendreBilan() {
   b.lignes.forEach((l, i) => {
     const tr = el('tr', l.reussi ? 'reussi' : 'rate');
     const nom = el('td', 'nom', etat.players[i].name);
-    if (l.pari) nom.appendChild(el('small', 'note-pouvoir', ` pari ${l.pari > 0 ? '+' : '−'}${Math.abs(l.pari)}`));
     const ann = el('td', '', String(l.annonce));
     if (l.ajustee !== null && l.ajustee !== undefined) ann.title = `annonce changée par le Cook (${l.ajustee} → ${l.annonce})`, ann.classList.add('ajustee');
     tr.append(nom, ann, el('td', '', String(l.plis)),
-      el('td', '', l.bonus ? `+${l.bonus}` : '–'), el('td', 'points', `${l.points > 0 ? '+' : ''}${l.points}`), el('td', 'total', String(etat.players[i].score)));
+      el('td', '', l.bonus ? `${l.bonus > 0 ? '+' : '−'}${Math.abs(l.bonus)}` : '–'), el('td', 'points', `${l.points > 0 ? '+' : ''}${l.points}`), el('td', 'total', String(etat.players[i].score)));
     t.appendChild(tr);
+    // le récapitulatif : d'où viennent les points
+    if (l.detail && l.detail.length) {
+      const ligne = el('tr', 'detail-points');
+      const td = el('td', '');
+      td.colSpan = 6;
+      l.detail.forEach((d) => {
+        const s = el('span', `morceau${d.pts > 0 ? ' plus' : d.pts < 0 ? ' moins' : ''}`);
+        if (d.pts) s.appendChild(el('b', '', `${d.pts > 0 ? '+' : '−'}${Math.abs(d.pts)}`));
+        s.append(` ${d.t}`);
+        td.appendChild(s);
+      });
+      ligne.appendChild(td);
+      t.appendChild(ligne);
+    }
   });
   $('btn-manche-suivante').textContent = b.manche >= R.NB_MANCHES ? 'Voir le classement' : `Manche ${b.manche + 1}`;
 }

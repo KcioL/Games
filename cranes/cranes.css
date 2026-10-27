@@ -468,3 +468,11 @@
 .loupe-pouvoir { color: #F4E3B5; max-width: 30em; text-align: center; padding: 0 16px; }
 .table-bilan .note-pouvoir { color: #9A5A1E; font-weight: 700; }
 .table-bilan td.ajustee { text-decoration: underline dotted; }
+
+/* récapitulatif des points sous chaque joueur */
+.table-bilan tr.detail-points td { border-top: none; padding: 0 8px 6px; text-align: left; }
+.detail-points .morceau { display: inline-block; margin: 0 10px 2px 0; font-size: .82em; color: #5B3A1A; white-space: nowrap; }
+.detail-points .morceau b { font-weight: 800; }
+.detail-points .morceau.plus b { color: #1D6B33; }
+.detail-points .morceau.moins b { color: #A3261A; }
+@media (max-width: 520px) { .detail-points .morceau { white-space: normal; } }
