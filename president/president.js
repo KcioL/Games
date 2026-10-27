@@ -158,6 +158,9 @@ function clicCarte(c) {
     rendreMain(); rendreBoutons();
     return;
   }
+  // rapidité : une des cartes qui peuvent finir le carré
+  const rapide = rapideHumain();
+  if (rapide && R.valeurDe(c) === R.valeurDe(rapide[0])) { jouerRapide(); return; }
   if (!monTour()) {
     toast(etat.status === 'echange' ? 'Attends la fin de l\'échange des cartes.' : 'Ce n\'est pas ton tour.');
     return;
@@ -201,12 +204,14 @@ function rapideHumain() {
   const cartes = moi().main.filter((c) => R.valeurDe(c) === m.v);
   return cartes.length >= m.nb ? cartes.slice(0, m.nb) : null;
 }
-$('btn-rapide').addEventListener('click', () => {
+// on touche une des cartes qui brillent : elles partent tout de suite (il faut être le plus rapide)
+function jouerRapide() {
   const ids = rapideHumain();
   if (!ids) return;
+  selection = [];
   let ok = false;
   agir((s) => { ok = R.jouer(s, maPlace, ids); return ok; }).then(() => { if (!ok) toast('Trop tard ! Quelqu\'un a joué avant toi.'); });
-});
+}
 $('btn-passer').addEventListener('click', () => {
   if (!monTour() || (selection.length && R.coupValide(etat, maPlace, selection))) return;
   selection = [];
@@ -405,6 +410,8 @@ function rendreMain() {
   const tour = monTour();
   const don = monDon();
   const b = tour ? R.aBattre(etat) : null;
+  const rapideMain = rapideHumain();
+  const rapideVal = rapideMain ? R.valeurDe(rapideMain[0]) : null;
   const jouables = new Set();
   if (tour) {
     const parValeur = {};
@@ -420,6 +427,8 @@ function rendreMain() {
   R.trierMain(p.main, etat.revolution).forEach((c) => {
     const e = carteEl(c);
     if (tour) e.classList.add(jouables.has(c) ? 'jouable' : 'interdite');
+    // rapidité : les cartes qui peuvent finir le carré brillent ; il suffit de toucher l'une d'elles
+    if (rapideVal && R.valeurDe(c) === rapideVal) { e.classList.add('rapide'); e.title = 'Touche vite pour finir le carré !'; }
     if (don) e.classList.add('jouable');
     if ((p.recu || []).includes(c) && etat.status === 'echange') e.classList.add('recue');
     if (selection.includes(c)) e.classList.add('choisie');
@@ -524,10 +533,6 @@ function rendreChoixCombo() {
 
 function rendreBoutons() {
   rendreChoixCombo();
-  const rapide = rapideHumain();
-  const br = $('btn-rapide');
-  br.hidden = !rapide;
-  if (rapide) br.textContent = `⚡ Finir le carré : ${decrireCoup(rapide)}`;
   const jouer = $('btn-jouer');
   const passer = $('btn-passer');
   const don = monDon();
