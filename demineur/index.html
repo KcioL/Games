@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Démineur</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💣</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="demineur.css">
+  <script type="module" src="demineur.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Démineur</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-local">Seul</button>
+        <button role="tab" aria-selected="false" data-volet="volet-ligne">Course en ligne</button>
+      </div>
+      <div class="volet" id="volet-local">
+        <p>Ouvre toutes les cases sans tomber sur une mine. Les chiffres disent combien de mines touchent la case. Ton premier coup ne tombe jamais sur une mine.</p>
+        <div hidden><select id="local-nb"><option value="1" selected>1</option></select><div id="local-noms"></div></div>
+        <div class="records" id="records"></div>
+        <button class="btn btn-principal" id="btn-local">Jouer</button>
+      </div>
+      <div class="volet" id="volet-ligne" hidden>
+        <p>Tout le monde reçoit la même grille, avec une case de départ déjà ouverte. Le premier qui a tout déminé gagne ; une mine et c'est fini pour toi ! Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <label>Nombre de joueurs
+          <select id="nb-joueurs">
+            <option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+          </select>
+        </label>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <fieldset class="reglages">
+        <legend>Difficulté <small>(pour celui qui crée la partie)</small></legend>
+        <div class="niveaux" role="radiogroup" aria-label="Difficulté">
+          <label class="niveau"><input type="radio" name="niveau" value="debutant" checked><span><strong>Débutant</strong><small>9 × 9 · 10 mines</small></span></label>
+          <label class="niveau"><input type="radio" name="niveau" value="intermediaire"><span><strong>Intermédiaire</strong><small>16 × 16 · 40 mines</small></span></label>
+          <label class="niveau"><input type="radio" name="niveau" value="expert"><span><strong>Expert</strong><small>30 × 16 · 99 mines</small></span></label>
+        </div>
+      </fieldset>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="pelouse" hidden>
+    <div class="tableau-dm" id="tableau">
+      <div class="adversaires-dm" id="adversaires" hidden></div>
+      <div class="barre-dm">
+        <span class="compteur-dm" id="mines" title="Mines restantes (moins les drapeaux)">💣 0</span>
+        <button class="visage-dm" id="btn-visage" type="button" aria-label="Nouvelle partie">🙂</button>
+        <span class="compteur-dm" id="chrono" title="Temps">⏱ 0</span>
+      </div>
+      <div class="cadre-dm" id="cadre">
+        <div class="grille-dm" id="grille" role="grid" aria-label="Grille du démineur"></div>
+      </div>
+      <div class="outils-dm">
+        <div class="mode-dm" role="radiogroup" aria-label="Que fait un appui sur une case ?">
+          <button type="button" class="actif" id="mode-creuser" aria-pressed="true">⛏️ Creuser</button>
+          <button type="button" id="mode-drapeau" aria-pressed="false">🚩 Drapeau</button>
+        </div>
+        <p class="aide-dm" id="aide">Appui long (ou clic droit) : poser un drapeau.</p>
+        <button class="btn-dm discret" id="btn-abandon" type="button" hidden>Abandonner</button>
+      </div>
+    </div>
+
+    <!-- fin de partie -->
+    <div class="voile-dm" id="fin" hidden>
+      <div class="panneau-dm">
+        <p class="fin-ico" id="fin-ico"></p>
+        <h2 id="fin-titre"></h2>
+        <p id="fin-texte"></p>
+        <ol class="podium-dm" id="fin-classement"></ol>
+        <button class="btn-dm principal" id="btn-rejouer" type="button">Rejouer</button>
+        <button class="btn-dm discret" id="btn-voir" type="button">Voir la grille</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Démineur</h2>
+    <p>Des mines sont cachées sous l'herbe. Ouvre toutes les cases qui n'en contiennent pas.</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Touche une case pour la creuser. Un chiffre indique combien de mines touchent cette case (y compris en diagonale). Une case vide ouvre toute seule ses voisines.</li>
+      <li><strong>Appui long</strong> (ou clic droit) : poser ou enlever un drapeau là où tu penses qu'il y a une mine. Tu peux aussi passer en mode 🚩 Drapeau.</li>
+      <li>Touche un chiffre déjà ouvert entouré d'autant de drapeaux : toutes ses autres voisines s'ouvrent d'un coup.</li>
+      <li>Seul, ton premier coup ne tombe jamais sur une mine. Tes meilleurs temps sont gardés sur ce téléphone.</li>
+    </ul>
+    <h3>Course en ligne</h3>
+    <ul>
+      <li>Tout le monde a la même grille, avec une case de départ déjà ouverte. Ton chrono part quand la grille s'affiche.</li>
+      <li>Une mine et ta course s'arrête. Classement : ceux qui ont tout déminé, du plus rapide au plus lent, puis les autres selon le nombre de cases ouvertes.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

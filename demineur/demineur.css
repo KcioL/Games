@@ -1,0 +1,135 @@
+/* ==========================================================================
+   Démineur : un jardin (herbe en damier), de la terre là où l'on creuse
+   ========================================================================== */
+.reglages { border: 1px solid var(--nuit-3); border-radius: 12px; padding: 8px 12px 10px; margin-top: 4px; display: grid; gap: 8px; }
+.reglages legend { padding: 0 6px; font-weight: 700; font-size: .9rem; }
+.reglages legend small { font-weight: 400; color: var(--brume); }
+.niveaux { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.carte-salon label.niveau { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--nuit); border: 2px solid var(--nuit-3); cursor: pointer; font-weight: 400; }
+.carte-salon label.niveau input { width: auto; accent-color: var(--or); flex: none; }
+.niveau span { display: grid; gap: 1px; }
+.niveau strong { font-weight: 700; }
+.niveau small { color: var(--brume); font-size: .8rem; }
+.niveau:has(input:checked) { border-color: var(--or); background: #1E2A5C; }
+.records { display: grid; gap: 2px; color: var(--brume); font-size: .9rem; }
+.records:empty { display: none; }
+.records-titre { color: var(--or-clair); font-weight: 700; }
+
+#jeu.pelouse:not([hidden]) {
+  display: block;
+  min-height: calc(100dvh - var(--h-barre, 57px));
+  padding: 10px 8px 20px;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(140, 220, 120, .18), transparent 70%),
+    linear-gradient(180deg, #1E3A2A, #12251B);
+}
+.tableau-dm { display: grid; gap: 10px; justify-items: center; max-width: 1200px; margin: 0 auto; }
+
+/* barre du haut : mines, visage, chrono */
+.barre-dm {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  width: min(100%, 420px);
+  padding: 6px 10px;
+  border-radius: 16px;
+  background: #4A7C2E;
+  box-shadow: 0 4px 0 #35591F, 0 10px 20px rgba(0, 0, 0, .35);
+}
+.compteur-dm { min-width: 4.6em; padding: 6px 10px; border-radius: 10px; background: rgba(0, 0, 0, .25); color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+.visage-dm {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: none;
+  background: radial-gradient(circle at 35% 30%, #FFF6C9, #FFD84D 60%, #E8B21C);
+  font-size: 1.7rem; line-height: 1;
+  box-shadow: 0 4px 0 #B88912, 0 6px 12px rgba(0, 0, 0, .3);
+  transition: transform .1s;
+}
+.visage-dm:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 #B88912; }
+.visage-dm:disabled { cursor: default; }
+
+/* la grille */
+.cadre-dm {
+  padding: 8px;
+  border-radius: 14px;
+  background: #3E6B26;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, .45), inset 0 0 0 3px #2F521C;
+  max-width: 100%;
+  overflow: auto;
+}
+.grille-dm { display: grid; grid-auto-rows: var(--c); --c: 32px; user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+.case-dm {
+  width: var(--c); height: var(--c);
+  padding: 0; border: none; border-radius: 0;
+  background: #AAD751;
+  font: 700 calc(var(--c) * .58)/1 var(--police);
+  display: grid; place-items: center;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  transition: filter .1s;
+}
+.case-dm.impair { background: #A2D149; }
+.case-dm:not(.ouverte):not(:disabled):hover { filter: brightness(1.12); }
+.case-dm.ouverte { background: #E5C29F; cursor: default; }
+.case-dm.ouverte.impair { background: #D7B899; }
+.case-dm.ouverte.n1, .case-dm.ouverte.n2, .case-dm.ouverte.n3, .case-dm.ouverte.n4,
+.case-dm.ouverte.n5, .case-dm.ouverte.n6, .case-dm.ouverte.n7, .case-dm.ouverte.n8 { cursor: pointer; }
+.case-dm.apparait { animation: creuse-dm .28s ease-out backwards; }
+@keyframes creuse-dm { from { background: #AAD751; transform: scale(.6); } }
+.n1 { color: #1976D2; } .n2 { color: #388E3C; } .n3 { color: #D32F2F; } .n4 { color: #7B1FA2; }
+.n5 { color: #FF8F00; } .n6 { color: #0097A7; } .n7 { color: #424242; } .n8 { color: #9E9E9E; }
+.case-dm.drapeau { font-size: calc(var(--c) * .6); }
+.case-dm.drapeau:not(:disabled) { animation: drapeau-dm .2s ease-out; }
+@keyframes drapeau-dm { from { transform: scale(1.4); } }
+.case-dm.mine { font-size: calc(var(--c) * .6); animation: mine-dm .3s ease-out backwards; }
+@keyframes mine-dm { from { transform: scale(0); } }
+.case-dm.boum { background: #E53935 !important; font-size: calc(var(--c) * .65); }
+.case-dm.faux { background: #F4B7B2; }
+.case-dm:disabled { cursor: default; color: inherit; opacity: 1; }
+
+/* outils */
+.outils-dm { display: grid; gap: 6px; justify-items: center; }
+.mode-dm { display: flex; padding: 4px; border-radius: 999px; background: rgba(0, 0, 0, .3); }
+.mode-dm button { border: none; background: none; color: #CFE8C4; padding: 9px 18px; border-radius: 999px; font-weight: 700; }
+.mode-dm button.actif { background: #AAD751; color: #24400F; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.aide-dm { color: #A9C9A0; font-size: .85rem; text-align: center; }
+.btn-dm { border: 1px solid var(--nuit-3); background: var(--nuit-2); color: var(--papier); padding: 10px 18px; border-radius: 12px; font-weight: 700; }
+.btn-dm.principal { background: var(--or); color: var(--encre); border-color: #B8861E; }
+.btn-dm.discret { background: none; border: none; color: #A9C9A0; font-weight: 500; text-decoration: underline; }
+
+/* course : les autres joueurs */
+.adversaires-dm { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.adversaires-dm[hidden] { display: none; }
+.adv-dm {
+  position: relative; overflow: hidden;
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 12px 7px; border-radius: 999px;
+  background: rgba(0, 0, 0, .3); border: 1px solid rgba(170, 215, 81, .35);
+  color: #E8F5E0; font-size: .85rem;
+}
+.adv-dm.moi { border-color: var(--or); }
+.adv-dm.gagne { background: #2E6B3A; }
+.adv-dm.perdu { opacity: .6; }
+.adv-dm span { color: #CFE8C4; }
+.trophees-dm { color: var(--or-clair) !important; font-weight: 700; }
+.progres-dm { position: absolute; left: 0; bottom: 0; height: 3px; background: #AAD751; transition: width .3s; }
+
+/* fin */
+.voile-dm { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; background: rgba(6, 16, 10, .62); }
+.voile-dm[hidden] { display: none; }
+.panneau-dm {
+  width: min(100%, 400px);
+  padding: 20px;
+  border-radius: 18px;
+  background: #1F3A28;
+  border: 2px solid #AAD751;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, .6);
+  display: grid; gap: 10px; justify-items: center; text-align: center;
+  animation: panneau-dm .3s cubic-bezier(.3, 1.4, .5, 1);
+}
+@keyframes panneau-dm { from { transform: scale(.85); opacity: 0; } }
+.fin-ico { font-size: 3rem; line-height: 1; }
+.panneau-dm h2 { color: #E8F5E0; font-size: 1.5rem; }
+.panneau-dm p { color: #CFE8C4; }
+.podium-dm { list-style: none; width: 100%; display: grid; gap: 6px; }
+.podium-dm[hidden] { display: none; }
+.podium-dm li { display: grid; grid-template-columns: 2em 1fr auto; gap: 8px; align-items: center; padding: 6px 12px; border-radius: 10px; background: rgba(0, 0, 0, .25); text-align: left; color: #E8F5E0; }
+.podium-dm li.gagnant { border: 1px solid var(--or); }

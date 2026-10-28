@@ -2,7 +2,7 @@
 // Lancé quand quelqu'un joue en ligne, au plus une fois toutes les 6 heures par appareil.
 // Les règles de la base n'autorisent à lister QUE les salons de plus de 24 h (voir database.rules.json).
 
-export const JEUX = ['uno', 'bataille', 'skyjo', 'blackjack', 'poker', 'chevaux', 'puissance4', 'tokyo', 'kassen', 'undercover', 'cranes', 'president', 'loupgarou', 'cluedo', 'mastermind', 'petitbac'];
+export const JEUX = ['uno', 'bataille', 'skyjo', 'blackjack', 'poker', 'chevaux', 'puissance4', 'tokyo', 'kassen', 'undercover', 'cranes', 'president', 'loupgarou', 'cluedo', 'mastermind', 'petitbac', 'demineur'];
 const DUREE_VIE = 24 * 60 * 60 * 1000;
 const MARGE = 10 * 60 * 1000;            // tolère une horloge de téléphone un peu en avance
 const INTERVALLE = 6 * 60 * 60 * 1000;
