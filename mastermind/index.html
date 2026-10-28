@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mastermind</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🟣</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="mastermind.css">
+  <script type="module" src="mastermind.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Mastermind</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-local">Contre l'ordinateur</button>
+        <button role="tab" aria-selected="false" data-volet="volet-ligne">En ligne</button>
+      </div>
+      <div class="volet" id="volet-local">
+        <p>Trouve le code secret de couleurs : à chaque essai, des fiches te disent combien de couleurs sont bien placées (noir) ou présentes mais mal placées (blanc).</p>
+        <label>Mode
+          <select id="local-mode">
+            <option value="solo" selected>Seul : trouve le code de l'ordinateur</option>
+            <option value="duel">Duel contre le bot : vous cherchez le code l'un de l'autre</option>
+            <option value="course">Course contre des bots : même code pour tous</option>
+          </select>
+        </label>
+        <label id="ligne-local-bots" hidden>Bots
+          <select id="local-bots">
+            <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option>
+          </select>
+        </label>
+        <!-- un seul joueur humain sur ce téléphone -->
+        <div hidden><select id="local-nb"><option value="1" selected>1</option></select></div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer</button>
+      </div>
+      <div class="volet" id="volet-ligne" hidden>
+        <p>Course : tout le monde cherche le même code, le moins d'essais gagne. Duel : à deux, chacun cache un code à l'autre. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <label>Mode
+          <select id="ligne-mode">
+            <option value="course" selected>Course : même code pour tous (2 à 8)</option>
+            <option value="duel">Duel : chacun cache un code à l'autre (à 2)</option>
+          </select>
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="1">1</option><option value="2" selected>2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Bots en plus
+            <select id="ligne-bots">
+              <option value="0" selected>Aucun</option><option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+
+      <fieldset class="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <div class="ligne-choix">
+          <label>Couleurs
+            <select id="opt-couleurs"><option value="6" selected>6</option><option value="8">8</option></select>
+          </label>
+          <label>Pions par code
+            <select id="opt-longueur"><option value="4" selected>4</option><option value="5">5</option></select>
+          </label>
+          <label>Essais
+            <select id="opt-essais"><option value="8">8</option><option value="10" selected>10</option><option value="12">12</option></select>
+          </label>
+          <label>Bot
+            <select id="opt-niveau"><option value="facile">Facile</option><option value="fort" selected>Fort</option></select>
+          </label>
+        </div>
+        <label class="option">
+          <input type="checkbox" id="opt-doublons" checked>
+          <span><strong>Couleurs répétées</strong><small>Une même couleur peut apparaître plusieurs fois dans le code.</small></span>
+        </label>
+      </fieldset>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="salle-mm" hidden>
+    <div class="disposition-mm">
+      <div class="colonne-mm">
+        <div class="adversaires-mm" id="adversaires"></div>
+        <p class="statut-mm" id="statut" aria-live="polite"></p>
+        <!-- le plateau -->
+        <section class="plateau-mm" id="plateau">
+          <div class="cache-mm" id="cache"></div>
+          <div class="rangees-mm" id="rangees"></div>
+        </section>
+        <!-- les couleurs -->
+        <div class="commandes-mm" id="commandes">
+          <div class="palette-mm" id="palette"></div>
+          <div class="boutons-mm">
+            <button class="btn-mm" id="btn-effacer" type="button">⌫ Effacer</button>
+            <button class="btn-mm principal" id="btn-valider" type="button" disabled>Valider</button>
+          </div>
+          <button class="btn-mm discret" id="btn-abandon" type="button">Abandonner</button>
+        </div>
+      </div>
+      <!-- duel : ce que l'autre essaie sur mon code -->
+      <aside class="cote-mm" id="cote" hidden>
+        <h2 id="cote-titre"></h2>
+        <div class="mon-code-mm" id="mon-code"></div>
+        <div class="rangees-mm petites" id="rangees-adverses"></div>
+      </aside>
+    </div>
+
+    <!-- fin de partie -->
+    <div class="voile-mm" id="fin" hidden>
+      <div class="panneau-mm">
+        <h2 id="fin-titre"></h2>
+        <p id="fin-texte"></p>
+        <div class="code-revele" id="fin-code"></div>
+        <ol class="podium-mm" id="fin-classement"></ol>
+        <button class="btn-mm principal" id="btn-revanche" type="button">Revanche</button>
+        <button class="btn-mm discret" id="btn-voir" type="button">Voir le plateau</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Mastermind</h2>
+    <p>Un code secret de 4 (ou 5) couleurs est caché. Trouve-le en un minimum d'essais.</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Touche les couleurs pour remplir ta rangée (touche un pion de la rangée pour l'enlever), puis valide.</li>
+      <li>Pour chaque essai, des fiches s'affichent à côté : une <strong>noire</strong> pour chaque couleur bien placée, une <strong>blanche</strong> pour chaque couleur présente dans le code mais mal placée. Les fiches ne disent pas lesquelles !</li>
+      <li>Si les couleurs répétées sont permises, une couleur peut apparaître plusieurs fois dans le code.</li>
+    </ul>
+    <h3>Les modes</h3>
+    <ul>
+      <li><strong>Seul</strong> : trouve le code de l'ordinateur.</li>
+      <li><strong>Course</strong> : tout le monde cherche le même code ; celui qui le trouve en moins d'essais gagne (égalité possible). Le temps ne sert qu'à départager l'ordre du classement.</li>
+      <li><strong>Duel</strong> : chacun cache un code à l'autre ; celui qui trouve le code adverse en moins d'essais gagne. Tu vois en direct les essais de l'autre sur ton code.</li>
+      <li>Les bots jouent leur essai suivant quand tu as joué le tien.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+# ==========================================================================
+# Petit bac : les thèmes et leurs catégories
+# ==========================================================================
+# Pour ajouter une catégorie : une nouvelle ligne sous son thème (ex. : Plat cuisiné)
+# Pour ajouter un thème : une ligne   == identifiant | Nom affiché | petite description
+#   puis ses catégories en dessous. L'identifiant : minuscules, sans accents ni espaces.
+# Les lignes qui commencent par # sont des commentaires, les lignes vides sont ignorées.
+# Le menu du Petit bac affiche automatiquement les thèmes de ce fichier.
+# À chaque partie, le jeu tire au hasard le nombre de catégories choisi par celui qui crée la partie.
+
+== classique | Classique | Prénom, pays, animal, métier…
+Prénom
+Pays
+Ville
+Animal
+Fruit ou légume
+Métier
+Objet
+Marque
+Couleur
+Sport
+Célébrité
+Film
+Plat cuisiné
+Instrument de musique
+Fleur ou plante
+Vêtement
+Moyen de transport
+Partie du corps
+Boisson
+Dessert
+Personnage de fiction
+Mot anglais
+Insecte
+Outil
+Chanteur ou chanteuse
+Série télé
+Matière scolaire
+Jeu ou jouet
+Fromage
+Capitale
+
+== anime | Anime · Manga · Jeux vidéo | Personnages, consoles, Pokémon…
+Personnage d'anime ou de manga
+Titre d'anime ou de manga
+Jeu vidéo
+Personnage de jeu vidéo
+Pokémon
+Console ou marque de jeux vidéo
+Méchant célèbre
+Super-héros ou super-héroïne
+Attaque ou pouvoir
+Objet magique ou légendaire
+Créature ou monstre
+Lieu imaginaire
+Personnage Disney ou Pixar
+Studio, éditeur ou mangaka
+Arme de jeu vidéo ou d'anime
+Youtubeur ou streameur
+Film d'animation
+Personnage de Dragon Ball, One Piece ou Naruto
+Boss de jeu vidéo
+Mot japonais
+
+== delire | Délire | Pour rire entre amis
+Excuse pour être en retard
+Chose qu'on trouve dans un frigo
+Chose qui pue
+Chose qu'on ne dit pas à sa belle-mère
+Cadeau nul
+Chose qu'on cache sous son lit
+Prénom pour un chat
+Raison de rompre
+Chose qui fait peur
+Mot qui fait rire
+Chose qu'on emporte sur une île déserte
+Métier qui n'existe pas encore
+Chose ronde
+Chose qu'on fait en cachette
+Nom de super-héros raté
+Chose qu'on trouve dans un sac à main
+Bruit bizarre
+Chose interdite au travail

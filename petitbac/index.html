@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Petit bac</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✏️</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="petitbac.css">
+  <script type="module" src="petitbac.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Petit bac</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil : en ligne seulement (chacun écrit sur son téléphone) -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-ligne">En ligne · chacun son téléphone</button>
+      </div>
+      <div class="volet" id="volet-ligne">
+        <p>Une lettre est tirée au sort : trouve un mot qui commence par cette lettre dans chaque catégorie. Le premier qui a tout rempli crie STOP ! Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <label>Nombre de joueurs
+          <select id="nb-joueurs">
+            <option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option>
+            <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+          </select>
+        </label>
+
+        <fieldset class="reglages" id="reglages">
+          <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+          <!-- les thèmes viennent de categories.txt -->
+          <div class="themes" id="themes" role="radiogroup" aria-label="Thème"></div>
+          <div class="ligne-choix">
+            <label>Catégories
+              <select id="opt-nb">
+                <option value="6">6</option><option value="8" selected>8</option><option value="10">10</option><option value="12">12</option><option value="0">Toutes</option>
+              </select>
+            </label>
+            <label>Manches
+              <select id="opt-manches">
+                <option value="3">3</option><option value="5" selected>5</option><option value="8">8</option><option value="10">10</option><option value="0">Sans fin</option>
+              </select>
+            </label>
+            <label>Après le STOP
+              <select id="opt-compte">
+                <option value="5">5 s</option><option value="10" selected>10 s</option><option value="15">15 s</option><option value="20">20 s</option>
+              </select>
+            </label>
+            <label>Temps maximum
+              <select id="opt-duree">
+                <option value="60">1 min</option><option value="120">2 min</option><option value="180" selected>3 min</option><option value="300">5 min</option><option value="0">Sans limite</option>
+              </select>
+            </label>
+          </div>
+          <label class="option">
+            <input type="checkbox" id="opt-changer">
+            <span><strong>Nouvelles catégories à chaque manche</strong><small>Sinon, les mêmes catégories pendant toute la partie.</small></span>
+          </label>
+          <label class="option">
+            <input type="checkbox" id="opt-difficiles">
+            <span><strong>Lettres difficiles</strong><small>Ajoute K, Q, W, X, Y et Z au tirage.</small></span>
+          </label>
+        </fieldset>
+
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <!-- (pas de mode « un seul téléphone » : chacun écrit en même temps) -->
+      <div hidden><select id="local-nb"><option value="1">1</option></select><div id="local-noms"></div><button id="btn-local" type="button"></button></div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="cahier" hidden>
+    <div class="feuille">
+      <div class="entete-pb">
+        <div class="lettre-pb" id="lettre" aria-live="polite"></div>
+        <div class="entete-txt">
+          <p class="manche-pb" id="manche"></p>
+          <p class="info-pb" id="info"></p>
+          <div class="joueurs-pb" id="joueurs"></div>
+        </div>
+      </div>
+
+      <!-- écrire ses réponses -->
+      <form class="grille-pb" id="grille" autocomplete="off" hidden></form>
+      <!-- vérifier les réponses -->
+      <section class="vote-pb" id="vote" hidden></section>
+      <!-- résultats -->
+      <section class="bilan-pb" id="bilan" hidden></section>
+    </div>
+
+    <div class="pied-pb" id="pied">
+      <button class="btn-stop" id="btn-stop" type="button" disabled>STOP !</button>
+    </div>
+
+    <!-- compte à rebours après le STOP -->
+    <div class="rebours" id="rebours" hidden>
+      <p class="rebours-qui" id="rebours-qui"></p>
+      <p class="rebours-n" id="rebours-n"></p>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Petit bac</h2>
+    <p>À chaque manche, une lettre est tirée au sort. Trouve, pour chaque catégorie, un mot qui commence par cette lettre (un article au début est toléré : « Le Havre » vaut pour H).</p>
+    <h3>STOP !</h3>
+    <ul>
+      <li>Le premier qui a rempli toutes les catégories peut appuyer sur STOP.</li>
+      <li>Les autres ont encore quelques secondes pour finir (10 s par défaut).</li>
+      <li>Si personne ne dit STOP, la manche s'arrête toute seule au bout du temps maximum.</li>
+    </ul>
+    <h3>Vérification</h3>
+    <ul>
+      <li>Tout le monde voit les réponses de tout le monde. Touche le 👎 d'une réponse pour la contester.</li>
+      <li>Une réponse contestée par la majorité des autres joueurs est refusée. Une réponse qui ne commence pas par la bonne lettre est refusée d'office.</li>
+      <li>Quand tout le monde a appuyé sur « J'ai vérifié », on compte les points (celui qui a créé le salon peut aussi compter tout de suite).</li>
+    </ul>
+    <h3>Points</h3>
+    <ul>
+      <li>Réponse valable : 10 points.</li>
+      <li>Même réponse qu'un autre joueur : 5 points chacun (les accents et majuscules ne comptent pas).</li>
+      <li>Réponse vide, fausse ou refusée : 0 point.</li>
+    </ul>
+    <p>Les thèmes et leurs catégories sont dans le fichier <code>petitbac/categories.txt</code> : on peut en ajouter facilement.</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>
