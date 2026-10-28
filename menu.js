@@ -18,3 +18,12 @@ if ('serviceWorker' in navigator) {
 } else {
   indic.textContent = "Le mode hors connexion n'est pas disponible sur ce navigateur.";
 }
+
+// Comptage des visites pour le tableau de bord (voir suivi.js)
+(() => {
+  const s = document.createElement('script');
+  s.src = 'suivi.js';
+  s.dataset.site = 'jeux';
+  s.dataset.base = 'https://games-12f19-default-rtdb.europe-west1.firebasedatabase.app';
+  document.head.appendChild(s);
+})();
