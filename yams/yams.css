@@ -1,0 +1,195 @@
+/* ==========================================================================
+   Yam's : une piste de dés en feutre vert et une feuille de marque en papier
+   ========================================================================== */
+.ligne-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.reglages { border: 1px solid var(--nuit-3); border-radius: 12px; padding: 8px 12px 10px; margin-top: 4px; display: grid; gap: 8px; }
+.reglages legend { padding: 0 6px; font-weight: 700; font-size: .9rem; }
+.reglages legend small { font-weight: 400; color: var(--brume); }
+.reglages .option { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; }
+.reglages .option input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--or); }
+.reglages .option span { display: grid; gap: 2px; }
+.reglages .option small { color: var(--brume); font-size: .8rem; line-height: 1.3; }
+
+:root {
+  --feutre: #1F6B4A;
+  --feutre-2: #164F37;
+  --bois: #6B4226;
+  --papier-ym: #FFFDF5;
+  --ligne-ym: #C9D8F2;
+  --encre-ym: #1D3FA0;
+  --de: clamp(46px, 15vw, 64px);
+}
+
+#jeu.salle-ym:not([hidden]) {
+  display: block;
+  min-height: calc(100dvh - var(--h-barre, 57px));
+  padding: 10px 8px 28px;
+}
+.disposition-ym {
+  display: grid; gap: 14px; justify-items: center;
+  max-width: 1080px; margin: 0 auto;
+}
+@media (min-width: 900px) {
+  .disposition-ym { grid-template-columns: minmax(360px, 420px) minmax(0, 1fr); align-items: start; }
+  .piste-ym { position: sticky; top: 12px; }
+}
+
+/* ---------- La piste ---------- */
+.piste-ym {
+  width: min(100%, 460px);
+  display: grid; gap: 10px; justify-items: center;
+  padding: 10px 10px 12px;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse 80% 70% at 50% 40%, rgba(255, 255, 255, .08), transparent 70%),
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, .025) 0 2px, transparent 2px 4px),
+    linear-gradient(180deg, var(--feutre), var(--feutre-2));
+  border: 7px solid var(--bois);
+  box-shadow: inset 0 3px 14px rgba(0, 0, 0, .45), 0 10px 26px rgba(0, 0, 0, .35), 0 0 0 2px #3B2414;
+  transition: box-shadow .3s;
+}
+.piste-ym.a-moi { box-shadow: inset 0 3px 14px rgba(0, 0, 0, .45), 0 10px 26px rgba(0, 0, 0, .35), 0 0 0 2px #3B2414, 0 0 0 5px rgba(242, 182, 50, .55); }
+.statut-ym { margin: 0; font-weight: 700; text-align: center; font-size: 1rem; text-shadow: 0 1px 2px rgba(0, 0, 0, .5); }
+.aide-ym { margin: 0; min-height: 1.3em; font-size: .85rem; color: #CFE8DA; text-align: center; line-height: 1.3; }
+
+.des-ym { display: flex; gap: clamp(6px, 2.4vw, 12px); justify-content: center; padding: 8px 0 16px; }
+.de-ym {
+  position: relative;
+  width: var(--de); height: var(--de);
+  padding: 0; border: 0; border-radius: 22%;
+  background: transparent;
+  cursor: pointer;
+  transition: transform .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.de-ym:disabled { cursor: default; }
+.face-ym {
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  place-items: center;
+  width: 100%; height: 100%;
+  padding: 14%;
+  box-sizing: border-box;
+  border-radius: 22%;
+  background: radial-gradient(circle at 30% 25%, #FFFFFF, #F1ECE1 70%, #E2DACB);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12), inset 0 2px 0 rgba(255, 255, 255, .9), 0 4px 8px rgba(0, 0, 0, .4);
+}
+.face-ym i {
+  width: 72%; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #4A4A55, #15151C);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .6);
+}
+.face-ym[data-v="1"] i { width: 86%; background: radial-gradient(circle at 35% 35%, #FF6B6B, #B3161F); }
+.de-ym.garde { transform: translateY(-8px); }
+.de-ym.garde .face-ym { box-shadow: 0 0 0 3px var(--or), inset 0 -3px 0 rgba(0, 0, 0, .12), 0 8px 12px rgba(0, 0, 0, .45); }
+.de-ym.garde::after {
+  content: "gardé";
+  position: absolute; left: 50%; bottom: -21px; transform: translateX(-50%);
+  font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--or-clair);
+}
+.de-ym.attente .face-ym { opacity: .45; filter: saturate(.4); }
+.de-ym:not(:disabled):not(.garde):hover { transform: translateY(-3px); }
+.de-ym.roule .face-ym { animation: roule-ym .55s cubic-bezier(.3, .7, .4, 1) both; animation-delay: inherit; }
+@keyframes roule-ym {
+  0% { transform: translateY(-30px) rotate(-200deg) scale(.7); opacity: .2; }
+  60% { transform: translateY(4px) rotate(15deg) scale(1.05); opacity: 1; }
+  100% { transform: none; }
+}
+
+.actions-ym { display: grid; gap: 8px; width: 100%; justify-items: center; }
+.btn-ym {
+  font: inherit; font-weight: 700; font-size: 1rem;
+  border: 0; border-radius: 999px;
+  padding: 12px 22px;
+  min-width: min(100%, 280px);
+  background: var(--nuit-3); color: var(--papier);
+  cursor: pointer;
+}
+.btn-ym.principal { background: var(--or); color: var(--encre); box-shadow: 0 4px 0 #B07F14; }
+.btn-ym.principal:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 #B07F14; }
+.btn-ym.discret { background: transparent; color: var(--brume); }
+.btn-ym:disabled { opacity: .5; cursor: default; box-shadow: none; }
+
+/* ---------- La feuille ---------- */
+.feuille-ym { width: min(100%, 640px); }
+.table-ym {
+  overflow-x: auto;
+  border-radius: 14px;
+  background: var(--papier-ym);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .35);
+}
+#feuille {
+  width: 100%;
+  border-collapse: collapse;
+  color: #26304F;
+  font-size: .9rem;
+}
+#feuille th, #feuille td { border-bottom: 1px solid var(--ligne-ym); padding: 0 4px; height: 31px; text-align: center; }
+#feuille thead th { height: auto; padding: 8px 4px 6px; border-bottom: 2px solid #E05A4E; vertical-align: bottom; }
+#feuille .coin-ym { width: 1%; }
+.joueur-ym { font-weight: 700; font-size: .82rem; line-height: 1.15; min-width: 58px; }
+.joueur-ym .nom-ym { display: block; max-width: 92px; margin: 0 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.joueur-ym.moi .nom-ym { color: var(--encre-ym); }
+.trophees-ym { display: block; font-size: .72rem; font-weight: 600; color: #9A6B00; }
+#feuille th.case-ym { text-align: left; padding-left: 10px; font-weight: 600; white-space: nowrap; border-right: 2px solid #F0B9B3; }
+.libelle-ym { display: inline-flex; align-items: center; gap: 7px; }
+.face-ym.mini { width: 18px; height: 18px; padding: 2px; border-radius: 4px; box-shadow: 0 0 0 1px #C9C2B2; background: #fff; }
+.face-ym.mini i { width: 80%; }
+#feuille td.actif { background: rgba(242, 182, 50, .16); }
+#feuille th.joueur-ym.actif { background: rgba(242, 182, 50, .3); }
+.ecrit-ym { font-family: "Caveat", "Segoe Print", cursive; font-size: 1.45rem; font-weight: 700; color: var(--encre-ym); line-height: 1; }
+.ecrit-ym.raye { color: #9AA3BC; }
+.ecrit-ym.ok { color: #1E8A4C; }
+td.nouveau .ecrit-ym { animation: ecrit-ym .9s ease both; }
+@keyframes ecrit-ym { 0% { transform: scale(1.8); color: #E05A4E; } 100% { transform: none; } }
+.manque-ym { font-size: .72rem; color: #8A93AE; white-space: nowrap; }
+.possible-ym {
+  font: inherit; font-weight: 700;
+  min-width: 44px; height: 28px; padding: 0 8px;
+  border: 2px dashed #8FA6DA; border-radius: 8px;
+  background: #EEF3FF; color: #4964B8;
+  cursor: pointer;
+}
+.possible-ym:hover { background: #DCE6FF; border-style: solid; }
+.possible-ym.zero { color: #A0A7BD; border-color: #D3D8E6; background: transparent; font-weight: 500; }
+.possible-ym.arme { color: #fff; background: #E05A4E; border: 2px solid #E05A4E; font-size: .78rem; }
+.possible-ym.extra { border-color: #D99A00; background: #FFF4D6; color: #9A6B00; }
+tr.sous-total th, tr.sous-total td { background: #F5F1E4; font-size: .82rem; color: #5B6480; }
+tr.sous-total td.actif { background: #F3E8C6; }
+tr.bonus th, tr.bonus td { border-bottom: 2px solid #E05A4E; }
+tr.bonus th { font-size: .82rem; color: #5B6480; }
+tr.total th, tr.total td { height: 44px; font-weight: 800; font-size: 1.15rem; background: #F5F1E4; border-bottom: 0; }
+tr.total td.actif { background: #F3E8C6; }
+
+/* ---------- Fin de partie ---------- */
+.voile-ym { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 30, .72); backdrop-filter: blur(3px); }
+.panneau-ym {
+  width: min(100%, 400px);
+  display: grid; gap: 12px; justify-items: center;
+  padding: 22px 18px;
+  border-radius: 20px;
+  background: var(--nuit-2); border: 1px solid var(--nuit-3);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .5);
+  text-align: center;
+  animation: arrive-ym .35s ease both;
+}
+@keyframes arrive-ym { from { transform: translateY(20px) scale(.96); opacity: 0; } }
+.panneau-ym h2 { margin: 0; font-size: 1.5rem; }
+.podium-ym { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 6px; }
+.podium-ym li { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: var(--nuit-3); }
+.podium-ym li.gagnant { background: rgba(242, 182, 50, .22); box-shadow: inset 0 0 0 1px var(--or); }
+.podium-ym .rang { width: 26px; text-align: center; }
+.podium-ym .nom { flex: 1; text-align: left; }
+.record-ym { margin: 0; color: var(--brume); font-size: .9rem; }
+.record-ym.nouveau { color: var(--or-clair); font-weight: 700; }
+
+@media (max-width: 380px) {
+  #feuille { font-size: .8rem; }
+  #feuille th.case-ym { padding-left: 6px; }
+  .libelle-ym { gap: 4px; }
+  .face-ym.mini { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .de-ym.roule .face-ym, td.nouveau .ecrit-ym, .panneau-ym { animation: none; }
+}

@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v127';
+const VERSION = 'jeux-vol-v128';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'suivi.js', 'manifest.webmanifest',
@@ -18,6 +18,7 @@ const FICHIERS = [
   'president/', 'president/index.html', 'president/president.js', 'president/president.css', 'president/regles.js',
   'cranes/', 'cranes/index.html', 'cranes/cranes.js', 'cranes/cranes.css', 'cranes/regles.js',
   'demineur/', 'demineur/index.html', 'demineur/demineur.js', 'demineur/demineur.css', 'demineur/regles.js',
+  'yams/', 'yams/index.html', 'yams/yams.js', 'yams/yams.css', 'yams/regles.js',
   'mastermind/', 'mastermind/index.html', 'mastermind/mastermind.js', 'mastermind/mastermind.css', 'mastermind/regles.js',
   'petitbac/', 'petitbac/index.html', 'petitbac/petitbac.js', 'petitbac/petitbac.css', 'petitbac/regles.js', 'petitbac/categories.txt',
   'cluedo/', 'cluedo/index.html', 'cluedo/cluedo.js', 'cluedo/cluedo.css', 'cluedo/regles.js', 'cluedo/donnees.js', 'cluedo/plateau.jpg',

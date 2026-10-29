@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yam's</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎲</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="yams.css">
+  <script type="module" src="yams.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Yam's</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-local">Sur ce téléphone</button>
+        <button role="tab" aria-selected="false" data-volet="volet-ligne">En ligne</button>
+      </div>
+      <div class="volet" id="volet-local">
+        <p>Seul pour battre ton record, contre des bots, ou à plusieurs en se passant le téléphone. Pas besoin d'internet.</p>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="local-nb">
+              <option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots
+            <select id="local-bots">
+              <option value="0">Aucun</option><option value="1" selected>1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+            </select>
+          </label>
+        </div>
+        <div class="local-noms" id="local-noms"></div>
+        <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
+      </div>
+      <div class="volet" id="volet-ligne" hidden>
+        <p>Chacun lance les dés sur son téléphone, à tour de rôle. Un joueur crée le salon, les autres entrent le code à 4 lettres. Des bots peuvent compléter la table.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="2" selected>2</option><option value="3">3</option><option value="4">4</option>
+              <option value="5">5</option><option value="6">6</option>
+            </select>
+          </label>
+          <label>Bots en plus
+            <select id="ligne-bots">
+              <option value="0" selected>Aucun</option><option value="1">1</option><option value="2">2</option>
+              <option value="3">3</option><option value="4">4</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+
+      <fieldset class="reglages">
+        <legend>Réglages de la partie <small>(pour celui qui la crée)</small></legend>
+        <label class="ligne-niveau">Niveau des bots
+          <select id="opt-niveau"><option value="facile">Facile</option><option value="fort" selected>Fort</option></select>
+        </label>
+        <label class="option">
+          <input type="checkbox" id="opt-bonus-yams" checked>
+          <span><strong>Yam's en plus : +100</strong><small>Une fois la case Yam's remplie avec 50 points, chaque nouveau Yam's rapporte 100 points de bonus (en plus de la case où on l'inscrit).</small></span>
+        </label>
+      </fieldset>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="salle-ym" hidden>
+    <div class="disposition-ym">
+      <!-- la piste de dés -->
+      <section class="piste-ym" aria-label="Les dés">
+        <p class="statut-ym" id="statut" aria-live="polite"></p>
+        <div class="des-ym" id="des"></div>
+        <p class="aide-ym" id="aide"></p>
+        <div class="actions-ym">
+          <button class="btn-ym principal" id="btn-lancer" type="button">Lancer</button>
+        </div>
+      </section>
+
+      <!-- la feuille de marque -->
+      <section class="feuille-ym" aria-label="Feuille de marque">
+        <div class="table-ym"><table id="feuille"></table></div>
+      </section>
+    </div>
+
+    <!-- fin de partie -->
+    <div class="voile-ym" id="fin" hidden>
+      <div class="panneau-ym">
+        <h2 id="fin-titre"></h2>
+        <ol class="podium-ym" id="fin-classement"></ol>
+        <p class="record-ym" id="fin-record" hidden></p>
+        <button class="btn-ym principal" id="btn-revanche" type="button">Revanche</button>
+        <button class="btn-ym discret" id="btn-voir" type="button">Voir la feuille</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Yam's</h2>
+    <p>Chacun son tour, on lance 5 dés pour remplir les 13 cases de sa feuille. Celui qui a le plus gros total à la fin gagne.</p>
+    <h3>À ton tour</h3>
+    <ul>
+      <li>Tu as jusqu'à <strong>3 lancers</strong>. Entre deux lancers, touche les dés que tu veux <strong>garder</strong> : seuls les autres sont relancés.</li>
+      <li>Ensuite (ou dès que tu veux), inscris ton résultat dans une case libre de ta feuille : les points possibles s'affichent en clair.</li>
+      <li>Si rien ne va, il faut quand même remplir une case : elle vaut alors 0 (on « barre » la case).</li>
+    </ul>
+    <h3>Le haut de la feuille</h3>
+    <ul>
+      <li>As, Deux… Six : le total des dés de cette valeur (trois 5 = 15 points).</li>
+      <li><strong>Bonus de 35 points</strong> si le total du haut atteint 63 (soit trois dés de chaque valeur).</li>
+    </ul>
+    <h3>Le bas de la feuille</h3>
+    <ul>
+      <li><strong>Brelan</strong> (3 dés identiques) et <strong>Carré</strong> (4 dés identiques) : le total des 5 dés.</li>
+      <li><strong>Full</strong> (un brelan et une paire) : 25 points.</li>
+      <li><strong>Petite suite</strong> (4 dés qui se suivent, comme 2-3-4-5) : 30 points. <strong>Grande suite</strong> (5 dés qui se suivent) : 40 points.</li>
+      <li><strong>Yam's</strong> (5 dés identiques) : 50 points.</li>
+      <li><strong>Chance</strong> : le total des 5 dés, sans condition.</li>
+      <li>Option « Yam's en plus » : chaque Yam's supplémentaire, une fois la case Yam's à 50, rapporte 100 points de bonus.</li>
+    </ul>
+    <p>Raccourcis au clavier : Espace pour lancer, 1 à 5 pour garder un dé.</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

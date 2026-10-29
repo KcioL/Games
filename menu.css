@@ -152,6 +152,7 @@ h1 {
 .cluedo .pastille { background: radial-gradient(circle at 35% 30%, #6B2230, #3A0F18 70%); box-shadow: inset 0 0 0 3px #C9A15C; font-size: 1.7rem; }
 .mastermind .pastille { background: radial-gradient(circle at 30% 30%, #E53935 0 13%, transparent 14%), radial-gradient(circle at 70% 30%, #1E88E5 0 13%, transparent 14%), radial-gradient(circle at 30% 70%, #43A047 0 13%, transparent 14%), radial-gradient(circle at 70% 70%, #FDD835 0 13%, transparent 14%), linear-gradient(160deg, #5A3820, #331D0E); color: transparent; }
 .petitbac .pastille { background: repeating-linear-gradient(180deg, #FFFDF5 0 9px, #C9D8F2 9px 10px); box-shadow: inset 6px 0 0 -3px #E05A4E; font-size: 1.6rem; }
+.yams .pastille { background: radial-gradient(ellipse at 50% 35%, #2A855C, #164F37 75%); box-shadow: inset 0 0 0 3px #6B4226; color: #FFFDF5; font-size: 2.3rem; line-height: 1; }
 .demineur .pastille { background: repeating-conic-gradient(#AAD751 0 25%, #A2D149 0 50%) 0 0 / 50% 50%; font-size: 1.6rem; }
 .loupgarou .pastille { background: radial-gradient(circle at 70% 30%, #FFFBE8 0 14%, transparent 15%), linear-gradient(180deg, #0F1840, #1B2350); font-size: 1.8rem; }
 .undercover .pastille {
