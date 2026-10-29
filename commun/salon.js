@@ -16,6 +16,11 @@ async function chargerFirebase() {
 
 export const $ = (id) => document.getElementById(id);
 
+// Compte une partie lancée pour le tableau de bord (voir suivi.js) ; mode : 'en-ligne' ou 'telephone'
+export function compterPartie(jeu, mode) {
+  try { if (window.suivi) window.suivi.action(`parties-${mode}`, jeu); } catch (e) { /* jamais bloquant */ }
+}
+
 export function el(tag, className, text) {
   const e = document.createElement(tag);
   if (className) e.className = className;
@@ -267,6 +272,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     ui.infoSalon.classList.toggle('local', local);
     montrer('attente');
     if (arreterEcoute) arreterEcoute();
+    let statutPrecedent = null;
     arreterEcoute = api.onValue(api.ref(api.db, `${jeu}/${code}`), (snap) => {
       const s = snap.val();
       if (!s) {
@@ -275,6 +281,9 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
         return;
       }
       s.players = s.players || [];
+      // Partie en ligne lancée : comptée une seule fois, par l'hôte, quand le salon quitte l'attente
+      if (!local && place === 0 && statutPrecedent === 'waiting' && s.status !== 'waiting') compterPartie(jeu, 'en-ligne');
+      statutPrecedent = s.status;
       if (s.status === 'waiting') {
         montrer('attente');
         afficherAttente(s);
@@ -302,6 +311,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     etat.createdAt = Date.now();
     etat.status = 'waiting';
     demarrer(etat);
+    compterPartie(jeu, 'telephone');
     localDb.set(localDb.ref(localDb.db, `${jeu}/${CODE_LOCAL}`), etat).then(() => {
       voileAuDebut = !!secret;
       entrer(CODE_LOCAL, 0);
