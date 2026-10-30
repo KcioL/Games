@@ -104,6 +104,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   let arreterEcoute = null;
   let api = null;          // base utilisée : Firebase ou base locale
   let local = false;
+  let departLocal = false; // une partie sur ce téléphone vient d'être créée
   let relais = null;
   let dernierEtat = null;
   let voileAuDebut = false;
@@ -290,7 +291,10 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     ui.infoSalon.classList.toggle('local', local);
     montrer('attente');
     if (arreterEcoute) arreterEcoute();
-    let precedent = null; // état d'avant (statut et numéro de partie), pour repérer une nouvelle partie
+    let precedent = null; // état d'avant (statut, numéro de partie, dernière action), pour repérer une nouvelle partie
+    let aCompter = false;  // nouvelle partie lancée, comptée seulement au premier coup joué
+    const depart = departLocal; // partie sur ce téléphone qui vient d'être créée (pas une reprise)
+    departLocal = false;
     arreterEcoute = api.onValue(api.ref(api.db, `${jeu}/${code}`), (snap) => {
       const s = snap.val();
       if (!s) {
@@ -300,10 +304,16 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
       }
       s.players = s.players || [];
       // Comptage des parties pour le tableau de bord (en ligne : par l'hôte seulement, pour ne compter qu'une fois)
-      if (precedent && (local || place === 0) && estNouvellePartie(jeu, precedent, s, local)) {
-        compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+      // Une grille ou une partie relancée sans y jouer (ex. le smiley du Démineur appuyé plusieurs fois) ne compte pas.
+      if (local || place === 0) {
+        const nouvelle = precedent ? estNouvellePartie(jeu, precedent, s, local) : (depart && s.status !== 'waiting');
+        if (nouvelle) aCompter = true;
+        else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting') {
+          aCompter = false;
+          compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+        }
       }
-      precedent = { status: s.status, partie: s.partie };
+      precedent = { status: s.status, partie: s.partie, majAt: s.majAt };
       if (s.status === 'waiting') {
         montrer('attente');
         afficherAttente(s);
@@ -331,7 +341,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     etat.createdAt = Date.now();
     etat.status = 'waiting';
     demarrer(etat);
-    compterPartie(jeu, 'telephone');
+    departLocal = true; // comptée au premier coup joué
     localDb.set(localDb.ref(localDb.db, `${jeu}/${CODE_LOCAL}`), etat).then(() => {
       voileAuDebut = !!secret;
       entrer(CODE_LOCAL, 0);
