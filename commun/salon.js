@@ -16,6 +16,24 @@ async function chargerFirebase() {
 
 export const $ = (id) => document.getElementById(id);
 
+// Statuts qui veulent dire « partie terminée ». Dans ces jeux, « fin » n'est que la fin d'une manche
+// ou d'une main (la manche suivante ne compte pas comme une nouvelle partie) : seul « termine » compte.
+const FINS_DE_PARTIE = { president: ['termine'], cranes: ['termine'], blackjack: ['termine'], poker: ['termine'] };
+const FINS_PAR_DEFAUT = ['fin', 'finished', 'termine'];
+
+// Une nouvelle partie commence quand :
+//  - en ligne, le salon quitte l'attente (la première partie ; sur ce téléphone elle est comptée au départ) ;
+//  - on rejoue après une partie terminée (« Rejouer », « Nouvelle partie », « Revanche »…) ;
+//  - le numéro de partie augmente (jeux qui le tiennent : Démineur, Yam's, Cluedo, Skull King…).
+export function estNouvellePartie(jeu, avant, apres, local) {
+  if (!avant || !apres) return false;
+  if (avant.status === 'waiting') return !local && apres.status !== 'waiting';
+  const fins = FINS_DE_PARTIE[jeu] || FINS_PAR_DEFAUT;
+  const rejouee = fins.includes(avant.status) && !fins.includes(apres.status) && apres.status !== 'waiting';
+  const numero = typeof avant.partie === 'number' && typeof apres.partie === 'number' && apres.partie > avant.partie;
+  return rejouee || numero;
+}
+
 // Compte une partie lancée pour le tableau de bord (voir suivi.js) ; mode : 'en-ligne' ou 'telephone'
 export function compterPartie(jeu, mode) {
   try { if (window.suivi) window.suivi.action(`parties-${mode}`, jeu); } catch (e) { /* jamais bloquant */ }
@@ -272,7 +290,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     ui.infoSalon.classList.toggle('local', local);
     montrer('attente');
     if (arreterEcoute) arreterEcoute();
-    let statutPrecedent = null;
+    let precedent = null; // état d'avant (statut et numéro de partie), pour repérer une nouvelle partie
     arreterEcoute = api.onValue(api.ref(api.db, `${jeu}/${code}`), (snap) => {
       const s = snap.val();
       if (!s) {
@@ -281,9 +299,11 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
         return;
       }
       s.players = s.players || [];
-      // Partie en ligne lancée : comptée une seule fois, par l'hôte, quand le salon quitte l'attente
-      if (!local && place === 0 && statutPrecedent === 'waiting' && s.status !== 'waiting') compterPartie(jeu, 'en-ligne');
-      statutPrecedent = s.status;
+      // Comptage des parties pour le tableau de bord (en ligne : par l'hôte seulement, pour ne compter qu'une fois)
+      if (precedent && (local || place === 0) && estNouvellePartie(jeu, precedent, s, local)) {
+        compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+      }
+      precedent = { status: s.status, partie: s.partie };
       if (s.status === 'waiting') {
         montrer('attente');
         afficherAttente(s);
