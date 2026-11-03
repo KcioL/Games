@@ -18,7 +18,18 @@ export const $ = (id) => document.getElementById(id);
 
 // Statuts qui veulent dire « partie terminée ». Dans ces jeux, « fin » n'est que la fin d'une manche
 // ou d'une main (la manche suivante ne compte pas comme une nouvelle partie) : seul « termine » compte.
-const FINS_DE_PARTIE = { president: ['termine'], cranes: ['termine'], blackjack: ['termine'], poker: ['termine'] };
+// Puissance 4 : « Nouvelle manche » garde les victoires, c'est la même partie (aucune fin de partie).
+const FINS_DE_PARTIE = { president: ['termine'], cranes: ['termine'], blackjack: ['termine'], poker: ['termine'], puissance4: [] };
+// Jeux en plusieurs manches (ou mains) : le champ de l'état qui tient le numéro de la manche en cours.
+// Le nombre de manches de chaque partie est noté au journal du tableau de bord.
+const MANCHES = {
+  president: 'manche', cranes: 'manche', kassen: 'manche', petitbac: 'manche', puissance4: 'manche',
+  blackjack: 'manche', skyjo: 'round', poker: 'mainNo',
+};
+export const numeroManche = (jeu, s) => {
+  const n = MANCHES[jeu] && s ? Number(s[MANCHES[jeu]]) : 0;
+  return Number.isInteger(n) && n > 0 ? n : (MANCHES[jeu] ? 1 : 0);
+};
 const FINS_PAR_DEFAUT = ['fin', 'finished', 'termine'];
 
 // Une nouvelle partie commence quand :
@@ -35,8 +46,30 @@ export function estNouvellePartie(jeu, avant, apres, local) {
 }
 
 // Compte une partie lancée pour le tableau de bord (voir suivi.js) ; mode : 'en-ligne' ou 'telephone'
-export function compterPartie(jeu, mode) {
-  try { if (window.suivi) window.suivi.action(`parties-${mode}`, jeu); } catch (e) { /* jamais bloquant */ }
+// Renvoie la référence de la partie au journal (pour noter ses manches ensuite), ou null.
+export function compterPartie(jeu, mode, manche = 0) {
+  try {
+    if (window.suivi) return window.suivi.action(`parties-${mode}`, jeu, manche ? { m: manche } : undefined) || null;
+  } catch (e) { /* jamais bloquant */ }
+  return null;
+}
+// La partie en cours est gardée dans le téléphone : après un rechargement (« Reprendre »), ses manches
+// continuent d'être notées sur la même partie.
+const clePartieSuivie = (jeu) => `jeux-vol:partie-suivie:${jeu}`;
+function garderPartie(jeu, cle, ref) {
+  try {
+    if (ref) localStorage.setItem(clePartieSuivie(jeu), JSON.stringify({ cle, ref }));
+    else localStorage.removeItem(clePartieSuivie(jeu));
+  } catch (e) { /* rien */ }
+}
+function partieGardee(jeu, cle) {
+  try {
+    const g = JSON.parse(localStorage.getItem(clePartieSuivie(jeu)));
+    return g && g.cle === cle && g.ref && g.ref.id ? g.ref : null;
+  } catch (e) { return null; }
+}
+function compterManches(ref, n) {
+  try { if (ref && n && window.suivi && window.suivi.manches) window.suivi.manches(ref, n); } catch (e) { /* rien */ }
 }
 
 export function el(tag, className, text) {
@@ -293,6 +326,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     if (arreterEcoute) arreterEcoute();
     let precedent = null; // état d'avant (statut, numéro de partie, dernière action), pour repérer une nouvelle partie
     let aCompter = false;  // nouvelle partie lancée, comptée seulement au premier coup joué
+    let refPartie = null;  // la partie en cours au journal, pour y noter le nombre de manches
     const depart = departLocal; // partie sur ce téléphone qui vient d'être créée (pas une reprise)
     departLocal = false;
     arreterEcoute = api.onValue(api.ref(api.db, `${jeu}/${code}`), (snap) => {
@@ -307,10 +341,16 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
       // Une grille ou une partie relancée sans y jouer (ex. le smiley du Démineur appuyé plusieurs fois) ne compte pas.
       if (local || place === 0) {
         const nouvelle = precedent ? estNouvellePartie(jeu, precedent, s, local) : (depart && s.status !== 'waiting');
-        if (nouvelle) aCompter = true;
+        const cle = `${code}-${s.createdAt || ''}-${s.partie || ''}`;
+        if (!precedent && !nouvelle && MANCHES[jeu]) refPartie = partieGardee(jeu, cle); // reprise
+        if (nouvelle) { aCompter = true; refPartie = null; garderPartie(jeu, cle, null); }
         else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting') {
           aCompter = false;
-          compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+          refPartie = compterPartie(jeu, local ? 'telephone' : 'en-ligne', numeroManche(jeu, s));
+          if (MANCHES[jeu]) garderPartie(jeu, cle, refPartie);
+        } else if (refPartie) {
+          compterManches(refPartie, numeroManche(jeu, s));
+          garderPartie(jeu, cle, refPartie);
         }
       }
       precedent = { status: s.status, partie: s.partie, majAt: s.majAt };
