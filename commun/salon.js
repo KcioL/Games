@@ -19,13 +19,16 @@ export const $ = (id) => document.getElementById(id);
 // Statuts qui veulent dire « partie terminée ». Dans ces jeux, « fin » n'est que la fin d'une manche
 // ou d'une main (la manche suivante ne compte pas comme une nouvelle partie) : seul « termine » compte.
 // Puissance 4 : « Nouvelle manche » garde les victoires, c'est la même partie (aucune fin de partie).
-const FINS_DE_PARTIE = { president: ['termine'], cranes: ['termine'], blackjack: ['termine'], poker: ['termine'], puissance4: [] };
+// Démineur : « Rejouer » et le smiley donnent une nouvelle grille, comptée comme une manche de la même partie.
+const FINS_DE_PARTIE = { president: ['termine'], cranes: ['termine'], blackjack: ['termine'], poker: ['termine'], puissance4: [], demineur: [] };
 // Jeux en plusieurs manches (ou mains) : le champ de l'état qui tient le numéro de la manche en cours.
 // Le nombre de manches de chaque partie est noté au journal du tableau de bord.
 const MANCHES = {
   president: 'manche', cranes: 'manche', kassen: 'manche', petitbac: 'manche', puissance4: 'manche',
-  blackjack: 'manche', skyjo: 'round', poker: 'mainNo',
+  blackjack: 'manche', skyjo: 'round', poker: 'mainNo', demineur: 'partie',
 };
+// Jeux où le « numéro de partie » de l'état est en fait celui de la manche (une grille au Démineur)
+const PARTIE_EST_MANCHE = (jeu) => MANCHES[jeu] === 'partie';
 export const numeroManche = (jeu, s) => {
   const n = MANCHES[jeu] && s ? Number(s[MANCHES[jeu]]) : 0;
   return Number.isInteger(n) && n > 0 ? n : (MANCHES[jeu] ? 1 : 0);
@@ -41,7 +44,7 @@ export function estNouvellePartie(jeu, avant, apres, local) {
   if (avant.status === 'waiting') return !local && apres.status !== 'waiting';
   const fins = FINS_DE_PARTIE[jeu] || FINS_PAR_DEFAUT;
   const rejouee = fins.includes(avant.status) && !fins.includes(apres.status) && apres.status !== 'waiting';
-  const numero = typeof avant.partie === 'number' && typeof apres.partie === 'number' && apres.partie > avant.partie;
+  const numero = !PARTIE_EST_MANCHE(jeu) && typeof avant.partie === 'number' && typeof apres.partie === 'number' && apres.partie > avant.partie;
   return rejouee || numero;
 }
 
@@ -68,8 +71,14 @@ function partieGardee(jeu, cle) {
     return g && g.cle === cle && g.ref && g.ref.id ? g.ref : null;
   } catch (e) { return null; }
 }
-function compterManches(ref, n) {
-  try { if (ref && n && window.suivi && window.suivi.manches) window.suivi.manches(ref, n); } catch (e) { /* rien */ }
+// Manches jouées : une manche compte au premier coup joué dedans (une grille relancée sans y jouer ne compte pas).
+// ref.n : numéro de la manche en cours ; ref.attente : nouvelle manche pas encore jouée ; ref.m : manches comptées.
+function suivreManches(ref, n, coupJoue) {
+  if (!ref || !n) return;
+  if (n !== ref.n) { ref.n = n; ref.attente = true; return; }
+  if (!ref.attente || !coupJoue) return;
+  ref.attente = false;
+  try { if (window.suivi && window.suivi.manches) window.suivi.manches(ref, (ref.m || 1) + 1); } catch (e) { /* rien */ }
 }
 
 export function el(tag, className, text) {
@@ -341,19 +350,20 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
       // Une grille ou une partie relancée sans y jouer (ex. le smiley du Démineur appuyé plusieurs fois) ne compte pas.
       if (local || place === 0) {
         const nouvelle = precedent ? estNouvellePartie(jeu, precedent, s, local) : (depart && s.status !== 'waiting');
-        const cle = `${code}-${s.createdAt || ''}-${s.partie || ''}`;
+        const cle = `${code}-${s.createdAt || ''}-${PARTIE_EST_MANCHE(jeu) ? '' : s.partie || ''}`;
         if (!precedent && !nouvelle && MANCHES[jeu]) refPartie = partieGardee(jeu, cle); // reprise
         if (nouvelle) { aCompter = true; refPartie = null; garderPartie(jeu, cle, null); }
-        else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting') {
+        // (une écriture qui change de manche, comme une nouvelle grille, n'est pas un coup joué)
+        else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting' && numeroManche(jeu, s) === precedent.n) {
           aCompter = false;
-          refPartie = compterPartie(jeu, local ? 'telephone' : 'en-ligne', numeroManche(jeu, s));
-          if (MANCHES[jeu]) garderPartie(jeu, cle, refPartie);
+          refPartie = MANCHES[jeu] ? compterPartie(jeu, local ? 'telephone' : 'en-ligne', 1) : compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+          if (refPartie && MANCHES[jeu]) { refPartie.n = numeroManche(jeu, s); refPartie.attente = false; garderPartie(jeu, cle, refPartie); }
         } else if (refPartie) {
-          compterManches(refPartie, numeroManche(jeu, s));
+          suivreManches(refPartie, numeroManche(jeu, s), precedent && s.majAt !== precedent.majAt);
           garderPartie(jeu, cle, refPartie);
         }
       }
-      precedent = { status: s.status, partie: s.partie, majAt: s.majAt };
+      precedent = { status: s.status, partie: s.partie, majAt: s.majAt, n: numeroManche(jeu, s) };
       if (s.status === 'waiting') {
         montrer('attente');
         afficherAttente(s);
