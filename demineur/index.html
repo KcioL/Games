@@ -60,12 +60,16 @@
         </div>
       </div>
       <fieldset class="reglages">
-        <legend>Difficulté <small>(pour celui qui crée la partie)</small></legend>
+        <legend>Réglages <small>(pour celui qui crée la partie)</small></legend>
         <div class="niveaux" role="radiogroup" aria-label="Difficulté">
           <label class="niveau"><input type="radio" name="niveau" value="debutant" checked><span><strong>Débutant</strong><small>9 × 9 · 10 mines</small></span></label>
           <label class="niveau"><input type="radio" name="niveau" value="intermediaire"><span><strong>Intermédiaire</strong><small>16 × 16 · 40 mines</small></span></label>
           <label class="niveau"><input type="radio" name="niveau" value="expert"><span><strong>Expert</strong><small>30 × 16 · 99 mines</small></span></label>
         </div>
+        <label class="option">
+          <input type="checkbox" id="opt-sans-hasard" checked>
+          <span><strong>Sans hasard</strong><small>La grille peut toujours se finir par déduction : jamais besoin de tenter sa chance entre deux cases (et les déductions restent à portée d'humain).</small></span>
+        </label>
       </fieldset>
       <button class="btn" id="btn-reprendre" hidden></button>
     </div>
@@ -99,6 +103,7 @@
           <button type="button" id="mode-drapeau" aria-pressed="false">🚩 Drapeau</button>
         </div>
         <p class="aide-dm" id="aide">Appui long (ou clic droit) : poser un drapeau.</p>
+        <p class="garantie-dm" id="garantie" hidden>🧠 Grille sans hasard : tout se déduit des chiffres, jamais de 50/50.</p>
         <button class="btn-dm discret" id="btn-abandon" type="button" hidden>Abandonner</button>
       </div>
     </div>
@@ -125,6 +130,7 @@
       <li><strong>Appui long</strong> (ou clic droit) : poser ou enlever un drapeau là où tu penses qu'il y a une mine. Tu peux aussi passer en mode 🚩 Drapeau.</li>
       <li>Touche un chiffre déjà ouvert entouré d'autant de drapeaux : toutes ses autres voisines s'ouvrent d'un coup.</li>
       <li>Seul, ton premier coup ne tombe jamais sur une mine. Tes meilleurs temps sont gardés sur ce téléphone.</li>
+      <li>Avec l'option <strong>Sans hasard</strong> (cochée au départ), chaque grille peut être finie en réfléchissant, sans jamais deviner : s'il te semble que c'est du 50/50, regarde mieux les chiffres autour !</li>
     </ul>
     <h3>Course en ligne</h3>
     <ul>

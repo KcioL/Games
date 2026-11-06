@@ -244,10 +244,25 @@ function actCarte(s, i, k) {
 }
 
 // Boutons et cartes de l'écran : actions de « mon » joueur
-const piocher = () => agir((s) => actPiocher(s, maPlace));
-const prendreDefausse = () => agir((s) => actPrendreDefausse(s, maPlace));
-const defausserTenue = () => agir((s) => actDefausser(s, maPlace));
-const cliquerCarte = (k) => agir((s) => actCarte(s, maPlace, k));
+// En ligne, l'action n'est appliquée que si la partie en est toujours au moment affiché à l'écran
+// au moment du clic : un clic ne peut jamais être rejoué sur un autre état (par exemple poser la
+// carte piochée alors qu'on venait de la défausser), même si le réseau rejoue la transaction.
+function vuAuClic() {
+  return { status: etat.status, phase: etat.phase, coup: etat.coup || 0, held: etat.held ? `${etat.held.from}:${etat.held.v}` : '' };
+}
+function memeMoment(s, vu) {
+  if (s.status !== vu.status) return false;
+  if (s.status === 'flip') return true; // au début de manche, tout le monde retourne ses cartes en même temps
+  return s.phase === vu.phase && (s.coup || 0) === vu.coup && (s.held ? `${s.held.from}:${s.held.v}` : '') === vu.held;
+}
+const agirVu = (action) => { const vu = vuAuClic(); return agir((s) => memeMoment(s, vu) && action(s)); };
+// un double appui sur « Défausser » ne doit pas retourner aussi la carte qui apparaît sous le doigt
+let dernierBouton = 0;
+const bouton = (fn) => () => { dernierBouton = Date.now(); return fn(); };
+const piocher = bouton(() => agirVu((s) => actPiocher(s, maPlace)));
+const prendreDefausse = bouton(() => agirVu((s) => actPrendreDefausse(s, maPlace)));
+const defausserTenue = bouton(() => agirVu((s) => actDefausser(s, maPlace)));
+const cliquerCarte = (k) => (Date.now() - dernierBouton < 300 ? undefined : agirVu((s) => actCarte(s, maPlace, k)));
 
 function suite() {
   agir((s) => {

@@ -33,7 +33,7 @@ const salon = initSalon({
   etatInitial: (nom, nb, { local }) => ({
     players: Array.from({ length: local ? 1 : nb }, (_, i) => ({ name: i === 0 ? nom : 'En attente', joined: i === 0 })),
     mode: local ? 'solo' : 'course',
-    options: { niveau: niveauChoisi() },
+    options: { niveau: niveauChoisi(), sansHasard: $('opt-sans-hasard').checked },
   }),
   demarrer: (s) => R.nouvellePartie(s),
   afficher: (s, place) => {
@@ -309,6 +309,7 @@ function rendre() {
   construireGrille();
   rendreGrille();
   rendreBarre();
+  $('garantie').hidden = etat.options.sansHasard === false || etat.grille.logique === false;
   rendreAdversaires();
   rendreFin();
   if (precedent && course()) {

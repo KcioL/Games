@@ -13,6 +13,14 @@ export const NIVEAUX = {
 };
 
 export const niveau = (s) => NIVEAUX[s.options && s.options.niveau] || NIVEAUX.debutant;
+// option « sans hasard » (par défaut) : la grille se résout toujours par déduction, sans jamais deviner
+const sansHasard = (s) => !s.options || s.options.sansHasard !== false;
+function genererMines(s, l, h, n, depart) {
+  if (!sansHasard(s)) return placerMines(l, h, n, depart);
+  const r = placerMinesSansHasard(l, h, n, depart);
+  s.grille.logique = r.logique;
+  return r.mines;
+}
 
 export function voisins(idx, l, h) {
   const x = idx % l; const y = Math.floor(idx / l);
@@ -34,6 +42,129 @@ export function placerMines(l, h, n, sure) {
   for (let k = 0; k < l * h; k++) if (!interdites.has(k)) libres.push(k);
   for (let i = libres.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [libres[i], libres[j]] = [libres[j], libres[i]]; }
   return libres.slice(0, Math.min(n, libres.length)).sort((a, b) => a - b);
+}
+
+// ---------- Grilles sans hasard ----------
+// Un « démineur logique » joue la grille depuis la case de départ, sans jamais deviner.
+// Il renvoie true s'il arrive à tout ouvrir : la grille peut alors être résolue par déduction pure.
+export function resoluble(l, h, mines, depart, maxFrontiere = 26) {
+  const N = l * h;
+  const m = new Set(mines);
+  const ch = chiffres({ l, h, mines });
+  const VS = Array.from({ length: N }, (_, k) => voisins(k, l, h));
+  const st = new Uint8Array(N); // 0 inconnue, 1 ouverte, 2 mine trouvée
+  let ouvertes = 0; let trouvees = 0; let erreur = false;
+  const aOuvrir = N - mines.length;
+  const ouvrir = (k) => {
+    const pile = [k];
+    while (pile.length) {
+      const x = pile.pop();
+      if (st[x]) continue;
+      if (m.has(x)) { erreur = true; return false; } // ne doit jamais arriver : le démineur ne se trompe pas
+      st[x] = 1; ouvertes++;
+      if (ch[x] === 0) VS[x].forEach((v) => { if (!st[v]) pile.push(v); });
+    }
+    return true;
+  };
+  const marquer = (k) => { if (!st[k]) { if (!m.has(k)) erreur = true; st[k] = 2; trouvees++; } };
+  if (!ouvrir(depart)) return false;
+  for (let tour = 0; tour < 10000 && ouvertes < aOuvrir; tour++) {
+    // les contraintes : chaque chiffre ouvert qui touche des cases inconnues
+    const cs = [];
+    for (let k = 0; k < N; k++) {
+      if (st[k] !== 1 || ch[k] <= 0) continue;
+      const inc = []; let deja = 0;
+      VS[k].forEach((v) => { if (!st[v]) inc.push(v); else if (st[v] === 2) deja++; });
+      if (inc.length) cs.push({ c: inc, n: ch[k] - deja });
+    }
+    let progres = false;
+    // 1. évidences : 0 mine restante, ou autant de mines que de cases
+    cs.forEach((a) => {
+      if (a.n === 0) { a.c.forEach((v) => { if (!st[v]) ouvrir(v); }); progres = true; } else if (a.n === a.c.length) { a.c.forEach(marquer); progres = true; }
+    });
+    if (progres) continue;
+    // 2. deux chiffres voisins ensemble (le fameux 1-2-1…)
+    const parCase = new Map();
+    cs.forEach((a, i) => a.c.forEach((v) => { if (!parCase.has(v)) parCase.set(v, []); parCase.get(v).push(i); }));
+    for (let i = 0; i < cs.length && !progres; i++) {
+      const A = cs[i]; const setA = new Set(A.c);
+      const vus = new Set();
+      A.c.forEach((v) => parCase.get(v).forEach((j) => { if (j !== i) vus.add(j); }));
+      for (const j of vus) {
+        const B = cs[j];
+        const inter = B.c.filter((v) => setA.has(v)).length;
+        const seulB = B.c.filter((v) => !setA.has(v));
+        const seulA = A.c.length - inter;
+        if (!seulB.length) continue;
+        const maxInter = Math.min(A.n, inter);
+        const minInter = Math.max(0, A.n - seulA);
+        if (B.n - maxInter === seulB.length) { seulB.forEach(marquer); progres = true; break; }
+        if (B.n - minInter === 0) { seulB.forEach((v) => { if (!st[v]) ouvrir(v); }); progres = true; break; }
+      }
+    }
+    if (progres) continue;
+    // 3. le nombre total de mines
+    const reste = mines.length - trouvees;
+    const inconnues = [];
+    for (let k = 0; k < N; k++) if (!st[k]) inconnues.push(k);
+    if (reste === 0) { inconnues.forEach(ouvrir); continue; }
+    if (reste === inconnues.length) { inconnues.forEach(marquer); continue; }
+    // 4. toutes les possibilités sur chaque morceau de frontière (s'il n'est pas trop grand)
+    const vuesF = new Set(); 
+    for (const [depF] of parCase) {
+      if (vuesF.has(depF)) continue;
+      const comp = []; const pile = [depF]; vuesF.add(depF);
+      const ics = new Set();
+      while (pile.length) {
+        const v = pile.pop(); comp.push(v);
+        parCase.get(v).forEach((j) => { ics.add(j); cs[j].c.forEach((w) => { if (!vuesF.has(w)) { vuesF.add(w); pile.push(w); } }); });
+      }
+      if (comp.length > maxFrontiere) continue;
+      const pos = new Map(comp.map((v, k) => [v, k]));
+      const ctr = [...ics].map((j) => ({ c: cs[j].c.map((v) => pos.get(v)), n: cs[j].n }));
+      const ctrDe = comp.map(() => []);
+      ctr.forEach((c, j) => c.c.forEach((k) => ctrDe[k].push(j)));
+      const val = new Int8Array(comp.length).fill(-1);
+      const compte = new Array(comp.length).fill(0);
+      let sols = 0; let essais = 0;
+      const ok = (k) => ctrDe[k].every((j) => {
+        const c = ctr[j]; let mi = 0; let li = 0;
+        c.c.forEach((x) => { if (val[x] === 1) mi++; else if (val[x] === -1) li++; });
+        return mi <= c.n && mi + li >= c.n;
+      });
+      const rec = (k, nm) => {
+        if (++essais > 200000) return;
+        if (nm > reste) return;
+        if (k === comp.length) { sols++; val.forEach((x, y) => { if (x === 1) compte[y]++; }); return; }
+        for (const x of [0, 1]) { val[k] = x; if (ok(k)) rec(k + 1, nm + x); }
+        val[k] = -1;
+      };
+      rec(0, 0);
+      if (essais > 200000 || !sols) continue;
+      comp.forEach((v, k) => {
+        if (compte[k] === 0) { ouvrir(v); progres = true; } else if (compte[k] === sols) { marquer(v); progres = true; }
+      });
+      if (progres) break;
+    }
+    if (erreur) throw new Error('démineur logique : erreur de déduction');
+    if (!progres) return false; // il faudrait deviner
+  }
+  if (erreur) throw new Error('démineur logique : erreur de déduction');
+  return ouvertes >= aOuvrir;
+}
+
+// grille qu'on peut finir sans deviner (on en tire jusqu'à en trouver une, dans la limite du temps donné)
+export function placerMinesSansHasard(l, h, n, depart, delai = 3000) {
+  const fin = Date.now() + delai;
+  let mines = placerMines(l, h, n, depart);
+  let essais = 1;
+  const teste = (mn) => { try { return resoluble(l, h, mn, depart, 8); } catch (e) { return false; } };
+  while (!teste(mines)) {
+    if (Date.now() > fin) return { mines, logique: false, essais };
+    mines = placerMines(l, h, n, depart);
+    essais++;
+  }
+  return { mines, logique: true, essais };
 }
 
 // nombre de mines autour de chaque case (-1 : une mine)
@@ -67,7 +198,7 @@ export function nouvellePartie(s, maintenant = Date.now()) {
   if (s.mode === 'course') {
     // même grille pour tous, avec une case de départ sans mine autour, déjà ouverte
     const depart = Math.floor(nv.h / 2) * nv.l + Math.floor(nv.l / 2);
-    s.grille.mines = placerMines(nv.l, nv.h, nv.mines, depart);
+    s.grille.mines = genererMines(s, nv.l, nv.h, nv.mines, depart);
     s.grille.pret = true;
     s.depart = depart;
   }
@@ -119,7 +250,7 @@ export function ouvrir(s, i, idx, maintenant = Date.now()) {
   const g = s.grille;
   const p = s.players[i];
   if (idx < 0 || idx >= g.l * g.h || p.vue[idx] !== '.') return false;
-  if (!g.pret) { g.mines = placerMines(g.l, g.h, g.n, idx); g.pret = true; } // solo : premier clic sans danger
+  if (!g.pret) { g.mines = genererMines(s, g.l, g.h, g.n, idx); g.pret = true; } // solo : premier clic sans danger
   if (!p.debut) p.debut = maintenant;
   const ok = ouvrirZone(s, i, idx);
   s.coup = (s.coup || 0) + 1;

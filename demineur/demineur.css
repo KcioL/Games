@@ -4,6 +4,10 @@
 .reglages { border: 1px solid var(--nuit-3); border-radius: 12px; padding: 8px 12px 10px; margin-top: 4px; display: grid; gap: 8px; }
 .reglages legend { padding: 0 6px; font-weight: 700; font-size: .9rem; }
 .reglages legend small { font-weight: 400; color: var(--brume); }
+.reglages .option { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: 400; }
+.reglages .option input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--or); }
+.reglages .option span { display: grid; gap: 2px; }
+.reglages .option small { color: var(--brume); font-size: .8rem; line-height: 1.3; }
 .niveaux { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .carte-salon label.niveau { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--nuit); border: 2px solid var(--nuit-3); cursor: pointer; font-weight: 400; }
 .carte-salon label.niveau input { width: auto; accent-color: var(--or); flex: none; }
@@ -91,6 +95,7 @@
 .mode-dm button { border: none; background: none; color: #CFE8C4; padding: 9px 18px; border-radius: 999px; font-weight: 700; }
 .mode-dm button.actif { background: #AAD751; color: #24400F; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
 .aide-dm { color: #A9C9A0; font-size: .85rem; text-align: center; }
+.garantie-dm { margin: 0; color: #CFE6C4; font-size: .8rem; text-align: center; opacity: .85; }
 .btn-dm { border: 1px solid var(--nuit-3); background: var(--nuit-2); color: var(--papier); padding: 10px 18px; border-radius: 12px; font-weight: 700; }
 .btn-dm.principal { background: var(--or); color: var(--encre); border-color: #B8861E; }
 .btn-dm.discret { background: none; border: none; color: #A9C9A0; font-weight: 500; text-decoration: underline; }
