@@ -50,11 +50,24 @@ export function estNouvellePartie(jeu, avant, apres, local) {
 
 // Compte une partie lancée pour le tableau de bord (voir suivi.js) ; mode : 'en-ligne' ou 'telephone'
 // Renvoie la référence de la partie au journal (pour noter ses manches ensuite), ou null.
-export function compterPartie(jeu, mode, manche = 0) {
+export function compterPartie(jeu, mode, manche = 0, joueurs = '') {
   try {
-    if (window.suivi) return window.suivi.action(`parties-${mode}`, jeu, manche ? { m: manche } : undefined) || null;
+    const details = {};
+    if (manche) details.m = manche;
+    if (joueurs) details.j = joueurs;
+    if (window.suivi) return window.suivi.action(`parties-${mode}`, jeu, details) || null;
   } catch (e) { /* jamais bloquant */ }
   return null;
+}
+// Joueurs encore dans la partie : sans les spectateurs (Poker, Blackjack : à sec), ceux qui ont abandonné
+// (Démineur, Mastermind) ni ceux qui n'ont plus de vies (Gwynt · Kassen). « 3 » ou « 3+1 » (3 joueurs, 1 bot).
+export function compoJoueurs(s) {
+  const la = (s && Array.isArray(s.players) ? s.players : [])
+    .filter((p) => p && p.joined !== false && !p.spectateur && !p.abandon && !(typeof p.vies === 'number' && p.vies <= 0));
+  const bots = la.filter((p) => p.bot).length;
+  const humains = Math.min(99, la.length - bots);
+  if (!la.length) return '';
+  return bots ? `${humains}+${Math.min(99, bots)}` : String(humains);
 }
 // La partie en cours est gardée dans le téléphone : après un rechargement (« Reprendre »), ses manches
 // continuent d'être notées sur la même partie.
@@ -73,12 +86,12 @@ function partieGardee(jeu, cle) {
 }
 // Manches jouées : une manche compte au premier coup joué dedans (une grille relancée sans y jouer ne compte pas).
 // ref.n : numéro de la manche en cours ; ref.attente : nouvelle manche pas encore jouée ; ref.m : manches comptées.
-function suivreManches(ref, n, coupJoue) {
+function suivreManches(ref, n, coupJoue, s) {
   if (!ref || !n) return;
   if (n !== ref.n) { ref.n = n; ref.attente = true; return; }
   if (!ref.attente || !coupJoue) return;
   ref.attente = false;
-  try { if (window.suivi && window.suivi.manches) window.suivi.manches(ref, (ref.m || 1) + 1); } catch (e) { /* rien */ }
+  try { if (window.suivi && window.suivi.manches) window.suivi.manches(ref, (ref.m || 1) + 1, compoJoueurs(s)); } catch (e) { /* rien */ }
 }
 
 export function el(tag, className, text) {
@@ -356,10 +369,10 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
         // (une écriture qui change de manche, comme une nouvelle grille, n'est pas un coup joué)
         else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting' && numeroManche(jeu, s) === precedent.n) {
           aCompter = false;
-          refPartie = MANCHES[jeu] ? compterPartie(jeu, local ? 'telephone' : 'en-ligne', 1) : compterPartie(jeu, local ? 'telephone' : 'en-ligne');
+          refPartie = compterPartie(jeu, local ? 'telephone' : 'en-ligne', MANCHES[jeu] ? 1 : 0, compoJoueurs(s));
           if (refPartie && MANCHES[jeu]) { refPartie.n = numeroManche(jeu, s); refPartie.attente = false; garderPartie(jeu, cle, refPartie); }
         } else if (refPartie) {
-          suivreManches(refPartie, numeroManche(jeu, s), precedent && s.majAt !== precedent.majAt);
+          suivreManches(refPartie, numeroManche(jeu, s), precedent && s.majAt !== precedent.majAt, s);
           garderPartie(jeu, cle, refPartie);
         }
       }

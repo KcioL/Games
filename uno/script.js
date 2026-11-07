@@ -610,14 +610,15 @@ function isPlayable(card) {
 // Compte une partie lancée pour le tableau de bord (voir suivi.js). Cette fonction peut être
 // appelée plusieurs fois de suite pour la même partie (plusieurs mises à jour du salon) : 5 s d'écart minimum.
 let partieCompteeA = 0;
-function compterPartieUno() {
+function compterPartieUno(joueurs) {
   if (Date.now() - partieCompteeA < 5000) return;
   partieCompteeA = Date.now();
-  try { if (window.suivi) window.suivi.action(modeLocal ? 'parties-telephone' : 'parties-en-ligne', 'uno'); } catch (e) { /* jamais bloquant */ }
+  const nb = Array.isArray(joueurs) ? Math.min(99, joueurs.length) : 0; // nombre de joueurs, pour le tableau de bord
+  try { if (window.suivi) window.suivi.action(modeLocal ? 'parties-telephone' : 'parties-en-ligne', 'uno', nb ? { j: String(nb) } : undefined); } catch (e) { /* jamais bloquant */ }
 }
 
 function startOnlineGameFromFirebase(currentPlayersData) {
-  compterPartieUno();
+  compterPartieUno(currentPlayersData);
   createDeck();
   discardPile = [];
   playDirection = 1;
