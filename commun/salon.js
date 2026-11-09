@@ -86,12 +86,33 @@ function partieGardee(jeu, cle) {
 }
 // Manches jouées : une manche compte au premier coup joué dedans (une grille relancée sans y jouer ne compte pas).
 // ref.n : numéro de la manche en cours ; ref.attente : nouvelle manche pas encore jouée ; ref.m : manches comptées.
+// Partie allée jusqu'au bout (sinon, quittée en cours de route, elle compte comme abandonnée).
+// Démineur seul : la grille est finie quand chaque joueur a gagné, perdu ou abandonné.
+export function partieFinie(jeu, s) {
+  if (!s) return false;
+  if (jeu === 'demineur' && s.mode !== 'course') return s.players.length > 0 && s.players.every((p) => p && p.etat && p.etat !== 'jeu');
+  const fins = FINS_DE_PARTIE[jeu] && FINS_DE_PARTIE[jeu].length ? FINS_DE_PARTIE[jeu] : FINS_PAR_DEFAUT;
+  return fins.includes(s.status);
+}
+// Durée de la partie (du premier au dernier coup : le temps passé ensuite sur l'écran de fin ne compte pas)
+// et sa fin, notées au journal du tableau de bord
+let partieEnCours = null;
+function noterDuree(ref, finie = false) {
+  if (!ref || !ref.debut) return;
+  const d = Math.round(((ref.dernier || Date.now()) - ref.debut) / 1000);
+  try { if (window.suivi && window.suivi.partie) window.suivi.partie(ref, { d: Math.max(1, d), x: finie || undefined }); } catch (e) { /* rien */ }
+}
+if (typeof addEventListener === 'function') {
+  addEventListener('pagehide', () => noterDuree(partieEnCours));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) noterDuree(partieEnCours); });
+}
 function suivreManches(ref, n, coupJoue, s) {
   if (!ref || !n) return;
   if (n !== ref.n) { ref.n = n; ref.attente = true; return; }
   if (!ref.attente || !coupJoue) return;
   ref.attente = false;
   try { if (window.suivi && window.suivi.manches) window.suivi.manches(ref, (ref.m || 1) + 1, compoJoueurs(s)); } catch (e) { /* rien */ }
+  noterDuree(ref);
 }
 
 export function el(tag, className, text) {
@@ -364,17 +385,24 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
       if (local || place === 0) {
         const nouvelle = precedent ? estNouvellePartie(jeu, precedent, s, local) : (depart && s.status !== 'waiting');
         const cle = `${code}-${s.createdAt || ''}-${PARTIE_EST_MANCHE(jeu) ? '' : s.partie || ''}`;
-        if (!precedent && !nouvelle && MANCHES[jeu]) refPartie = partieGardee(jeu, cle); // reprise
-        if (nouvelle) { aCompter = true; refPartie = null; garderPartie(jeu, cle, null); }
+        if (!precedent && !nouvelle) refPartie = partieGardee(jeu, cle); // reprise
+        if (nouvelle) { noterDuree(refPartie); aCompter = true; refPartie = null; garderPartie(jeu, cle, null); }
         // (une écriture qui change de manche, comme une nouvelle grille, n'est pas un coup joué)
         else if (aCompter && precedent && s.majAt !== precedent.majAt && s.status !== 'waiting' && numeroManche(jeu, s) === precedent.n) {
           aCompter = false;
           refPartie = compterPartie(jeu, local ? 'telephone' : 'en-ligne', MANCHES[jeu] ? 1 : 0, compoJoueurs(s));
-          if (refPartie && MANCHES[jeu]) { refPartie.n = numeroManche(jeu, s); refPartie.attente = false; garderPartie(jeu, cle, refPartie); }
+          if (refPartie) {
+            refPartie.debut = Date.now();
+            if (MANCHES[jeu]) { refPartie.n = numeroManche(jeu, s); refPartie.attente = false; }
+            garderPartie(jeu, cle, refPartie);
+          }
         } else if (refPartie) {
           suivreManches(refPartie, numeroManche(jeu, s), precedent && s.majAt !== precedent.majAt, s);
           garderPartie(jeu, cle, refPartie);
         }
+        if (refPartie && precedent && s.majAt !== precedent.majAt) refPartie.dernier = Date.now();
+        if (refPartie && !refPartie.x && partieFinie(jeu, s)) { noterDuree(refPartie, true); garderPartie(jeu, cle, refPartie); }
+        partieEnCours = refPartie;
       }
       precedent = { status: s.status, partie: s.partie, majAt: s.majAt, n: numeroManche(jeu, s) };
       if (s.status === 'waiting') {
