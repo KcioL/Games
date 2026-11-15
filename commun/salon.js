@@ -195,13 +195,49 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     localNb: $('local-nb'), localNoms: $('local-noms'), local: $('btn-local'),
   };
 
-  // ---------- Onglets « En ligne » / « Sur ce téléphone » ----------
-  function choisirOnglet(o) {
-    ui.onglets.forEach((x) => {
-      const actif = x === o;
-      x.setAttribute('aria-selected', String(actif));
-      $(x.dataset.volet).hidden = !actif;
-    });
+  // ---------- Onglets « En ligne » / « Solo » / « Sur ce téléphone » ----------
+  // Les jeux qu'on peut lancer seul sur cet appareil (contre des bots, le croupier…) ont un onglet « Solo » à part.
+  // Il utilise le même volet que « Sur ce téléphone », mais avec un seul joueur humain ;
+  // « Sur ce téléphone » sert alors à jouer à plusieurs en se passant l'appareil.
+  const ongletLocal = [...ui.onglets].find((o) => o.dataset.volet === 'volet-local');
+  const optionsNb = ui.localNb ? [...ui.localNb.options] : [];
+  const soloPossible = !!ongletLocal && optionsNb.some((o) => o.value === '1') && optionsNb.some((o) => parseInt(o.value, 10) >= 2);
+  const voletLocal = $('volet-local');
+  const intro = voletLocal ? voletLocal.querySelector(':scope > p') : null;
+  const texteIntro = intro ? intro.textContent : '';
+  let nbAPlusieurs = null; // nombre de joueurs choisi dans « Sur ce téléphone », retrouvé en y revenant
+  if (soloPossible) {
+    const b = el('button', '', 'Solo');
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.dataset.volet = 'volet-local';
+    b.dataset.solo = '1';
+    b.setAttribute('aria-selected', 'false');
+    ongletLocal.before(b);
+    // le volet « Sur ce téléphone » était ouvert d'office : c'est maintenant « Solo » (jouer seul était le cas habituel)
+    if (ongletLocal.getAttribute('aria-selected') === 'true') { ongletLocal.setAttribute('aria-selected', 'false'); b.setAttribute('aria-selected', 'true'); }
+    ui.onglets = document.querySelectorAll('.onglets [role="tab"]');
+  }
+  function appliquerMode(solo) {
+    if (!soloPossible) return;
+    const avant = ui.localNb.value;
+    if (!solo && avant !== '1') nbAPlusieurs = avant;
+    optionsNb.forEach((op) => { const cache = !solo && op.value === '1'; op.hidden = cache; op.disabled = cache; });
+    if (solo) ui.localNb.value = '1';
+    else if (ui.localNb.value === '1') ui.localNb.value = nbAPlusieurs || optionsNb.find((op) => op.value !== '1').value;
+    const etiquette = ui.localNb.closest('label');
+    if (etiquette) etiquette.hidden = solo || optionsNb.filter((op) => !op.disabled).length < 2;
+    if (intro) intro.textContent = solo ? 'Joue tout seul contre l\'ordinateur, sans besoin d\'internet.' : texteIntro;
+    voletLocal.classList.toggle('solo', solo);
+    if (ui.localNb.value !== avant) ui.localNb.dispatchEvent(new Event('change'));
+  }
+  const cleOnglet = `jeux-vol:onglet:${jeu}`;
+  const nomOnglet = (o) => (o.dataset.solo ? 'solo' : o.dataset.volet);
+  function choisirOnglet(o, memoriser = true) {
+    ui.onglets.forEach((x) => x.setAttribute('aria-selected', String(x === o)));
+    new Set([...ui.onglets].map((x) => x.dataset.volet)).forEach((v) => { $(v).hidden = v !== o.dataset.volet; });
+    if (o.dataset.volet === 'volet-local') appliquerMode(!!o.dataset.solo);
+    if (memoriser) { try { localStorage.setItem(cleOnglet, nomOnglet(o)); } catch (e) { /* rien */ } }
   }
   ui.onglets.forEach((o) => o.addEventListener('click', () => choisirOnglet(o)));
   // Liens qui mènent directement à un onglet (ex. « Joue sur ce téléphone »)
@@ -268,6 +304,18 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     } else {
       ui.reprendre.hidden = true;
     }
+  }
+  // onglet de départ : le dernier utilisé pour ce jeu, sinon celui prévu par la page
+  {
+    let memo = null;
+    try { memo = localStorage.getItem(cleOnglet); } catch (e) { /* rien */ }
+    const depart = [...ui.onglets].find((o) => memo && nomOnglet(o) === memo)
+      || [...ui.onglets].find((o) => o.getAttribute('aria-selected') === 'true') || ui.onglets[0];
+    // (après coup, pour que les réglages propres au jeu suivent le nombre de joueurs)
+    queueMicrotask(() => {
+      if (soloPossible && depart && depart.dataset.volet !== 'volet-local') appliquerMode(true); // volet prêt pour « Solo »
+      if (depart) choisirOnglet(depart, false);
+    });
   }
   construireNoms();
   afficherReprendre();

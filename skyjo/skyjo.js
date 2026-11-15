@@ -448,6 +448,15 @@ function famille(v) {
 }
 
 // les parties gagnées s'affichent en petit badge à côté du nom, dès la première victoire
+// sous chaque jeu : le total des cartes retournées (celles qui ont disparu en colonne ne comptent plus)
+function scoreVisible(grille, court = false) {
+  const v = sommeVisible(grille);
+  const e = el('div', 'score-visible');
+  e.title = 'Total des cartes retournées';
+  e.append(el('span', '', court ? 'Retournées' : 'Cartes retournées'), el('b', v < 0 ? 'negatif' : v >= 30 ? 'haut' : '', `${v} pt${Math.abs(v) > 1 ? 's' : ''}`));
+  return e;
+}
+
 function rendreAdversaires() {
   const zone = $('adversaires');
   zone.innerHTML = '';
@@ -462,10 +471,10 @@ function rendreAdversaires() {
     const nom = el('strong', '', p.name);
     if (p.victoires) nom.appendChild(el('span', 'trophees', `🏆 ${p.victoires}`));
     tete.appendChild(nom);
-    tete.appendChild(el('span', '', `${sommeVisible(p.grid)} pts visibles, total ${p.total}`));
+    tete.appendChild(el('span', '', `Total de la partie : ${p.total}`));
     const g = el('div', 'grille-cartes mini');
     p.grid.forEach((c) => g.appendChild(carteEl(c)));
-    bloc.append(tete, g);
+    bloc.append(tete, g, scoreVisible(p.grid, n > 2));
     zone.appendChild(bloc);
   }
 }
@@ -500,7 +509,8 @@ function rendreCentre() {
 function rendreMonJeu() {
   const moi = etat.players[maPlace];
   $('mon-nom').textContent = salon.estLocal() ? `Jeu ${de(moi.name)}` : `${moi.name} (toi)`;
-  $('mon-score').textContent = `${sommeVisible(moi.grid)} pts visibles, total ${moi.total}`;
+  $('mon-score').textContent = `Total de la partie : ${moi.total}`;
+  $('mon-visible').replaceWith(Object.assign(scoreVisible(moi.grid), { id: 'mon-visible' }));
   if (moi.victoires) $('mon-nom').appendChild(el('span', 'trophees', `🏆 ${moi.victoires}`));
   const g = $('ma-grille');
   g.innerHTML = '';

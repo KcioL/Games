@@ -131,6 +131,20 @@
   border: 2px solid transparent;
 }
 .mon-jeu.actif { border-color: #F2C230; }
+/* total des cartes retournées, sous chaque jeu */
+.score-visible {
+  display: flex; justify-content: center; align-items: baseline; gap: 6px;
+  margin-top: 6px; padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .22);
+  font-size: .78rem; color: var(--brume); white-space: nowrap;
+  width: fit-content; max-width: 100%; margin-left: auto; margin-right: auto;
+}
+.score-visible b { font-size: 1.05rem; color: var(--papier); }
+.score-visible b.negatif { color: #7FD8A0; }
+.score-visible b.haut { color: #FF9C8A; }
+.mon-jeu .score-visible { margin-top: 10px; font-size: .85rem; }
+.mon-jeu .score-visible b { font-size: 1.25rem; }
 .mon-entete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
 .mon-entete span { color: var(--brume); font-size: .85rem; }
 .grille-cartes.grande { gap: 8px; }
@@ -168,7 +182,7 @@
   .centre { grid-area: centre; padding: 0; }
   .statut { grid-area: statut; padding: 4px 8px; min-height: 0; }
   .btn-bilan { grid-area: bilan; }
-  .mon-jeu { grid-area: mon; width: min(420px, calc(100vh - 110px)); width: min(420px, calc(100svh - 110px)); padding: 8px; }
+  .mon-jeu { grid-area: mon; width: min(420px, calc(100vh - 150px)); width: min(420px, calc(100svh - 150px)); padding: 8px; }
   .mon-entete { margin-bottom: 4px; }
   .grille-cartes.grande { gap: 6px; }
   .grille-cartes.grande .carte { font-size: 1.4rem; }
@@ -202,7 +216,7 @@
 
   /* Les deux jeux ont la même taille, calée sur la hauteur de l'écran */
   .deux-joueurs .mon-jeu,
-  .deux-joueurs .adversaire { width: min(440px, calc(100vh - 210px), calc((100vw - 220px) / 2)); width: min(440px, calc(100svh - 210px), calc((100vw - 220px) / 2)); }
+  .deux-joueurs .adversaire { width: min(440px, calc(100vh - 250px), calc((100vw - 220px) / 2)); width: min(440px, calc(100svh - 250px), calc((100vw - 220px) / 2)); }
   .deux-joueurs .adversaire { padding: 10px; border-radius: 16px; }
   .deux-joueurs .adv-tete { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
   .deux-joueurs .adv-tete strong { font-size: 1rem; }
@@ -226,7 +240,7 @@
   .multi .grille-cartes.mini { gap: 5px; }
   .multi .grille-cartes.mini .carte { font-size: clamp(.9rem, 1.4vw, 1.25rem); border-radius: 6px; }
   /* mon jeu : la place qui reste sous la rangée des adversaires */
-  .multi .mon-jeu { width: min(420px, calc(100vh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); width: min(420px, calc(100svh - 160px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); }
+  .multi .mon-jeu { width: min(420px, calc(100vh - 260px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); width: min(420px, calc(100svh - 260px - clamp(150px, 17vw, 230px)), calc(100vw - 380px)); }
 }
 
 /* parties gagnées, à côté du nom */
