@@ -45,6 +45,7 @@ export function normaliser(s) {
   s.dons = s.dons || [];
   s.options = s.options || { revolution: false, revolutionTrou: true, ouRien: true, manches: 0 };
   if (s.dernierPli) s.dernierPli.cartes = s.dernierPli.cartes || [];
+  s.fautifs = s.fautifs || [];
   return s;
 }
 
@@ -58,12 +59,17 @@ export function nouvellePartie(s) {
 }
 
 const avecCartes = (s) => s.players.map((_, i) => i).filter((i) => s.players[i].main.length > 0);
-// joueur suivant (après i) qui a encore des cartes
-function suivant(s, i) {
+// Règle « Qui passe attend le pli suivant » : un joueur qui a passé ne rejoue plus avant la fin du pli
+export const passeBloque = (s) => !!(s.options && s.options.passeBloque);
+// Règle « Interdit de finir par un 2 » : on ne pose pas ses dernières cartes si ce sont des 2
+// (si on n'a plus que des 2 et qu'on doit ouvrir, on les pose, mais on finit dernier : Trou du cul d'office)
+export const finDeuxInterdit = (s) => !!(s.options && s.options.finDeux);
+// joueur suivant (après i) qui a encore des cartes (et, dans un pli, qui n'a pas passé si la règle le veut)
+function suivant(s, i, dansLePli = false) {
   const n = s.players.length;
   for (let k = 1; k <= n; k++) {
     const j = (i + k) % n;
-    if (s.players[j].main.length) return j;
+    if (s.players[j].main.length && !(dansLePli && passeBloque(s) && s.players[j].aPasse)) return j;
   }
   return -1;
 }
@@ -82,6 +88,7 @@ export function nouvelleManche(s) {
   s.ouRien = null;
   s.revolution = false;
   s.classement = [];
+  s.fautifs = [];
   s.dernierPli = null;
   s.evenement = null;
   s.bilan = null;
@@ -167,9 +174,11 @@ export function coupValide(s, i, ids) {
   if (!ids.every((c) => p.main.includes(c))) return false;
   const v = valeurDe(ids[0]);
   if (!ids.every((c) => valeurDe(c) === v)) return false;
-  // hors de son tour : seulement pour compléter un carré, avec la règle de la rapidité
-  if (s.active !== i) return !!(s.options.rapidite && completeCarre(s, ids));
   const b = aBattre(s);
+  // finir par un 2 : interdit pour suivre (on passe) ; permis seulement pour ouvrir quand il ne reste que des 2 (pénalité)
+  if (finDeuxInterdit(s) && v === '2' && ids.length === p.main.length && (b || s.active !== i)) return false;
+  // hors de son tour : seulement pour compléter un carré, avec la règle de la rapidité (pas si on a passé)
+  if (s.active !== i) return !!(s.options.rapidite && completeCarre(s, ids)) && !(passeBloque(s) && p.aPasse);
   if (!b) return true;
   // compléter le carré est toujours permis, même avec plus de cartes que le coup précédent
   if (completeCarre(s, ids)) return true;
@@ -199,8 +208,15 @@ export function jouer(s, i, ids) {
   for (let k = s.tas.length - 1; k >= 0 && valeurDe(s.tas[k].cartes[0]) === v; k--) memeValeur += s.tas[k].cartes.length;
   const carreComplete = ids.length < 4 && memeValeur >= 4;
   if (!p.main.length) {
-    p.fini = s.classement.length + 1;
-    s.classement.push(i);
+    if (finDeuxInterdit(s) && v === '2') {
+      // fini par un 2 : classé tout en bas (le premier fautif est le dernier)
+      s.fautifs.push(i);
+      p.fini = s.players.length - s.fautifs.length + 1;
+      s.evenement = { type: 'finDeux', j: i };
+    } else {
+      p.fini = s.classement.length + 1;
+      s.classement.push(i);
+    }
   }
   // un carré posé d'un coup ferme le pli (règle « Carré qui ferme le pli ») ; avec la révolution, l'ordre s'inverse
   let ferme = false;
@@ -213,9 +229,9 @@ export function jouer(s, i, ids) {
   if (carreComplete && carreFerme(s)) { ferme = true; s.evenement = { type: 'carre', j: i, v, nb: ids.length, rapide: horsTour, coupe: horsTour ? s.active : -1 }; }
   if (finSiPossible(s)) return true;
   if (ferme) { fermerPli(s, i); return true; }
-  s.active = suivant(s, i);
-  // plus personne ne peut répondre (tous les autres ont fini) : le pli se ferme
-  if (s.active === i) fermerPli(s, i);
+  s.active = suivant(s, i, true);
+  // plus personne ne peut répondre (tous les autres ont fini, ou ont passé) : le pli se ferme
+  if (s.active === i || s.active < 0) fermerPli(s, i);
   return true;
 }
 
@@ -227,6 +243,14 @@ export function passer(s, i) {
   s.coup = (s.coup || 0) + 1;
   s.evenement = null;
   const d = s.dernierJoueur;
+  if (passeBloque(s)) {
+    // le pli se ferme quand tous les autres joueurs encore en jeu ont passé
+    const encoreDansLePli = avecCartes(s).filter((k) => k !== d && !s.players[k].aPasse);
+    if (!encoreDansLePli.length) { fermerPli(s, d); return true; }
+    s.active = suivant(s, i, true);
+    if (s.active < 0 || s.active === d) { fermerPli(s, d); return true; }
+    return true;
+  }
   const encore = avecCartes(s).length - (s.players[d] && s.players[d].main.length ? 1 : 0);
   if (s.passes >= encore) { fermerPli(s, d); return true; }
   s.active = suivant(s, i);
@@ -260,6 +284,8 @@ function finSiPossible(s) {
 
 function finManche(s) {
   const n = s.players.length;
+  // ceux qui ont fini par un 2 passent tout en bas
+  if (s.fautifs && s.fautifs.length) { s.classement = [...s.classement, ...[...s.fautifs].reverse()]; s.fautifs = []; }
   // le Trou du cul de la manche précédente finit Président : c'est la révolution (variante)
   const premier = s.players[s.classement[0]];
   s.revolutionTrou = !!(s.options.revolutionTrou && premier && premier.role === 'trou');
@@ -308,6 +334,12 @@ export function donBot(s, i) {
   if (!d) return null;
   return trierMain(s.players[i].main).slice(0, d.nb); // les plus faibles
 }
+// (règle « finir par un 2 ») après ces cartes, il ne resterait que des 2 en main : à éviter
+const laisseQueDesDeux = (s, p, ids) => {
+  if (!finDeuxInterdit(s) || valeurDe(ids[0]) === '2') return false;
+  const reste = p.main.filter((c) => !ids.includes(c));
+  return reste.length > 0 && reste.every((c) => valeurDe(c) === '2');
+};
 export function coupBot(s, i) {
   const p = s.players[i];
   const gs = groupes(p.main, s.revolution);
@@ -317,6 +349,9 @@ export function coupBot(s, i) {
   if (!b) {
     // on ouvre : la plus petite combinaison complète (on garde les 2 pour la fin)
     const normaux = gs.filter((g) => g.v !== fort);
+    // interdit de finir par un 2 : on se débarrasse des 2 avant la dernière combinaison (ils ferment le pli, on rejoue)
+    const deux = gs.find((g) => g.v === '2');
+    if (finDeuxInterdit(s) && deux && gs.filter((g) => g.v !== '2').length <= 1) return { type: 'jouer', ids: deux.cartes };
     // fin de main : si tout part en deux coups, on garde le plus fort pour la fin
     const choix = (normaux.length ? normaux : gs)[0];
     return { type: 'jouer', ids: choix.cartes };
@@ -324,8 +359,9 @@ export function coupBot(s, i) {
   // compléter le carré : on ramasse le pli et on rejoue
   const m = manquePourCarre(s);
   const g4 = m && gs.find((g) => g.v === m.v && g.cartes.length >= m.nb);
-  if (g4) return { type: 'jouer', ids: g4.cartes.slice(0, m.nb) };
-  const ok = gs.filter((g) => g.cartes.length >= b.nb && (b.ouRien ? g.v === b.ouRien : g.f >= force(b.v, s.revolution)));
+  if (g4 && coupValide(s, i, g4.cartes.slice(0, m.nb)) && !laisseQueDesDeux(s, p, g4.cartes.slice(0, m.nb))) return { type: 'jouer', ids: g4.cartes.slice(0, m.nb) };
+  const ok = gs.filter((g) => g.cartes.length >= b.nb && (b.ouRien ? g.v === b.ouRien : g.f >= force(b.v, s.revolution))
+    && coupValide(s, i, g.cartes.slice(0, b.nb)));
   if (!ok.length) return { type: 'passer' };
   // de préférence sans casser un groupe plus grand, et sans gaspiller les cartes fortes
   const exacts = ok.filter((g) => g.cartes.length === b.nb);
@@ -337,6 +373,14 @@ export function coupBot(s, i) {
     if (!autre) return { type: 'passer' };
     choix = autre;
   }
+  // interdit de finir par un 2 : ne jamais rester avec seulement des 2 en main
+  if (finDeuxInterdit(s) && choix.v !== '2' && p.main.some((c) => valeurDe(c) === '2')) {
+    const reste = p.main.filter((c) => !choix.cartes.slice(0, b.nb).includes(c));
+    if (reste.every((c) => valeurDe(c) === '2')) {
+      const deux = ok.find((g) => g.v === '2');
+      return deux ? { type: 'jouer', ids: deux.cartes.slice(0, b.nb) } : { type: 'passer' };
+    }
+  }
   return { type: 'jouer', ids: choix.cartes.slice(0, b.nb) };
 }
 
@@ -347,5 +391,6 @@ export function rapideBot(s, i) {
   const m = manquePourCarre(s);
   if (!m || !p.main.length) return null;
   const cartes = p.main.filter((c) => valeurDe(c) === m.v);
-  return cartes.length >= m.nb ? cartes.slice(0, m.nb) : null;
+  const ids = cartes.slice(0, m.nb);
+  return cartes.length >= m.nb && coupValide(s, i, ids) && !laisseQueDesDeux(s, p, ids) ? ids : null;
 }

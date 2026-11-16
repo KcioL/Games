@@ -128,9 +128,10 @@ export function actVu(s, i) {
 }
 
 // Indice écrit (en ligne) ; texte vide = indice donné à voix haute (sur un seul téléphone)
-export function actIndice(s, i, texte) {
+// tard : le chrono est écoulé (on envoie ce qui était écrit, ou rien)
+export function actIndice(s, i, texte, tard = false) {
   if (s.status !== 'jeu' || s.phase !== 'indices' || s.ordre[s.parle] !== i) return false;
-  if (texte) s.indices.push({ tour: s.tour, joueur: i, texte: texte.slice(0, 40) });
+  if (texte || tard) s.indices.push({ tour: s.tour, joueur: i, texte: (texte || '').slice(0, 40), tard: !!tard });
   avancerParole(s);
   s.coup++;
   return true;

@@ -20,6 +20,7 @@ const lireReglages = () => ({
   theme: (document.querySelector('input[name="theme"]:checked') || {}).value || 'general',
   undercover: $('reglage-undercover').value,
   mrwhite: $('reglage-mrwhite').value,
+  chrono: parseInt($('reglage-chrono').value, 10) || 0,
 });
 
 // Aperçu de la composition sous les réglages
@@ -190,6 +191,58 @@ function bouton(texte, classe, fn) {
   return b;
 }
 
+// ---------- Chrono de l'indice ----------
+// Chaque téléphone compte à partir du moment où il voit le tour du joueur commencer (pas d'horloge commune à régler).
+const dureeChrono = () => (etat && etat.reglages && parseInt(etat.reglages.chrono, 10)) || 0;
+const vusDebut = new Map(); // tour de parole -> heure (sur ce téléphone) où il a commencé
+const cleParole = (s) => `${s.partie}-${s.tour}-${s.parle}-${s.ordre[s.parle]}`;
+function debutParole() {
+  const k = cleParole(etat);
+  if (!vusDebut.has(k)) vusDebut.set(k, Date.now());
+  return vusDebut.get(k);
+}
+function resteChrono() {
+  return dureeChrono() * 1000 - (Date.now() - debutParole());
+}
+function elementChrono() {
+  const e = el('div', 'uc-chrono');
+  e.id = 'uc-chrono';
+  e.append(el('span', 'uc-chrono-n'), el('span', 'uc-chrono-barre', ''));
+  e.lastChild.appendChild(el('i'));
+  majChrono(e);
+  return e;
+}
+let sonne = '';
+function majChrono(e = $('uc-chrono')) {
+  if (!e || !etat || etat.phase !== 'indices') return;
+  const reste = resteChrono();
+  const total = dureeChrono() * 1000;
+  const sec = Math.max(0, Math.ceil(reste / 1000));
+  e.querySelector('.uc-chrono-n').textContent = reste > 0 ? `⏱ ${sec} s` : '⏱ Temps écoulé !';
+  e.querySelector('.uc-chrono-barre i').style.width = `${Math.max(0, Math.min(100, (reste / total) * 100))}%`;
+  e.classList.toggle('presse', reste > 0 && reste <= 5000);
+  e.classList.toggle('fini', reste <= 0);
+  // fin du temps : une petite vibration, une seule fois par tour de parole
+  if (reste <= 0 && sonne !== cleParole(etat)) { sonne = cleParole(etat); try { if (navigator.vibrate) navigator.vibrate([120, 80, 120]); } catch (err) { /* rien */ } }
+}
+let envoiAuto = '';
+setInterval(() => {
+  if (!etat || etat.status !== 'jeu' || etat.phase !== 'indices' || !dureeChrono()) return;
+  majChrono();
+  if (local()) return; // sur un seul téléphone, c'est vous qui passez au suivant
+  const qui = etat.ordre[etat.parle];
+  const reste = resteChrono();
+  const k = cleParole(etat);
+  // le joueur qui parle : à la fin du temps, ce qu'il a écrit part tout seul ;
+  // les autres prennent le relais quelques secondes après, s'il ne répond plus (téléphone en veille…)
+  const aMoi = qui === maPlace;
+  if (envoiAuto === k || reste > (aMoi ? 0 : -5000)) return;
+  envoiAuto = k;
+  const texte = aMoi ? brouillon.trim() : '';
+  if (aMoi) brouillon = '';
+  agir((x) => (cleParole(x) === k ? actIndice(x, qui, texte, true) : false));
+}, 250);
+
 function champTexte(placeholder, envoyer, libelle) {
   const ligne = el('form', 'uc-saisie');
   const input = el('input');
@@ -264,6 +317,7 @@ function rendreAction(moi) {
     } else if (qui === maPlace) {
       zone.appendChild(champTexte('Ton indice (un mot)', (t) => agir((x) => actIndice(x, maPlace, t)), 'Envoyer'));
     }
+    if (dureeChrono()) zone.prepend(elementChrono());
     return;
   }
 
@@ -350,7 +404,7 @@ function rendreJoueurs() {
     else if (enVote && !local()) etatTexte = p.vote >= 0 ? 'a voté ✓' : 'vote…';
     else if (s.phase === 'indices') {
       const ind = s.indices.find((x) => x.tour === s.tour && x.joueur === i);
-      if (ind) etatTexte = `« ${ind.texte} »`;
+      if (ind) etatTexte = ind.texte ? `« ${ind.texte} »${ind.tard ? ' ⏱' : ''}` : '⏱ trop tard';
     }
     if (etatTexte) texte.appendChild(el('span', 'uc-joueur-etat', etatTexte));
     b.appendChild(texte);
@@ -387,7 +441,8 @@ function rendreIndices() {
     const liste = el('ul');
     s.indices.filter((x) => x.tour === t).forEach((x) => {
       const li = el('li');
-      li.append(el('span', 'uc-indices-nom', nom(x.joueur)), el('span', 'uc-indices-mot', x.texte));
+      li.append(el('span', 'uc-indices-nom', nom(x.joueur)),
+        el('span', `uc-indices-mot${x.tard ? ' tard' : ''}`, x.tard ? (x.texte ? `${x.texte} ⏱` : '⏱ trop tard') : x.texte));
       liste.appendChild(li);
     });
     bloc.appendChild(liste);

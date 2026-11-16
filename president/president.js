@@ -24,6 +24,8 @@ const salon = initSalon({
       ouRien: $('opt-ourien').checked,
       carre: $('opt-carre').checked,
       rapidite: $('opt-carre').checked && $('opt-rapidite').checked,
+      passeBloque: $('opt-passe').checked,
+      finDeux: $('opt-fin-deux').checked,
       manches: parseInt($('opt-manches').value, 10) || 0,
     };
     return { players: joueurs, options };
@@ -202,7 +204,8 @@ function rapideHumain() {
   const m = R.manquePourCarre(etat);
   if (!m) return null;
   const cartes = moi().main.filter((c) => R.valeurDe(c) === m.v);
-  return cartes.length >= m.nb ? cartes.slice(0, m.nb) : null;
+  // (pas après avoir passé, avec la règle « Qui passe attend le pli suivant », ni pour finir par un 2)
+  return cartes.length >= m.nb && R.coupValide(etat, maPlace, cartes.slice(0, m.nb)) ? cartes.slice(0, m.nb) : null;
 }
 // on touche une des cartes qui brillent : elles partent tout de suite (il faut être le plus rapide)
 function jouerRapide() {
@@ -419,7 +422,9 @@ function rendreMain() {
     Object.entries(parValeur).forEach(([v, cs]) => {
       const m = b && R.manquePourCarre(etat);
       const ok = !b || (m && m.v === v && cs.length >= m.nb) || (cs.length >= b.nb && (b.ouRien ? v === b.ouRien : R.force(v, etat.revolution) >= R.force(b.v, etat.revolution)));
-      if (ok) cs.forEach((c) => jouables.add(c));
+      // et au moins une façon de les poser est permise (ex. : pas ses derniers 2 pour finir)
+      const permis = [1, 2, 3, 4].some((n) => n <= cs.length && R.coupValide(etat, maPlace, cs.slice(0, n)));
+      if (ok && permis) cs.forEach((c) => jouables.add(c));
     });
     // une carte choisie qui n'est plus jouable (le pli a changé) est reposée
     selection = selection.filter((c) => jouables.has(c));
@@ -432,10 +437,17 @@ function rendreMain() {
     if (don) e.classList.add('jouable');
     if ((p.recu || []).includes(c) && etat.status === 'echange') e.classList.add('recue');
     if (selection.includes(c)) e.classList.add('choisie');
-    e.addEventListener('click', () => { if (tour && !jouables.has(c)) { toast(texteABattre(b)); return; } clicCarte(c); });
+    e.addEventListener('click', () => { if (tour && !jouables.has(c)) { toast(texteInterdit(c, b)); return; } clicCarte(c); });
     zone.appendChild(e);
   });
   serrerMain();
+}
+function texteInterdit(c, b) {
+  const p = moi();
+  if (R.finDeuxInterdit(etat) && R.valeurDe(c) === '2' && p.main.every((x) => R.valeurDe(x) === '2')) {
+    return 'Interdit de finir par un 2 : passe, et garde-le pour ouvrir un pli (tu finiras alors dernier).';
+  }
+  return texteABattre(b);
 }
 function texteABattre(b) {
   if (!b) return '';
@@ -781,7 +793,11 @@ function rendre(sansAnim = false) {
   // événements : révolution, joueur qui finit
   if (prev && prev.place === maPlace && !sansAnim) {
     const ev = etat.evenement;
-    if (ev && ev.type === 'carre' && ev.rapide && prev.coup !== etat.coup) {
+    if (ev && ev.type === 'finDeux' && prev.coup !== etat.coup) {
+      const q = etat.players[ev.j];
+      const role = R.ROLES[ROLE_FINI(etat.players.length, q.fini)];
+      bandeau(`${role.ico} ${ev.j === maPlace ? 'Tu as' : `${q.name} a`} fini par un 2 : ${role.nom} d'office !`, 2600);
+    } else if (ev && ev.type === 'carre' && ev.rapide && prev.coup !== etat.coup) {
       const qui = ev.j === maPlace ? 'Tu as' : `${etat.players[ev.j].name} a`;
       const coupe = ev.coupe >= 0 ? (ev.coupe === maPlace ? 'avant toi' : `avant ${etat.players[ev.coupe].name}`) : 'avant son tour';
       bandeau(`⚡ Rapidité ! ${qui} complété le carré de ${R.nomValeur(ev.v, 2)} ${coupe} : ${ev.j === maPlace ? 'tu ramasses le pli et tu rejoues' : 'il ramasse le pli et rejoue'}.`, 3000);

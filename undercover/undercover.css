@@ -22,7 +22,7 @@
 #compo-apercu.erreur { color: #F2A79A; }
 
 /* ---------- Jeu ---------- */
-#jeu { max-width: 680px; margin: 0 auto; padding: 10px 12px 40px; display: grid; gap: 12px; }
+#jeu { max-width: 680px; margin: 0 auto; padding: 10px 12px 40px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
 .uc-entete { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--brume); font-size: .88rem; font-weight: 600; }
 .uc-theme { color: var(--or); }
 .statut { text-align: center; }
@@ -47,7 +47,7 @@ button.carte-mot { cursor: pointer; }
 .carte-mot-aide { font-size: .88rem; color: var(--brume); max-width: 36ch; }
 .carte-mot:not(.grande) .carte-mot-texte { font-size: 1.6rem; }
 
-.uc-action { display: grid; gap: 12px; justify-items: stretch; }
+.uc-action { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; justify-items: stretch; }
 .uc-action > .btn { justify-self: center; min-width: min(320px, 100%); padding: 13px 20px; font-size: 1.05rem; }
 .btn-eliminer { background: var(--rouge) !important; color: #fff !important; }
 
@@ -165,3 +165,16 @@ button.carte-mot { cursor: pointer; }
   .uc-fin-joueurs li { grid-template-columns: auto minmax(0, 1fr) auto 2.6em; }
   .uc-fin-total { display: none; }
 }
+
+/* chrono de l'indice */
+.uc-chrono { display: grid; gap: 6px; justify-items: center; }
+.uc-chrono-n { font-weight: 700; font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.uc-chrono-barre { width: min(100%, 320px); height: 8px; border-radius: 999px; background: var(--nuit-3); overflow: hidden; }
+.uc-chrono-barre i { display: block; height: 100%; width: 100%; background: var(--or); border-radius: inherit; transition: width .25s linear; }
+.uc-chrono.presse .uc-chrono-n { color: var(--rouge); animation: uc-presse .5s ease-in-out infinite alternate; }
+.uc-chrono.presse .uc-chrono-barre i { background: var(--rouge); }
+.uc-chrono.fini .uc-chrono-n { color: var(--rouge); }
+@keyframes uc-presse { to { transform: scale(1.12); } }
+.uc-indices-mot.tard { color: var(--brume); font-style: italic; }
+@media (prefers-reduced-motion: reduce) { .uc-chrono.presse .uc-chrono-n { animation: none; } }
+.ligne-reglages label:nth-child(3) { grid-column: 1 / -1; }
