@@ -49,6 +49,19 @@
       </div>
       <div class="volet" id="volet-local" hidden>
         <p>Un seul téléphone, que vous vous passez à chaque tour. Pas besoin d'internet.</p>
+        <label>Adversaire
+          <select id="local-nb">
+            <option value="2">Un autre joueur</option>
+            <option value="1">L'ordinateur</option>
+          </select>
+        </label>
+        <label id="choix-niveau" hidden>Niveau de l'ordinateur
+          <select id="local-niveau">
+            <option value="facile">Facile</option>
+            <option value="moyen" selected>Moyen</option>
+            <option value="difficile">Difficile</option>
+          </select>
+        </label>
         <div class="local-noms" id="local-noms"></div>
         <button class="btn btn-principal" id="btn-local">Commencer la partie</button>
       </div>
@@ -118,6 +131,7 @@
       <li>Point blanc : dans l'eau. Rouge : touché. Rouge foncé : coulé.</li>
       <li>Quand tu touches un bateau, tu rejoues. Dans l'eau, c'est à l'autre.</li>
       <li>Le premier qui coule toute la flotte adverse gagne.</li>
+      <li>En <strong>Solo</strong>, tu joues contre l'ordinateur : Facile (il tire presque au hasard), Moyen (il finit les bateaux qu'il touche) ou Difficile (il calcule où tes bateaux ont le plus de chances d'être).</li>
     </ul>
     <button class="btn fermer">Fermer</button>
   </dialog>

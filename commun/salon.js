@@ -1,6 +1,7 @@
 // Gestion des salons, partagée par la Bataille navale et le Skyjo.
 // Chaque jeu fournit : etatInitial(nom, nbJoueurs), demarrer(etat), afficher(etat, maPlace),
-// et pour le mode un seul téléphone : quiDoitJouer(etat) et secret (faut-il cacher le jeu entre deux tours).
+// et pour le mode un seul téléphone : quiDoitJouer(etat) et secret (faut-il cacher le jeu entre deux tours ;
+// une fonction secret(etat) est aussi possible, par exemple pour ne rien cacher en solo contre un bot).
 import { localDb } from './local-db.js';
 import { creerRelais, de } from './relais.js';
 import { EXEMPLE_PSEUDO } from './perso.js';
@@ -492,7 +493,9 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     const cible = quiDoitJouer ? quiDoitJouer(s) : -1;
     if (relais.voileVisible()) return; // le jeu s'affichera quand la bonne personne aura le téléphone
 
-    if (cible >= 0 && (voileAuDebut || (secret && cible !== place))) {
+    const cacher = typeof secret === 'function' ? !!secret(s) : !!secret;
+    if (!cacher) voileAuDebut = false;
+    if (cible >= 0 && (voileAuDebut || (cacher && cible !== place))) {
       if (voileAuDebut) {
         voileAuDebut = false;
         montrerVoile(cible);
