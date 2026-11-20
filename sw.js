@@ -1,6 +1,6 @@
 // Garde le site en mémoire sur l'appareil pour qu'il s'ouvre sans internet.
 // Pour forcer la mise à jour chez tout le monde après une modification, change VERSION.
-const VERSION = 'jeux-vol-v144';
+const VERSION = 'jeux-vol-v145';
 
 const FICHIERS = [
   './', 'index.html', 'menu.css', 'menu.js', 'firebase.js', 'suivi.js', 'manifest.webmanifest',
@@ -43,7 +43,8 @@ const HOTES_EXTERNES = ['www.gstatic.com', 'fonts.googleapis.com', 'fonts.gstati
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(VERSION);
-    await cache.addAll(FICHIERS);
+    // « reload » : on prend les fichiers sur le serveur, pas une vieille copie gardée par le navigateur
+    await cache.addAll(FICHIERS.map((f) => new Request(f, { cache: 'reload' })));
     await Promise.all(EXTERNES.map((u) => cache.add(u).catch(() => {})));
     await self.skipWaiting();
   })());
@@ -62,8 +63,10 @@ self.addEventListener('activate', (event) => {
 async function reseauPuisCache(requete) {
   const cache = await caches.open(VERSION);
   try {
+    // « no-cache » : le navigateur redemande toujours au serveur si le fichier a changé
+    // (sinon il peut resservir une ancienne version pendant quelques minutes après une mise à jour du site)
     const reponse = await Promise.race([
-      fetch(requete),
+      fetch(requete.mode === 'navigate' ? requete : new Request(requete, { cache: 'no-cache' })),
       new Promise((_, refus) => setTimeout(() => refus(new Error('délai dépassé')), 4000)),
     ]);
     if (reponse && reponse.ok) cache.put(requete, reponse.clone());

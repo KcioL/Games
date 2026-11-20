@@ -585,6 +585,8 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   ui.reprendre.addEventListener('click', async () => {
     const s = lireSession();
     if (!s) return;
+    // (une partie commencée avant que le pseudo soit demandé)
+    if (pseudoManquant()) { exigerPseudo(() => ui.reprendre.click()); return; }
     if (s.local) {
       passerEnLocal();
       voileAuDebut = !!secret;

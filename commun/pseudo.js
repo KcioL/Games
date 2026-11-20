@@ -62,6 +62,24 @@ export async function assurerPseudo(message) {
   return pseudo() || demanderPseudo(message);
 }
 
+// Bandeau « Choisis ton pseudo pour jouer » : visible tant qu'il n'y a pas de pseudo (le jeu reste bloqué)
+export function avisPseudo(message = 'Choisis ton pseudo pour jouer : il apparaît dans les résultats.') {
+  const e = document.createElement('div');
+  e.className = 'avis-pseudo';
+  const t = document.createElement('p');
+  t.textContent = `🔒 ${message}`;
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'btn btn-principal';
+  b.textContent = 'Choisir mon pseudo';
+  b.addEventListener('click', () => demanderPseudo());
+  e.append(t, b);
+  const maj = () => { e.hidden = !!pseudo(); };
+  maj();
+  document.addEventListener('pseudo-change', maj);
+  return e;
+}
+
 // Petit bouton « 👤 Léa » pour voir et changer son pseudo
 export function boutonPseudo() {
   const b = document.createElement('button');

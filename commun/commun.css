@@ -288,3 +288,8 @@ dialog.dialogue-pseudo .actions-pseudo { display: flex; gap: 10px; justify-conte
 dialog.dialogue-pseudo .actions-pseudo .btn { margin-top: 18px; }
 dialog.dialogue-pseudo .btn-principal { background: var(--or); color: #1B1B1B; }
 .bouton-pseudo { font-size: .85rem; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }
+
+/* bandeau « Choisis ton pseudo pour jouer » */
+.avis-pseudo { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 14px; border-radius: 14px; background: var(--nuit-2); border: 2px solid var(--or); }
+.avis-pseudo[hidden] { display: none; }
+.avis-pseudo p { margin: 0; font-weight: 600; }

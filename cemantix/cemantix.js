@@ -1,6 +1,6 @@
 import { $, el, toast, initRegles, compterPartie } from '../commun/salon.js';
 import { chargerSemantique, numeroDuJour } from '../commun/mots/semantique.js';
-import { pseudo, assurerPseudo, boutonPseudo } from '../commun/pseudo.js';
+import { pseudo, assurerPseudo, boutonPseudo, avisPseudo } from '../commun/pseudo.js';
 
 const CLE = 'jeux-vol:cemantix';
 initRegles();
@@ -107,6 +107,9 @@ function noterResultat() {
 }
 
 $('mode-libre').parentElement.after(boutonPseudo());
+// pas de pseudo, pas de partie : il apparaît dans les résultats du tableau de bord
+$('saisie').before(avisPseudo());
+document.addEventListener('pseudo-change', () => { if (partie) { rendre(); if (!fini()) $('mot').focus({ preventScroll: true }); } });
 
 // ---------- Proposer un mot ----------
 function proposer(texte) {
@@ -190,9 +193,9 @@ function rendre() {
   if (!partie) return;
   $('titre').textContent = partie.mode === 'jour' ? `Mot du jour n°${partie.num} · ${partie.essais.length} essai${partie.essais.length > 1 ? 's' : ''}` : `Partie libre · ${partie.essais.length} essai${partie.essais.length > 1 ? 's' : ''}`;
   const termine = fini();
-  $('mot').disabled = termine;
-  $('btn-envoyer').disabled = termine;
-  $('outils').hidden = false;
+  $('mot').disabled = termine || !pseudo();
+  $('btn-envoyer').disabled = termine || !pseudo();
+  $('outils').hidden = !pseudo();
   $('btn-indice').hidden = termine;
   $('btn-abandon').hidden = termine;
   $('btn-nouveau').hidden = !(termine || partie.mode === 'libre');
@@ -247,8 +250,6 @@ Promise.all([chargerSemantique(), fetch('donnees/infos.json').then((r) => r.json
   .then(([s, inf]) => {
     sem = s;
     infos = inf;
-    $('mot').disabled = false;
-    $('btn-envoyer').disabled = false;
-    return demarrer('jour');
+    return demarrer('jour').then(() => { if (!pseudo()) assurerPseudo(); });
   })
   .catch(() => setMessage('Impossible de charger les mots. Vérifie ta connexion puis recharge la page.', true));

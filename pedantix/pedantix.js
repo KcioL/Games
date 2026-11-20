@@ -1,6 +1,6 @@
 import { $, el, toast, initRegles, compterPartie } from '../commun/salon.js';
 import { chargerSemantique, numeroDuJour, sansAccents } from '../commun/mots/semantique.js';
-import { pseudo, assurerPseudo, boutonPseudo } from '../commun/pseudo.js';
+import { pseudo, assurerPseudo, boutonPseudo, avisPseudo } from '../commun/pseudo.js';
 
 const CLE = 'jeux-vol:pedantix';
 const CLE_PETITS = 'jeux-vol:pedantix-petits';
@@ -160,8 +160,8 @@ async function demarrer(m, nouveau = false) {
   partie.dernier = null;
   calculerProches();
   setMessage('');
-  $('mot').disabled = fini();
-  $('btn-envoyer').disabled = fini();
+  $('mot').disabled = fini() || !pseudo();
+  $('btn-envoyer').disabled = fini() || !pseudo();
   rendre();
   if (!fini()) $('mot').focus({ preventScroll: true });
 }
@@ -181,6 +181,9 @@ function noterResultat() {
 }
 
 $('mode-libre').parentElement.after(boutonPseudo());
+// pas de pseudo, pas de partie : il apparaît dans les résultats du tableau de bord
+$('saisie').before(avisPseudo());
+document.addEventListener('pseudo-change', () => { if (partie) { rendre(); if (!fini()) $('mot').focus({ preventScroll: true }); } });
 
 // ---------- Proposer un mot ----------
 function proposer(texte) {
@@ -316,9 +319,9 @@ function rendre() {
       g.appendChild(b);
     }
   }
-  $('mot').disabled = termine;
-  $('btn-envoyer').disabled = termine;
-  $('btn-abandon').hidden = termine;
+  $('mot').disabled = termine || !pseudo();
+  $('btn-envoyer').disabled = termine || !pseudo();
+  $('btn-abandon').hidden = termine || !pseudo();
   $('btn-nouveau').hidden = !(termine || partie.mode === 'libre');
   $('btn-nouveau').textContent = partie.mode === 'jour' ? 'Jouer une partie libre' : 'Nouvel article';
 }
@@ -334,9 +337,8 @@ async function partager() {
 // ---------- Chargement ----------
 fetch('articles.txt').then((r) => r.text()).then((t) => {
   titres = t.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
-  $('mot').disabled = false;
-  $('btn-envoyer').disabled = false;
   demarrer('jour');
+  if (!pseudo()) assurerPseudo();
 }).catch(() => setMessage('Impossible de charger la liste des articles.', true));
 // le sens des mots (pour les mots « proches ») arrive un peu après : le jeu marche déjà sans
 chargerSemantique().then((s) => { sem = s; if (partie) { calculerProches(); rendre(); } }).catch(() => {});
