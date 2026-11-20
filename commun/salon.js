@@ -5,6 +5,7 @@
 import { localDb } from './local-db.js';
 import { creerRelais, de } from './relais.js';
 import { EXEMPLE_PSEUDO } from './perso.js';
+import { pseudoValide, demanderPseudo } from './pseudo.js';
 
 export { de };
 
@@ -172,7 +173,7 @@ function genererCode() {
   return c;
 }
 
-export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret, validerLocal, validerEnLigne }) {
+export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, secret, validerLocal, validerEnLigne, pseudoObligatoire = false }) {
   const cleSession = 'jeux-vol:' + jeu;
   const clePseudo = 'jeux-vol:pseudo';
   const CODE_LOCAL = 'LOCAL';
@@ -333,7 +334,32 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
     if (!relais) relais = creerRelais();
   }
 
+  // Jeux où le pseudo apparaît dans les résultats (pseudoObligatoire) : on le demande s'il manque
+  function premierNomLocal(n) {
+    const premier = ui.localNoms && ui.localNoms.querySelector('input');
+    if (premier && (!premier.value.trim() || !pseudoValide(premier.value))) premier.value = n;
+  }
+  function pseudoManquant() {
+    if (!pseudoObligatoire) return false;
+    let n = ui.pseudo.value.trim();
+    if (!pseudoValide(n)) { try { n = (localStorage.getItem(clePseudo) || '').trim(); } catch (e) { n = ''; } }
+    if (!pseudoValide(n)) return true;
+    ui.pseudo.value = n;
+    premierNomLocal(n);
+    return false;
+  }
+  function exigerPseudo(suite) {
+    demanderPseudo().then((n) => {
+      if (!n) return;
+      ui.pseudo.value = n;
+      premierNomLocal(n);
+      suite();
+    });
+  }
+  document.addEventListener('pseudo-change', (e) => { if (pseudoObligatoire && e.detail) { ui.pseudo.value = e.detail; const p = ui.localNoms && ui.localNoms.querySelector('input'); if (p) p.value = e.detail; } });
+
   async function creer() {
+    if (pseudoManquant()) { exigerPseudo(creer); return; }
     const nom = lirePseudo() || 'Joueur 1';
     const nb = ui.nb ? parseInt(ui.nb.value, 10) : 2;
     const erreur = validerEnLigne ? validerEnLigne() : '';
@@ -359,6 +385,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
   }
 
   async function rejoindre(c) {
+    if (pseudoManquant()) { exigerPseudo(() => rejoindre(c)); return; }
     const nom = lirePseudo();
     if (!/^[A-Z]{4}$/.test(c)) { toast('Le code du salon fait 4 lettres.'); return; }
     let maPlace = -1;
@@ -468,6 +495,7 @@ export function initSalon({ jeu, etatInitial, demarrer, afficher, quiDoitJouer, 
 
   // ---------- Mode un seul téléphone ----------
   function commencerLocal() {
+    if (pseudoManquant()) { exigerPseudo(commencerLocal); return; }
     const erreur = validerLocal ? validerLocal() : '';
     if (erreur) { toast(erreur); return; }
     const noms = [...ui.localNoms.querySelectorAll('input')]

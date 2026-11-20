@@ -276,3 +276,15 @@ dialog.regles .btn { margin-top: 18px; background: var(--nuit-3); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* ---------- Pseudo (Sutom, Pédantix, Cémantix) ---------- */
+dialog.dialogue-pseudo { width: min(420px, 92vw); }
+dialog.dialogue-pseudo .champ-pseudo {
+  width: 100%; margin-top: 12px; padding: 12px 14px; border-radius: 12px; font: inherit; font-size: 1.05rem;
+  border: 1px solid var(--lisere); background: var(--nuit-1, #0E1530); color: var(--papier);
+}
+dialog.dialogue-pseudo .erreur-pseudo { color: #FF8A8A; font-size: .9rem; margin-top: 8px; }
+dialog.dialogue-pseudo .actions-pseudo { display: flex; gap: 10px; justify-content: flex-end; }
+dialog.dialogue-pseudo .actions-pseudo .btn { margin-top: 18px; }
+dialog.dialogue-pseudo .btn-principal { background: var(--or); color: #1B1B1B; }
+.bouton-pseudo { font-size: .85rem; white-space: nowrap; max-width: 60vw; overflow: hidden; text-overflow: ellipsis; }

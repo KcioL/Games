@@ -1,5 +1,6 @@
 import { $, el, toast, initRegles, compterPartie } from '../commun/salon.js';
 import { chargerSemantique, numeroDuJour, sansAccents } from '../commun/mots/semantique.js';
+import { pseudo, assurerPseudo, boutonPseudo } from '../commun/pseudo.js';
 
 const CLE = 'jeux-vol:pedantix';
 const CLE_PETITS = 'jeux-vol:pedantix-petits';
@@ -27,7 +28,7 @@ $('opt-petits').addEventListener('change', () => {
 function lire() { try { return JSON.parse(localStorage.getItem(CLE)) || {}; } catch (e) { return {}; } }
 function sauver() {
   const m = lire();
-  const p = { num: partie.num, titre: partie.titre, page: partie.page, url: partie.url, texte: partie.texte, essais: partie.essais, trouve: partie.trouve, abandon: partie.abandon, compte: partie.compte };
+  const p = { num: partie.num, titre: partie.titre, page: partie.page, url: partie.url, texte: partie.texte, essais: partie.essais, trouve: partie.trouve, abandon: partie.abandon, compte: partie.compte, debut: partie.debut || 0, envoye: !!partie.envoye };
   if (partie.mode === 'jour') {
     m.jours = m.jours || {};
     m.jours[partie.num] = p;
@@ -166,20 +167,39 @@ async function demarrer(m, nouveau = false) {
 }
 const fini = () => partie && (partie.trouve || partie.abandon);
 
+
+// ---------- Résultat pour le tableau de bord (voir suivi.js) : pseudo, essais, temps ----------
+function noterResultat() {
+  if (!partie || partie.envoye) return;
+  partie.envoye = true;
+  try {
+    if (window.suivi && window.suivi.resultat) window.suivi.resultat('pedantix', {
+      n: pseudo(), e: partie.essais.length, s: partie.debut ? (Date.now() - partie.debut) / 1000 : undefined,
+      g: partie.trouve ? 'trouve' : 'abandon', m: partie.mode, k: partie.mode === 'jour' ? partie.num : undefined,
+    });
+  } catch (e) { /* jamais bloquant */ }
+}
+
+$('mode-libre').parentElement.after(boutonPseudo());
+
 // ---------- Proposer un mot ----------
 function proposer(texte) {
   if (!partie || fini()) return;
+  // le pseudo apparaît dans les résultats : on le demande avant le premier mot
+  if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
   const mots = String(texte).match(MOT);
   if (!mots) return;
   const mot = mots[0];
   const n = norm(mot);
   if (partie.essais.some((e) => norm(e) === n)) { setMessage(`« ${mot} » est déjà proposé.`); partie.dernier = n; rendre(); return; }
   partie.essais.push(mot.toLowerCase());
+  if (!partie.debut) partie.debut = Date.now();
   partie.dernier = n;
   if (!partie.compte) { partie.compte = true; compterPartie('pedantix', 'telephone'); }
   const nb = partie.morceauxTexte.filter((m) => m.n === n).length + partie.morceauxTitre.filter((m) => m.n === n).length;
   setMessage(nb ? `« ${mot} » : ${nb} fois dans l'article !` : `« ${mot} » n'est pas dans l'article.`, !nb);
   verifierVictoire();
+  if (partie.trouve) noterResultat();
   calculerProches();
   sauver();
   rendre();
@@ -198,6 +218,7 @@ $('saisie').addEventListener('submit', (ev) => {
 $('btn-abandon').addEventListener('click', () => {
   if (!partie || fini() || !confirm('Abandonner et voir l\'article ?')) return;
   partie.abandon = true;
+  noterResultat();
   sauver();
   rendre();
 });

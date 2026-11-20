@@ -1,5 +1,6 @@
 import { $, el, toast, initSalon, initRegles } from '../commun/salon.js';
 import * as R from './regles.js';
+import { assurerPseudo, boutonPseudo } from '../commun/pseudo.js';
 
 const CLE_STATS = 'jeux-vol:sutom-jours';
 const CLAVIER = ['AZERTYUIOP', 'QSDFGHJKLM', 'WXCVBN'];
@@ -82,7 +83,12 @@ function majAccueil() {
 majAccueil();
 
 // ---------- Salon ----------
-$('btn-libre').addEventListener('click', () => { modeLibre = true; $('btn-local').click(); modeLibre = false; });
+$('btn-libre').addEventListener('click', async () => {
+  // le pseudo d'abord : la partie libre démarre ensuite d'un coup (modeLibre n'est lu qu'au démarrage)
+  if (!(await assurerPseudo())) return;
+  modeLibre = true; $('btn-local').click(); modeLibre = false;
+});
+$('btn-local').before(boutonPseudo());
 
 const salon = initSalon({
   jeu: 'sutom',
@@ -110,13 +116,34 @@ const salon = initSalon({
     const p = moi();
     if (precedent && precedent.players[maPlace] && precedent.players[maPlace].essais.length < p.essais.length) animerLigne = p.essais.length - 1;
     if (etat.mode === 'jour' && etat.jour) ecrireJour(etat.jour, p.essais, etat.mot);
+    // fin de la partie : le résultat de chaque joueur part au tableau de bord (une fois : par l'hôte, ou sur ce téléphone)
+    if (etat.status === 'fin' && precedent && precedent.status !== 'fin' && (salon.estLocal() || maPlace === 0)) envoyerResultats(etat);
     rendre();
   },
   quiDoitJouer: () => -1,
   secret: false,
+  pseudoObligatoire: true, // le pseudo apparaît dans les résultats du tableau de bord
 });
 initRegles();
 const agir = (fn) => salon.agir((s) => fn(R.normaliser(s)));
+
+// ---------- Résultats pour le tableau de bord (voir suivi.js) ----------
+const resultatsEnvoyes = new Set();
+function envoyerResultats(s) {
+  const cle = `${s.createdAt || ''}-${s.partie}`;
+  if (resultatsEnvoyes.has(cle) || !window.suivi || !window.suivi.resultat) return;
+  resultatsEnvoyes.add(cle);
+  s.players.forEach((p) => {
+    if (!p || !p.essais || (!p.essais.length && !p.abandon)) return; // une place jamais jouée
+    try {
+      window.suivi.resultat('sutom', {
+        n: p.name, e: p.essais.length, s: (p.temps || 0) / 1000,
+        g: p.trouve ? 'trouve' : p.abandon ? 'abandon' : 'rate',
+        m: s.mode, k: s.mode === 'jour' ? s.jour : undefined,
+      });
+    } catch (e) { /* jamais bloquant */ }
+  });
+}
 
 // ---------- Outils ----------
 const moi = () => etat.players[maPlace];

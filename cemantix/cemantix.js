@@ -1,5 +1,6 @@
 import { $, el, toast, initRegles, compterPartie } from '../commun/salon.js';
 import { chargerSemantique, numeroDuJour } from '../commun/mots/semantique.js';
+import { pseudo, assurerPseudo, boutonPseudo } from '../commun/pseudo.js';
 
 const CLE = 'jeux-vol:cemantix';
 initRegles();
@@ -13,7 +14,7 @@ let mode = 'jour';
 function lire() { try { return JSON.parse(localStorage.getItem(CLE)) || {}; } catch (e) { return {}; } }
 function sauver() {
   const m = lire();
-  const p = { num: partie.num, essais: partie.essais.map((e) => e.mot), trouve: partie.trouve, abandon: partie.abandon, indices: partie.indices, compte: partie.compte };
+  const p = { num: partie.num, essais: partie.essais.map((e) => e.mot), trouve: partie.trouve, abandon: partie.abandon, indices: partie.indices, compte: partie.compte, debut: partie.debut || 0, envoye: !!partie.envoye };
   if (partie.mode === 'jour') { m.jours = m.jours || {}; m.jours[partie.num] = p; } else m.libre = p;
   try { localStorage.setItem(CLE, JSON.stringify(m)); } catch (e) { /* rien */ }
 }
@@ -83,6 +84,7 @@ async function demarrer(m, nouveau = false) {
   if (deja) {
     deja.essais.forEach((mot) => { const i = sem.trouver(mot); if (i >= 0 && !partie.essais.some((e) => e.i === i)) partie.essais.push({ i, mot: sem.mots[i], ...mesurer(i) }); });
     partie.trouve = !!deja.trouve; partie.abandon = !!deja.abandon; partie.indices = deja.indices || 0; partie.compte = !!deja.compte;
+    partie.debut = deja.debut || 0; partie.envoye = !!deja.envoye;
     partie.dernier = partie.essais[partie.essais.length - 1] || null;
   }
   setMessage('');
@@ -91,18 +93,36 @@ async function demarrer(m, nouveau = false) {
 }
 const fini = () => partie && (partie.trouve || partie.abandon);
 
+
+// ---------- Résultat pour le tableau de bord (voir suivi.js) : pseudo, essais, temps ----------
+function noterResultat() {
+  if (!partie || partie.envoye) return;
+  partie.envoye = true;
+  try {
+    if (window.suivi && window.suivi.resultat) window.suivi.resultat('cemantix', {
+      n: pseudo(), e: partie.essais.length, s: partie.debut ? (Date.now() - partie.debut) / 1000 : undefined,
+      g: partie.trouve ? 'trouve' : 'abandon', m: partie.mode, k: partie.mode === 'jour' ? partie.num : undefined, i: partie.indices,
+    });
+  } catch (e) { /* jamais bloquant */ }
+}
+
+$('mode-libre').parentElement.after(boutonPseudo());
+
 // ---------- Proposer un mot ----------
 function proposer(texte) {
   if (!partie || fini()) return;
+  // le pseudo apparaît dans les résultats : on le demande avant le premier mot
+  if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
   const i = sem.trouver(texte);
   if (i < 0) { setMessage(`Je ne connais pas « ${texte.trim()} ».`, true); return; }
   const deja = partie.essais.find((e) => e.i === i);
   if (deja) { partie.dernier = deja; setMessage(`« ${deja.mot} » est déjà dans la liste.`); rendre(); return; }
   const e = { i, mot: sem.mots[i], ...mesurer(i) };
   partie.essais.push(e);
+  if (!partie.debut) partie.debut = Date.now();
   partie.dernier = e;
   if (!partie.compte) { partie.compte = true; compterPartie('cemantix', 'telephone'); }
-  if (e.r === 0) partie.trouve = true;
+  if (e.r === 0) { partie.trouve = true; noterResultat(); }
   sauver();
   setMessage('');
   rendre();
@@ -131,6 +151,7 @@ $('btn-indice').addEventListener('click', () => {
 $('btn-abandon').addEventListener('click', () => {
   if (!partie || fini() || !confirm('Abandonner et voir le mot ?')) return;
   partie.abandon = true;
+  noterResultat();
   sauver();
   rendre();
 });
