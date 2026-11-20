@@ -21,7 +21,11 @@ const petitsVisibles = () => $('opt-petits').checked;
 try { const v = localStorage.getItem(CLE_PETITS); if (v !== null) $('opt-petits').checked = v === '1'; } catch (e) { /* rien */ }
 $('opt-petits').addEventListener('change', () => {
   try { localStorage.setItem(CLE_PETITS, $('opt-petits').checked ? '1' : '0'); } catch (e) { /* rien */ }
-  if (partie) { verifierVictoire(); rendre(); }
+  if (partie && !fini()) {
+    verifierVictoire();
+    if (partie.trouve) { noterResultat(); sauver(); }
+  }
+  if (partie) rendre();
 });
 
 // ---------- Mémoire du téléphone ----------
@@ -329,26 +333,12 @@ function rendre() {
   if (termine) {
     g.appendChild(el('h2', '', partie.trouve ? '🎉 Trouvé !' : 'Dommage !'));
     g.appendChild(el('p', '', partie.trouve ? `C'était « ${partie.titre} », trouvé en ${partie.essais.length} mots.` : `C'était « ${partie.titre} ».`));
-    if (partie.mode === 'jour' && partie.trouve) {
-      const b = el('button', 'btn', 'Partager mon résultat');
-      b.type = 'button';
-      b.addEventListener('click', partager);
-      g.appendChild(b);
-    }
   }
   $('mot').disabled = termine || !pseudo();
   $('btn-envoyer').disabled = termine || !pseudo();
   $('btn-abandon').hidden = termine || !pseudo();
   $('btn-nouveau').hidden = !(termine || partie.mode === 'libre');
   $('btn-nouveau').textContent = partie.mode === 'jour' ? 'Jouer une partie libre' : 'Nouvel article';
-}
-
-async function partager() {
-  const texte = `Pédantix n°${partie.num} : trouvé en ${partie.essais.length} mots ! 📖`;
-  try {
-    if (navigator.share) await navigator.share({ text: texte });
-    else { await navigator.clipboard.writeText(texte); toast('Résultat copié : tu peux le coller où tu veux.'); }
-  } catch (e) { /* partage annulé */ }
 }
 
 // ---------- Chargement ----------

@@ -229,12 +229,6 @@ function rendre() {
     for (let r = 1; r <= 100; r++) ol.appendChild(el('li', '', `${sem.mots[partie.idx[r]]} · ${(partie.sc[r] / 100).toFixed(2)} °C`));
     proches.appendChild(ol);
     g.appendChild(proches);
-    if (partie.mode === 'jour' && partie.trouve) {
-      const b = el('button', 'btn', 'Partager mon résultat');
-      b.type = 'button';
-      b.addEventListener('click', partager);
-      g.appendChild(b);
-    }
   }
 
   // la liste : le dernier mot en haut, puis tous les mots du plus chaud au plus froid
@@ -246,15 +240,6 @@ function rendre() {
   const corps = $('essais');
   corps.innerHTML = '';
   [...partie.essais].sort((a, b) => b.t - a.t).forEach((e) => corps.appendChild(ligne(e, num.get(e.i))));
-}
-
-async function partager() {
-  const pm = (seuil) => partie.essais.filter((e) => pourMille(e.r) >= seuil && e.r !== 0).length;
-  const texte = `Cémantix n°${partie.num} : trouvé en ${partie.essais.length} essais !\n🥳 1\n😱 ${pm(999)}\n🔥 ${pm(990)}\n🥵 ${pm(900)}\n😎 ${pm(1)}`;
-  try {
-    if (navigator.share) await navigator.share({ text: texte });
-    else { await navigator.clipboard.writeText(texte); toast('Résultat copié : tu peux le coller où tu veux.'); }
-  } catch (e) { /* partage annulé */ }
 }
 
 // ---------- Chargement ----------

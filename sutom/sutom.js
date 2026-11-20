@@ -198,19 +198,15 @@ $('btn-abandon').addEventListener('click', () => {
   if (peutJouer() && confirm('Abandonner ? Le mot te sera révélé.')) agir((s) => R.abandonner(s, maPlace));
 });
 $('btn-voir').addEventListener('click', () => { finMasquee = true; rendre(); });
+// (plus de bouton « Partager » : le résultat part tout seul au tableau de bord ; au cas où une ancienne page l'aurait encore)
+const ancienPartage = document.getElementById('btn-partager');
+if (ancienPartage) ancienPartage.remove();
 $('btn-suite').addEventListener('click', () => agir((s) => {
   if (s.status !== 'fin') return false;
   // après le mot du jour, on enchaîne sur des parties libres
   if (s.mode === 'jour') { s.mode = 'libre'; s.longueur = 0; delete s.jour; }
   return R.nouvellePartie(s, tirer(s.longueur));
 }));
-$('btn-partager').addEventListener('click', async () => {
-  const texte = R.partage(etat.mot, moi().essais, `SUTOM n°${etat.jour}`);
-  try {
-    if (navigator.share) await navigator.share({ text: texte });
-    else { await navigator.clipboard.writeText(texte); toast('Résultat copié : tu peux le coller où tu veux.'); }
-  } catch (e) { /* partage annulé */ }
-});
 
 // ---------- Affichage ----------
 const CLASSES = { [R.BIEN]: 'bien', [R.MAL]: 'mal', [R.ABSENT]: 'absent' };
@@ -353,7 +349,6 @@ function rendreFin() {
     });
     const jour = etat.mode === 'jour';
     if (jour) rendreStats($('fin-stats'), p.trouve ? p.essais.length : 0); else $('fin-stats').innerHTML = '';
-    $('btn-partager').hidden = !jour;
     $('btn-suite').textContent = jour ? 'Jouer une partie libre' : etat.mode === 'course' ? 'Revanche' : 'Nouveau mot';
   }, attente);
 }
