@@ -1,0 +1,66 @@
+/* ==========================================================================
+   Pédantix : une page d'encyclopédie dont les mots sont cachés sous des bandes grises
+   ========================================================================== */
+.salle-px { padding: 10px 10px 40px; max-width: 1100px; margin: 0 auto; }
+.haut-px { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 6px 0 8px; background: var(--nuit); max-width: 760px; margin: 0 auto; }
+.modes-px { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--nuit-2); border-radius: 12px; padding: 4px; }
+.modes-px button { border: 0; background: transparent; border-radius: 9px; padding: 8px 6px; font: inherit; font-weight: 700; color: var(--brume); cursor: pointer; }
+.modes-px button[aria-selected="true"] { background: var(--nuit-3); color: var(--papier); box-shadow: inset 0 -2px 0 var(--or); }
+.saisie-px { display: flex; gap: 8px; }
+.saisie-px input { flex: 1 1 0; min-width: 0; padding: 11px 14px; border-radius: 12px; border: 2px solid var(--nuit-3); background: var(--nuit-2); color: var(--papier); font-size: max(16px, 1.05rem); }
+.saisie-px input:focus { border-color: var(--or); outline: none; }
+.saisie-px .btn { flex: none; }
+.message-px { margin: 0; min-height: 1.2em; text-align: center; font-weight: 600; color: var(--or-clair); }
+.message-px.discret { color: var(--brume); font-weight: 400; }
+
+.disposition-px { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: 6px; }
+@media (min-width: 900px) {
+  .disposition-px { grid-template-columns: minmax(0, 1fr) 270px; align-items: start; }
+  .cote-px { position: sticky; top: 150px; max-height: calc(100dvh - 170px); overflow: auto; }
+}
+
+/* la page */
+.page-px {
+  background: #FBFAF6; color: #202122;
+  border-radius: 12px;
+  padding: 18px 18px 22px;
+  font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+  font-size: 1.04rem; line-height: 1.85;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .3);
+  min-height: 200px;
+}
+.page-px.chargement { background: linear-gradient(100deg, #EDEBE4 30%, #F7F5EF 50%, #EDEBE4 70%) 0 0 / 300% 100%; animation: charge-px 1.4s linear infinite; }
+@keyframes charge-px { to { background-position: -100% 0; } }
+.titre-px { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #C8CCD1; font-family: inherit; font-size: 1.7rem; font-weight: 600; line-height: 1.5; color: #000; }
+.texte-px { overflow-wrap: anywhere; }
+.cache-px {
+  display: inline-block; vertical-align: -0.18em;
+  height: 1.15em; border-radius: 3px;
+  background: #3B3E44;
+  margin: 0 1px;
+  cursor: pointer;
+  font-family: "Fredoka", system-ui, sans-serif; font-size: .8em; line-height: 1.45em; text-align: center;
+  white-space: nowrap; overflow: hidden;
+}
+.titre-px .cache-px { background: #2A2C31; }
+.cache-px.proche { --force: .5; background: #D9DCE1; color: rgba(40, 44, 52, calc(.35 + .65 * var(--force))); font-style: italic; padding: 0 3px; }
+.cache-px.nouveau { animation: nouveau-px 1s ease; }
+.vu-px.nouveau { background: #FFE08A; border-radius: 3px; animation: nouveau-px 1.2s ease; }
+@keyframes nouveau-px { from { background: #F2B632; } }
+.source-px { margin: 14px 0 0; font-family: "Fredoka", system-ui, sans-serif; font-size: .82rem; color: #54595D; }
+.source-px a { color: #3366CC; }
+
+/* à côté : les mots proposés */
+.cote-px { display: grid; gap: 10px; align-content: start; }
+.compte-px { margin: 0; color: var(--brume); font-size: .85rem; }
+.essais-px { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 50dvh; overflow: auto; }
+.essais-px li { display: flex; justify-content: space-between; gap: 8px; padding: 5px 10px; border-radius: 8px; background: var(--nuit-2); }
+.essais-px li.oui b { color: #7FD8A0; }
+.essais-px li.non { color: var(--brume); }
+.option-px { display: flex; gap: 8px; align-items: center; font-size: .85rem; color: var(--brume); cursor: pointer; }
+.option-px input { width: 18px; height: 18px; accent-color: var(--or); }
+.outils-px { display: flex; flex-wrap: wrap; gap: 6px; }
+.gagne-px { display: grid; gap: 8px; justify-items: center; text-align: center; padding: 14px; border-radius: 14px; background: linear-gradient(160deg, rgba(63, 165, 107, .25), var(--nuit-2)); border: 2px solid var(--vert); }
+.gagne-px h2, .gagne-px p { margin: 0; }
+@media (prefers-reduced-motion: reduce) { .page-px.chargement, .cache-px.nouveau, .vu-px.nouveau { animation: none; } }
+.para-px { display: block; height: .7em; }

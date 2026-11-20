@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sutom</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🟥</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="../commun/relais.css">
+  <link rel="stylesheet" href="sutom.css">
+  <script type="module" src="sutom.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Sutom</h1>
+    <span class="info-salon" id="info-salon" hidden><span class="etiquette">Salon </span><strong id="code-affiche"></strong></span>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+    <button class="btn btn-discret" id="btn-quitter" hidden>Quitter</button>
+  </header>
+
+  <!-- Accueil -->
+  <section class="ecran" id="lobby">
+    <div class="carte-salon">
+      <div class="onglets" role="tablist">
+        <button role="tab" aria-selected="true" data-volet="volet-local">Seul</button>
+        <button role="tab" aria-selected="false" data-volet="volet-ligne">Course en ligne</button>
+      </div>
+      <div class="volet" id="volet-local">
+        <p>Trouve le mot en 6 essais. La première lettre est donnée ; chaque essai doit être un vrai mot.</p>
+        <div hidden><select id="local-nb"><option value="1" selected>1</option></select><div id="local-noms"></div></div>
+        <button class="btn btn-principal btn-jour" id="btn-local" disabled>Mot du jour</button>
+        <p class="sous-bouton" id="info-jour"></p>
+        <div class="separateur">ou</div>
+        <div class="ligne-libre">
+          <label>Lettres
+            <select id="libre-longueur">
+              <option value="0" selected>Au hasard</option>
+              <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            </select>
+          </label>
+          <button class="btn" id="btn-libre" type="button" disabled>Partie libre</button>
+        </div>
+        <div class="stats-sutom" id="stats"></div>
+      </div>
+      <div class="volet" id="volet-ligne" hidden>
+        <p>Tout le monde cherche le même mot, chacun sur son téléphone. Le moins d'essais gagne ; à égalité, le plus rapide. Un joueur crée le salon, les autres entrent le code à 4 lettres.</p>
+        <label>Ton pseudo
+          <input id="pseudo" maxlength="16" autocomplete="nickname">
+        </label>
+        <div class="ligne-choix">
+          <label>Joueurs
+            <select id="nb-joueurs">
+              <option value="2" selected>2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+              <option value="6">6</option><option value="7">7</option><option value="8">8</option>
+            </select>
+          </label>
+          <label>Lettres
+            <select id="ligne-longueur">
+              <option value="0" selected>Au hasard</option>
+              <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-principal" id="btn-creer">Créer un salon</button>
+        <div class="separateur">ou</div>
+        <div class="ligne">
+          <input id="code-salon" maxlength="4" placeholder="CODE" aria-label="Code du salon" autocomplete="off">
+          <button class="btn" id="btn-rejoindre">Rejoindre</button>
+        </div>
+      </div>
+      <button class="btn" id="btn-reprendre" hidden></button>
+    </div>
+  </section>
+
+  <!-- Attente -->
+  <section class="ecran" id="attente" hidden>
+    <div class="carte-salon">
+      <h2>En attente des joueurs</h2>
+      <p>Donne ce code aux autres :</p>
+      <div class="code-grand" id="code-grand"></div>
+      <ul class="liste-places" id="liste-places"></ul>
+    </div>
+  </section>
+
+  <!-- Jeu -->
+  <main id="jeu" class="salle-st" hidden>
+    <div class="colonne-st">
+      <p class="titre-st" id="titre-partie"></p>
+      <div class="adversaires-st" id="adversaires" hidden></div>
+      <div class="grille-st" id="grille" aria-live="polite"></div>
+      <p class="message-st" id="message" aria-live="assertive"></p>
+      <div class="clavier-st" id="clavier"></div>
+      <button class="btn-st discret" id="btn-abandon" type="button" hidden>Abandonner</button>
+    </div>
+
+    <!-- fin de partie -->
+    <div class="voile-st" id="fin" hidden>
+      <div class="panneau-st">
+        <h2 id="fin-titre"></h2>
+        <p class="fin-mot" id="fin-mot"></p>
+        <a class="fin-def" id="fin-def" target="_blank" rel="noopener">Voir la définition</a>
+        <ol class="podium-st" id="fin-classement"></ol>
+        <div class="stats-sutom" id="fin-stats"></div>
+        <button class="btn-st" id="btn-partager" type="button" hidden>Partager mon résultat</button>
+        <button class="btn-st principal" id="btn-suite" type="button"></button>
+        <button class="btn-st discret" id="btn-voir" type="button">Voir la grille</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Sutom</h2>
+    <p>Trouve le mot caché en 6 essais. Il fait de 6 à 9 lettres, et sa première lettre est donnée.</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Écris un mot (au clavier ou avec les touches à l'écran) puis valide. Il doit être dans le dictionnaire, avoir la bonne longueur et commencer par la bonne lettre. Les accents ne comptent pas.</li>
+      <li><span class="ex bien">A</span> Case rouge : la lettre est à la bonne place.</li>
+      <li><span class="ex mal">A</span> Rond jaune : la lettre est dans le mot, mais ailleurs.</li>
+      <li><span class="ex absent">A</span> Bleu : la lettre n'est pas dans le mot (ou pas autant de fois).</li>
+      <li>Les lettres bien placées se recopient toutes seules dans la ligne suivante, en pâle.</li>
+    </ul>
+    <h3>Les modes</h3>
+    <ul>
+      <li><strong>Mot du jour</strong> : le même pour tout le monde, un nouveau chaque jour à minuit. Tes résultats et ta série de jours sont gardés sur ce téléphone, et tu peux partager ta grille (sans le mot !).</li>
+      <li><strong>Partie libre</strong> : autant de mots que tu veux.</li>
+      <li><strong>Course en ligne</strong> : même mot pour tous ; le moins d'essais gagne, le temps départage.</li>
+    </ul>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

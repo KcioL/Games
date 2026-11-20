@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pédantix</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="pedantix.css">
+  <script type="module" src="pedantix.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Pédantix</h1>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+  </header>
+
+  <main class="salle-px">
+    <div class="haut-px">
+      <div class="modes-px" role="tablist" aria-label="Mode de jeu">
+        <button role="tab" id="mode-jour" aria-selected="true">Article du jour</button>
+        <button role="tab" id="mode-libre" aria-selected="false">Partie libre</button>
+      </div>
+      <form class="saisie-px" id="saisie" autocomplete="off">
+        <input id="mot" placeholder="Un mot…" maxlength="40" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Ton mot" disabled>
+        <button class="btn btn-principal" id="btn-envoyer" type="submit" disabled>Envoyer</button>
+      </form>
+      <p class="message-px" id="message" aria-live="polite">Chargement…</p>
+    </div>
+
+    <div class="disposition-px">
+      <article class="page-px" id="page">
+        <h2 class="titre-px" id="titre"></h2>
+        <div class="texte-px" id="texte"></div>
+        <p class="source-px" id="source" hidden></p>
+      </article>
+      <aside class="cote-px">
+        <div class="gagne-px" id="gagne" hidden></div>
+        <p class="compte-px" id="compte"></p>
+        <ol class="essais-px" id="essais" reversed></ol>
+        <label class="option-px">
+          <input type="checkbox" id="opt-petits" checked>
+          <span>Petits mots déjà visibles (le, de, et…)</span>
+        </label>
+        <div class="outils-px">
+          <button class="btn btn-discret" id="btn-abandon" type="button">Abandonner</button>
+          <button class="btn btn-discret" id="btn-nouveau" type="button" hidden>Nouvel article</button>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Pédantix</h2>
+    <p>Le début d'un article de Wikipédia est caché : tous ses mots sont remplacés par des cases. Trouve <strong>le titre de l'article</strong> !</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Propose des mots : chaque fois qu'un mot est dans l'article, il apparaît partout où il se trouve (majuscules et accents ne comptent pas).</li>
+      <li>Si ton mot n'y est pas mais qu'il est <strong>proche par le sens</strong> d'un mot caché, il s'écrit en gris dans la case de ce mot (plus il est foncé, plus il est proche). Un mot au pluriel ou au féminin compte comme un autre mot : « chat » ne dévoile pas « chats », mais s'en approche.</li>
+      <li>Touche une case pour savoir combien de lettres a le mot caché.</li>
+      <li>Tu as gagné quand tous les mots du titre (en haut) sont dévoilés : l'article entier s'affiche alors.</li>
+    </ul>
+    <h3>Les modes</h3>
+    <ul>
+      <li><strong>Article du jour</strong> : le même pour tout le monde, un nouveau chaque jour à minuit. Ta partie est gardée sur ce téléphone.</li>
+      <li><strong>Partie libre</strong> : un autre article, autant que tu veux.</li>
+    </ul>
+    <p class="astuce">Les articles viennent directement de Wikipédia (texte sous licence CC BY-SA) : il faut une connexion internet. La liste des articles est dans le fichier <code>pedantix/articles.txt</code>, et on peut en ajouter.</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>

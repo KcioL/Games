@@ -1,0 +1,49 @@
+/* ==========================================================================
+   Cémantix : un thermomètre, du plus froid (bleu) au plus chaud (rouge)
+   ========================================================================== */
+.salle-cx { padding: 12px 10px 40px; }
+.colonne-cx { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; max-width: 640px; margin: 0 auto; }
+.modes-cx { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--nuit); border-radius: 12px; padding: 4px; }
+.modes-cx button { border: 0; background: transparent; border-radius: 9px; padding: 9px 6px; font: inherit; font-weight: 700; color: var(--brume); cursor: pointer; }
+.modes-cx button[aria-selected="true"] { background: var(--nuit-3); color: var(--papier); box-shadow: inset 0 -2px 0 var(--or); }
+.titre-cx { margin: 0; text-align: center; color: var(--brume); font-weight: 600; }
+
+.saisie-cx { display: flex; gap: 8px; }
+.saisie-cx input { flex: 1 1 0; min-width: 0; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--nuit-3); background: var(--nuit); color: var(--papier); font-size: max(16px, 1.1rem); }
+.saisie-cx input:focus { border-color: var(--or); outline: none; }
+.saisie-cx .btn { flex: none; }
+.message-cx { margin: 0; min-height: 1.2em; text-align: center; color: var(--brume); }
+.message-cx.erreur { color: #FF8A8A; }
+
+/* la liste des mots */
+.liste-cx { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-variant-numeric: tabular-nums; }
+.liste-cx th { font-size: .75rem; color: var(--brume); font-weight: 600; text-align: left; padding: 0 8px; }
+.liste-cx td { padding: 7px 8px; background: var(--nuit-2); }
+.liste-cx td:first-child { border-radius: 10px 0 0 10px; }
+.liste-cx td:last-child { border-radius: 0 10px 10px 0; }
+.liste-cx .num { color: var(--brume); width: 2.6em; font-size: .85rem; }
+.liste-cx .mot { font-weight: 700; word-break: break-word; }
+.liste-cx .temp { text-align: right; width: 4.2em; }
+.liste-cx .emoji { width: 1.6em; text-align: center; padding-left: 2px; padding-right: 2px; }
+.liste-cx .prog { width: 34%; }
+.liste-cx .pm { display: block; font-size: .78rem; color: var(--brume); }
+.barre-cx { display: block; height: 7px; border-radius: 999px; background: var(--nuit-3); overflow: hidden; }
+.barre-cx i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #F2B632, #E0445A); }
+#dernier tr td { background: var(--nuit-3); box-shadow: 0 -2px 0 var(--or) inset; }
+#dernier tr td:first-child { box-shadow: 0 -2px 0 var(--or) inset; }
+#dernier::after { content: ""; display: table-row; height: 8px; }
+tr.cible td { background: rgba(63, 165, 107, .3) !important; }
+
+.outils-cx { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+.gagne-cx { display: grid; gap: 10px; justify-items: center; text-align: center; padding: 16px; border-radius: 16px; background: linear-gradient(160deg, rgba(63, 165, 107, .25), var(--nuit-2)); border: 2px solid var(--vert); animation: arrive-cx .35s ease both; }
+.gagne-cx h2, .gagne-cx p { margin: 0; }
+@keyframes arrive-cx { from { transform: translateY(12px); opacity: 0; } }
+.proches-cx { width: 100%; text-align: left; }
+.proches-cx summary { cursor: pointer; color: var(--or); text-align: center; }
+.proches-cx ol { columns: 2; column-gap: 18px; font-size: .85rem; margin: 8px 0 0; padding-left: 2.2em; }
+@media (max-width: 420px) {
+  .liste-cx td { padding: 6px 5px; }
+  .liste-cx .prog { width: 28%; }
+  .proches-cx ol { columns: 1; }
+}
+@media (prefers-reduced-motion: reduce) { .gagne-cx { animation: none; } }

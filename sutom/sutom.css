@@ -1,0 +1,120 @@
+/* ==========================================================================
+   Sutom : une grille façon jeu télé (cases rouges, ronds jaunes, fond bleu nuit)
+   ========================================================================== */
+.ligne-choix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-jour { font-size: 1.1rem; padding: 14px; }
+.sous-bouton { margin: -6px 0 0; text-align: center; color: var(--brume); font-size: .85rem; }
+.ligne-libre { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: end; }
+.ligne-libre .btn { height: 44px; }
+
+:root {
+  --st-bleu: #0E6BA8;
+  --st-bleu-f: #0A4F7D;
+  --st-rouge: #E3383F;
+  --st-jaune: #F4C430;
+}
+#jeu.salle-st:not([hidden]) {
+  display: block;
+  min-height: calc(100dvh - var(--h-barre, 57px));
+  padding: 10px 6px 20px;
+}
+.colonne-st { display: grid; gap: 12px; justify-items: center; max-width: 620px; margin: 0 auto; }
+.titre-st { margin: 0; color: var(--brume); font-weight: 600; text-align: center; }
+
+/* la grille */
+.grille-st { --n: 7; --st-case: max(26px, min(58px, calc((100vw - 40px - (var(--n) - 1) * 5px) / var(--n)), 6.6dvh)); display: grid; gap: 5px; padding: 8px; border-radius: 14px; background: var(--st-bleu-f); box-shadow: 0 10px 24px rgba(0, 0, 0, .35); }
+.ligne-st { display: grid; grid-template-columns: repeat(var(--n), var(--st-case)); gap: 5px; }
+.ligne-st.secoue { animation: secoue-st .4s ease; }
+@keyframes secoue-st { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+.case-st {
+  position: relative;
+  display: grid; place-items: center;
+  width: var(--st-case); height: var(--st-case);
+  background: var(--st-bleu);
+  border-radius: 4px;
+  color: #fff; font-weight: 700; font-size: calc(var(--st-case) * .52); text-transform: uppercase;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+  z-index: 0;
+}
+.ligne-st.courante .case-st { background: #1580C6; }
+.case-st.indice { color: rgba(255, 255, 255, .45); }
+.case-st.tapee { animation: tape-st .12s ease; }
+@keyframes tape-st { 50% { transform: scale(1.1); } }
+.case-st.bien { background: var(--st-rouge); }
+.case-st.mal::before {
+  content: ""; position: absolute; inset: 6%; border-radius: 50%; background: var(--st-jaune); z-index: -1;
+}
+.case-st.mal { color: #3A2A00; }
+.case-st.revele { animation: revele-st .45s ease both; }
+@keyframes revele-st { 0% { transform: rotateX(90deg); filter: brightness(1.6); } 100% { transform: none; } }
+
+.message-st { min-height: 1.3em; margin: 0; font-weight: 600; text-align: center; }
+.message-st.erreur { color: #FF8A8A; }
+
+/* clavier */
+.clavier-st { display: grid; gap: 6px; width: min(100%, 560px); user-select: none; -webkit-user-select: none; }
+.rang-st { display: flex; gap: 5px; justify-content: center; }
+.touche-st {
+  flex: 1 1 0; max-width: 52px; height: clamp(44px, 7dvh, 56px);
+  border: 0; border-radius: 7px;
+  background: #3B4A80; color: #fff;
+  font: inherit; font-weight: 700; font-size: 1.05rem;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.touche-st.large { flex: 1.6 1 0; max-width: 80px; font-size: 1.25rem; background: #56649C; }
+.touche-st.bien { background: var(--st-rouge); }
+.touche-st.mal { background: var(--st-jaune); color: #3A2A00; }
+.touche-st.absent { background: #1C2448; color: #66729C; }
+.touche-st:active { transform: translateY(1px); filter: brightness(1.15); }
+.clavier-st.inactif { opacity: .45; pointer-events: none; }
+.btn-st {
+  font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 11px 22px;
+  min-width: min(100%, 260px); background: var(--nuit-3); color: var(--papier); cursor: pointer;
+}
+.btn-st.principal { background: var(--or); color: var(--encre); }
+.btn-st.discret { background: transparent; color: var(--brume); min-width: 0; padding: 6px 12px; }
+
+/* les autres joueurs (course) */
+.adversaires-st { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.adv-st { display: grid; gap: 4px; justify-items: center; padding: 6px 10px; border-radius: 12px; background: var(--nuit-2); border: 1px solid var(--nuit-3); font-size: .8rem; }
+.adv-st.trouve { border-color: var(--vert); }
+.adv-st.perdu { opacity: .6; }
+.adv-st span { color: var(--brume); }
+.mini-st { --n: 7; display: grid; gap: 2px; }
+.mini-st div { display: grid; grid-template-columns: repeat(var(--n), 8px); gap: 2px; }
+.mini-st i { width: 8px; height: 8px; border-radius: 2px; background: var(--st-bleu); }
+.mini-st i.bien { background: var(--st-rouge); }
+.mini-st i.mal { background: var(--st-jaune); border-radius: 50%; }
+.trophees-st { font-weight: 700; color: var(--or-clair) !important; }
+
+/* fin de partie */
+.voile-st { position: fixed; inset: 0; z-index: 30; display: grid; place-items: center; padding: 16px; background: rgba(8, 12, 30, .72); backdrop-filter: blur(3px); }
+.panneau-st { width: min(100%, 400px); max-height: calc(100dvh - 32px); overflow: auto; display: grid; gap: 10px; justify-items: center; padding: 20px 18px; border-radius: 20px; background: var(--nuit-2); border: 1px solid var(--nuit-3); text-align: center; animation: arrive-st .35s ease both; }
+@keyframes arrive-st { from { transform: translateY(18px) scale(.96); opacity: 0; } }
+.panneau-st h2 { margin: 0; }
+.fin-mot { margin: 0; font-size: 1.7rem; font-weight: 700; letter-spacing: .12em; color: #fff; background: var(--st-rouge); padding: 4px 14px; border-radius: 8px; }
+.fin-def { color: var(--or); font-size: .85rem; }
+.podium-st { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; gap: 6px; }
+.podium-st li { display: flex; align-items: center; gap: 10px; padding: 7px 12px; border-radius: 12px; background: var(--nuit-3); }
+.podium-st li.gagnant { background: rgba(242, 182, 50, .22); box-shadow: inset 0 0 0 1px var(--or); }
+.podium-st .nom { flex: 1; text-align: left; }
+
+/* statistiques du mot du jour */
+.stats-sutom { display: grid; gap: 10px; width: 100%; }
+.stats-sutom:empty { display: none; }
+.stats-chiffres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.stats-chiffres b { display: block; font-size: 1.3rem; }
+.stats-chiffres span { font-size: .72rem; color: var(--brume); }
+.stats-barres { display: grid; gap: 3px; }
+.stats-barre { display: grid; grid-template-columns: 14px 1fr; gap: 6px; align-items: center; font-size: .8rem; }
+.stats-barre i { display: block; background: var(--nuit-3); color: var(--papier); font-style: normal; text-align: right; padding: 1px 6px; border-radius: 4px; box-sizing: border-box; }
+.stats-barre.moi i { background: var(--st-rouge); }
+
+/* règles */
+.regles .ex { display: inline-grid; place-items: center; width: 24px; height: 24px; margin-right: 6px; border-radius: 4px; background: var(--st-bleu); color: #fff; font-weight: 700; position: relative; z-index: 0; vertical-align: middle; }
+.regles .ex.bien { background: var(--st-rouge); }
+.regles .ex.mal { color: #3A2A00; }
+.regles .ex.mal::before { content: ""; position: absolute; inset: 2px; border-radius: 50%; background: var(--st-jaune); z-index: -1; }
+
+@media (prefers-reduced-motion: reduce) { .case-st.revele, .ligne-st.secoue, .case-st.tapee { animation: none; } }

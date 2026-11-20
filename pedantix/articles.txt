@@ -1,0 +1,391 @@
+# Pédantix : les articles Wikipédia à deviner (un titre par ligne, exactement comme sur fr.wikipedia.org)
+# L'article du jour se prend dans l'ordre de cette liste (un par jour, puis on recommence).
+# Tu peux en ajouter, en enlever ou en changer l'ordre ; les lignes qui commencent par # sont ignorées.
+# Attention : changer l'ordre change aussi l'article du jour pour tout le monde.
+Jérusalem
+Groenland
+ADN
+Échecs
+Noël
+Golf
+Avion
+Vienne (Autriche)
+Stonehenge
+Père Noël
+Zèbre
+Notre-Dame de Paris
+Italie
+Pompier
+Genève
+Eau
+Tintin
+Fraise
+Crêpe
+Spider-Man
+Sel
+Manga
+Batterie (musique)
+Girafe
+Hibou grand-duc
+Marco Polo
+Château de Versailles
+Londres
+Seine
+Ours blanc
+Électricité
+Strasbourg
+Mexique
+Bière
+Champagne (vin)
+The Beatles
+Martin Luther King
+Madrid
+Lyon
+Mars (planète)
+Radio
+Mode (habillement)
+Jeux olympiques
+Première Guerre mondiale
+Astérix
+Fourmi
+Imprimerie
+Istanbul
+Ratatouille
+Nil
+Football
+Alexandre le Grand
+Grenouille
+Bateau
+Léonard de Vinci
+Édith Piaf
+Pieuvre
+Cerveau
+Sydney
+Mont Blanc
+Éléphant
+Dinosaure
+Pétanque
+Trou noir
+Sagrada Família
+Lapin
+Miel
+Charles de Gaulle
+Machu Picchu
+Concorde (avion)
+Camembert
+Pomme de terre
+Pyramides de Gizeh
+Sommeil
+New York
+Ballet
+Peinture
+Robot
+Basket-ball
+Coupe du monde de football
+Toulouse
+Pirate
+Japon
+Coco Chanel
+Arc-en-ciel
+Charles Darwin
+Marathon (sport)
+Métro de Paris
+Tigre
+Montréal
+Piano
+Nombre pi
+Chandeleur
+Chat
+Normandie
+Ampoule électrique
+James Bond
+Océan
+Jules Verne
+Cochon
+Manchot empereur
+Frite
+Mur de Berlin
+Feu
+Fromage
+Aigle royal
+Prague
+Wolfgang Amadeus Mozart
+Baleine bleue
+Danse
+Acropole d'Athènes
+Sculpture
+Molière
+Champignon
+Euro
+Russie
+Guerre froide
+Rêve
+Banane
+Jeanne d'Arc
+Himalaya
+Intelligence artificielle
+Gandhi
+Arc de triomphe de l'Étoile
+Corse
+Vikings
+Cheval
+Chevalier
+Rose (fleur)
+Baguette (pain)
+Mariage
+Araignée
+Internet
+Pokémon
+Australie
+Renard roux
+Cléopâtre VII
+Mathématiques
+Préhistoire
+Islande
+Organisation des Nations unies
+Rio de Janeiro
+Oxygène
+Volcan
+Tour de France
+Roger Federer
+Égypte
+Désert
+Grande Muraille
+Vélo
+Ouragan
+Tsunami
+Le Seigneur des anneaux
+Tyrannosaurus
+Mammouth
+Vin
+Déclaration des droits de l'homme et du citoyen
+Statue de la Liberté
+Lune
+Fête nationale française
+Berlin
+Louis XIV
+Tennis
+Tortue
+Bibliothèque
+Harry Potter
+Galilée (savant)
+Napoléon Ier
+Cyclisme
+Boulanger
+Minecraft
+Éclipse solaire
+Amour
+Bande dessinée
+Amsterdam
+Samouraï
+Mario (personnage)
+Démocratie
+Nelson Mandela
+Antarctique
+Soleil
+Musique
+Train à grande vitesse
+Batman
+Crocodile
+Brésil
+Or
+Flamant rose
+Renaissance (période historique)
+Carnaval
+Révolution française
+Automobile
+Cathédrale Notre-Dame de Paris
+Cinéma
+Téléphone mobile
+Blé
+Roue
+Elvis Presley
+Chêne
+Alpes
+Requin blanc
+Rock
+Rugby à XV
+Vampire
+Zéro
+Hôpital
+Isaac Newton
+Amazone (fleuve)
+Vache
+Thomas Edison
+Louis Pasteur
+Tremblement de terre
+Sang
+Vincent van Gogh
+Colisée
+Natation
+Thé
+Croissant (viennoiserie)
+Le Caire
+Superman
+Marie Curie
+Photographie
+Pékin
+Chien
+Télescope
+Violon
+Pomme
+Cœur
+Michael Jackson
+Horloge
+Budapest
+Charlie Chaplin
+Antoine de Saint-Exupéry
+Lion
+Télévision
+Loup gris
+Sushi
+Nice
+Gorille
+Sucre
+Toutânkhamon
+Fusée
+Provence
+Zinédine Zidane
+Monopoly
+Rubik's Cube
+Big Ben
+Boussole
+Riz
+Kangourou
+Appareil photographique
+Tour Eiffel
+Grèce antique
+Égypte antique
+Langue française
+Révolution industrielle
+Bambou
+Diamant
+Halloween
+La Joconde
+Victor Hugo
+Bretagne
+Ordinateur
+Sirène
+Loup-garou
+Abraham Lincoln
+Pétrole
+Atome
+Rome
+Mont Saint-Michel
+Jules César
+Pelé
+Microscope
+Lego
+Paris
+Sherlock Holmes
+Cactus
+Chocolat
+Raclette
+Jupiter (planète)
+Boxe anglaise
+Océan Pacifique
+Sapin
+Pâques
+Bordeaux
+Hélicoptère
+Tomate
+Jeu vidéo
+Star Wars
+Les Simpson
+Chine
+Winston Churchill
+Système solaire
+Café
+Panda géant
+École
+Amazonie
+Gengis Khan
+Dauphin
+Squelette
+Jazz
+Voie lactée
+Moyen Âge
+Titanic
+Parfum
+Tournesol
+Ski alpin
+Bruxelles
+Youri Gagarine
+Terre
+Inde
+Perroquet
+Poule
+Moscou
+Chameau
+Sous-marin
+Fer
+Anniversaire
+Le Petit Prince
+Alphabet
+Rire
+Glacier
+Sahara
+Christophe Colomb
+Neil Armstrong
+France
+Mickey Mouse
+Koala
+Seconde Guerre mondiale
+Rome antique
+Forêt
+Guitare
+Walt Disney
+Licorne
+Taj Mahal
+Judo
+Montgolfière
+Nikola Tesla
+Saturne (planète)
+Cirque
+Papillon
+Pingouin
+Mohamed Ali
+Dragon
+Dictionnaire
+Astronaute
+Serpent
+Hongrie
+Venise
+Cellule (biologie)
+Abeille
+Université
+Tokyo
+Albert Einstein
+Aurore polaire
+Le Roi lion
+Train
+Belgique
+Pizza
+Police
+Vaccin
+Union européenne
+Canada
+Opéra
+Pablo Picasso
+Théâtre
+Tetris
+Everest
+Suisse
+Usain Bolt
+Claude Monet
+William Shakespeare
+Hamburger
+Titanic (film, 1997)
+Johnny Hallyday
+Formule 1
+Air
+Les Misérables
+Agriculteur
+Marseille
+Madagascar
+Mer Méditerranée
+Comète de Halley
+Arbre
+Ludwig van Beethoven
+Musée du Louvre
+Croisades

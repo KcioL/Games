@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cémantix</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔥</text></svg>">
+  <link rel="apple-touch-icon" href="../icones/apple-touch-icon.png">
+  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../commun/commun.css">
+  <link rel="stylesheet" href="cemantix.css">
+  <script type="module" src="cemantix.js"></script>
+</head>
+<body>
+  <header class="barre">
+    <a class="retour" href="../" aria-label="Retour aux jeux">←<span class="mot"> Jeux</span></a>
+    <h1>Cémantix</h1>
+    <button class="btn btn-discret" id="btn-regles">Règles</button>
+  </header>
+
+  <main class="salle-cx">
+    <div class="colonne-cx">
+      <div class="modes-cx" role="tablist" aria-label="Mode de jeu">
+        <button role="tab" id="mode-jour" aria-selected="true">Mot du jour</button>
+        <button role="tab" id="mode-libre" aria-selected="false">Partie libre</button>
+      </div>
+      <p class="titre-cx" id="titre"></p>
+
+      <form class="saisie-cx" id="saisie" autocomplete="off">
+        <input id="mot" placeholder="Un mot…" maxlength="30" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Ton mot" disabled>
+        <button class="btn btn-principal" id="btn-envoyer" type="submit" disabled>Envoyer</button>
+      </form>
+      <p class="message-cx" id="message" aria-live="polite">Chargement des mots…</p>
+
+      <div class="gagne-cx" id="gagne" hidden></div>
+
+      <table class="liste-cx" id="liste" hidden>
+        <thead><tr><th>N°</th><th>Mot</th><th>°C</th><th></th><th>Progression</th></tr></thead>
+        <tbody id="dernier"></tbody>
+        <tbody id="essais"></tbody>
+      </table>
+
+      <div class="outils-cx" id="outils" hidden>
+        <button class="btn btn-discret" id="btn-indice" type="button">💡 Un mot proche</button>
+        <button class="btn btn-discret" id="btn-abandon" type="button">Abandonner</button>
+        <button class="btn btn-discret" id="btn-nouveau" type="button" hidden>Nouveau mot</button>
+      </div>
+    </div>
+  </main>
+
+  <dialog class="regles" id="regles">
+    <h2>Cémantix</h2>
+    <p>Trouve le mot secret… en te laissant guider par le <strong>sens</strong> des mots, pas par leurs lettres.</p>
+    <h3>Jouer</h3>
+    <ul>
+      <li>Propose n'importe quel mot. Plus il est proche du mot secret par le sens, plus il est <strong>chaud</strong> : sa température va de −100 °C à 100 °C (le mot secret).</li>
+      <li>Les 999 mots courants les plus proches du mot secret ont aussi une <strong>progression</strong> en ‰ : 999 ‰ pour le plus proche, 1 ‰ pour le millième. 🥵 à partir de 900 ‰, 🔥 à partir de 990 ‰, 😱 à 999 ‰.</li>
+      <li>En dehors des 1000 : 😎 si c'est tiède, 🥶 si c'est froid, 🧊 si c'est glacial.</li>
+      <li>Les mots sont rangés du plus chaud au plus froid ; ton dernier mot reste en haut.</li>
+      <li>Les noms, verbes, adjectifs… tout est permis, au singulier comme au pluriel, conjugué ou non (les accents peuvent être oubliés).</li>
+      <li>Coincé ? « 💡 Un mot proche » te donne un mot un peu plus chaud que ton meilleur.</li>
+    </ul>
+    <h3>Les modes</h3>
+    <ul>
+      <li><strong>Mot du jour</strong> : le même pour tout le monde, un nouveau chaque jour à minuit. Ta partie est gardée sur ce téléphone.</li>
+      <li><strong>Partie libre</strong> : un autre mot, autant que tu veux.</li>
+    </ul>
+    <p class="astuce">La proximité des mots vient d'un modèle de langue qui a lu énormément de textes en français : elle reflète les mots qui s'emploient dans les mêmes contextes, et réserve parfois des surprises !</p>
+    <button class="btn fermer">Fermer</button>
+  </dialog>
+  <script src="../commun/service-worker.js"></script>
+</body>
+</html>
