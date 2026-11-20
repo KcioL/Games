@@ -1,7 +1,7 @@
 // ==========================================================================
 // Sens des mots (pour Cémantix et Pédantix)
 // vocabulaire.txt : les 65 000 mots français les plus courants (un par ligne)
-// vocabulaire-plus.txt / vecteurs-plus.bin : 100 000 mots de plus (plus rares, récents, anglais courants…)
+// vocabulaire-plus.txt / vecteurs-plus.bin : 30 000 mots de plus (plus rares ou récents : halloween, smartphone…)
 // vecteurs.bin    : pour chaque mot, 64 nombres (−127…127) qui résument son sens : les 64 « directions »
 //                   principales du vrai modèle (300 nombres par mot). Le produit des deux listes de nombres
 //                   de deux mots redonne, à 1 ou 2 °C près, leur vraie proximité de sens (similarité cosinus).
@@ -51,7 +51,7 @@ export function chargerSemantique(base = '../commun/mots/') {
         const k = sansAccents(m);
         return indexSansAccents.has(k) ? indexSansAccents.get(k) : -1;
       },
-      // Mots en plus (100 000 mots plus rares ou récents : halloween, smartphone…), chargés seulement
+      // Mots en plus (30 000 mots plus rares ou récents : halloween, smartphone…), chargés seulement
       // quand on en a besoin pour ne pas alourdir le premier chargement
       chargerPlus() {
         if (!plus) {
@@ -77,6 +77,20 @@ export function chargerSemantique(base = '../commun/mots/') {
         await sem.chargerPlus();
         return sem.trouver(t);
       },
+      // Mot mal orthographié : le mot connu le plus ressemblant (1 ou 2 lettres de différence), ou ''
+      suggerer(t) {
+        const cible = sansAccents(nettoyer(t));
+        if (cible.length < 3) return '';
+        const max = cible.length <= 5 ? 1 : 2;
+        let meilleur = ''; let dMin = max + 1;
+        for (let i = 0; i < mots.length && dMin > 1; i++) {
+          const m = sansAccents(mots[i]);
+          if (Math.abs(m.length - cible.length) > max) continue;
+          const d = distance(cible, m, dMin - 1);
+          if (d < dMin) { dMin = d; meilleur = mots[i]; } // les mots sont rangés du plus courant au plus rare
+        }
+        return meilleur;
+      },
       // similarité approchée (−1…1) entre deux mots
       similarite(i, j) {
         if (i < 0 || j < 0) return 0;
@@ -89,6 +103,29 @@ export function chargerSemantique(base = '../commun/mots/') {
     return sem;
   });
   return promesse;
+}
+
+// Nombre de fautes (lettre en trop, en moins, changée, ou deux lettres inversées) entre deux mots ;
+// s'arrête dès que ça dépasse « max » (renvoie alors max + 1)
+function distance(a, b, max) {
+  if (a === b) return 0;
+  let avant2 = null;
+  let avant = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const ligne = [i];
+    let minLigne = i;
+    for (let j = 1; j <= b.length; j++) {
+      const c = a[i - 1] === b[j - 1] ? 0 : 1;
+      let v = Math.min(avant[j] + 1, ligne[j - 1] + 1, avant[j - 1] + c);
+      if (avant2 && i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, avant2[j - 2] + 1);
+      ligne.push(v);
+      if (v < minLigne) minLigne = v;
+    }
+    if (minLigne > max) return max + 1;
+    avant2 = avant;
+    avant = ligne;
+  }
+  return avant[b.length];
 }
 
 // numéro du jour (1 = 1er janvier 2026), d'après la date du téléphone : le même mot pour tout le monde

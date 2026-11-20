@@ -120,12 +120,16 @@ async function proposer(texte) {
   if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
   let i = sem.trouver(texte);
   if (i < 0 && !sem.plusCharge) {
-    // mot rare ou récent (halloween, smartphone…) : on va le chercher dans les 100 000 mots en plus
+    // mot rare ou récent (halloween, smartphone…) : on va le chercher dans les 30 000 mots en plus
     setMessage('Je cherche ce mot…');
     i = await sem.trouverPartout(texte);
     if (!partie || fini()) return;
   }
-  if (i < 0) { setMessage(`Je ne connais pas « ${texte.trim()} ».`, true); return; }
+  if (i < 0) {
+    const s = sem.suggerer(texte);
+    setMessage(`Je ne connais pas « ${texte.trim()} »${s ? ` : tu voulais dire « ${s} » ?` : '.'}`, true);
+    return;
+  }
   const deja = partie.essais.find((e) => e.i === i);
   if (deja) { partie.dernier = deja; setMessage(`« ${deja.mot} » est déjà dans la liste.`); rendre(); return; }
   const e = { i, mot: sem.mots[i], ...mesurer(i) };

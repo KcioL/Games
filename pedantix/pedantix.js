@@ -186,15 +186,31 @@ $('saisie').before(avisPseudo());
 document.addEventListener('pseudo-change', () => { if (partie) { rendre(); if (!fini()) $('mot').focus({ preventScroll: true }); } });
 
 // ---------- Proposer un mot ----------
-function proposer(texte) {
-  if (!partie || fini()) return;
+// renvoie true si le mot est pris en compte (false : mot inconnu, déjà proposé…)
+async function proposer(texte) {
+  if (!partie || fini()) return false;
   // le pseudo apparaît dans les résultats : on le demande avant le premier mot
-  if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
+  if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return true; }
   const mots = String(texte).match(MOT);
-  if (!mots) return;
+  if (!mots) return false;
   const mot = mots[0];
   const n = norm(mot);
-  if (partie.essais.some((e) => norm(e) === n)) { setMessage(`« ${mot} » est déjà proposé.`); partie.dernier = n; rendre(); return; }
+  if (partie.essais.some((e) => norm(e) === n)) { setMessage(`« ${mot} » est déjà proposé.`); partie.dernier = n; rendre(); return true; }
+  // un mot qui n'existe pas (faute de frappe) ne compte pas : on le refuse, en proposant la bonne orthographe
+  // (les mots de l'article sont toujours acceptés, même les noms propres que le dictionnaire ne connaît pas)
+  const dansArticle = partie.morceauxTexte.some((m) => m.n === n) || partie.morceauxTitre.some((m) => m.n === n);
+  if (!dansArticle && !/^\d+$/.test(n)) {
+    try {
+      if (!sem) { setMessage('Un instant, je vérifie le mot…'); sem = await chargerSemantique(); }
+      const i = await sem.trouverPartout(mot);
+      if (!partie || fini()) return false;
+      if (i < 0) {
+        const s = sem.suggerer(mot);
+        setMessage(`« ${mot} » n'existe pas dans le dictionnaire${s ? ` : tu voulais dire « ${s} » ?` : '.'} Il ne compte pas.`);
+        return false;
+      }
+    } catch (e) { /* dictionnaire indisponible : on accepte le mot */ }
+  }
   partie.essais.push(mot.toLowerCase());
   if (!partie.debut) partie.debut = Date.now();
   partie.dernier = n;
@@ -216,7 +232,8 @@ $('saisie').addEventListener('submit', (ev) => {
   ev.preventDefault();
   const t = $('mot').value;
   $('mot').value = '';
-  if (t.trim()) proposer(t);
+  // mot refusé (faute de frappe) : on le remet dans la case pour le corriger
+  if (t.trim()) proposer(t).then((ok) => { if (!ok && !$('mot').value) $('mot').value = t; });
 });
 $('btn-abandon').addEventListener('click', () => {
   if (!partie || fini() || !confirm('Abandonner et voir l\'article ?')) return;
