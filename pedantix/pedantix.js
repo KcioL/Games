@@ -6,7 +6,7 @@ const CLE = 'jeux-vol:pedantix';
 const CLE_PETITS = 'jeux-vol:pedantix-petits';
 const API = 'https://fr.wikipedia.org/w/api.php';
 const MOTS_MAX = 420;   // longueur du texte à deviner (on coupe à la fin d'un paragraphe)
-const SEUIL = 0.55;     // proximité de sens à partir de laquelle un mot s'affiche en gris
+const SEUIL = 0.5;     // proximité de sens à partir de laquelle un mot s'affiche en gris
 // petits mots qu'on peut afficher d'office
 const PETITS = new Set(('le la les l un une des de du d et à au aux en dans par pour sur avec ou où est a sont il elle ils elles '
   + 'se s sa son ses leur leurs qu que qui ce c cet cette ces ne n pas plus y été être ont était sous entre').split(' ').map((m) => sansAccents(m)));
@@ -341,4 +341,9 @@ fetch('articles.txt').then((r) => r.text()).then((t) => {
   if (!pseudo()) assurerPseudo();
 }).catch(() => setMessage('Impossible de charger la liste des articles.', true));
 // le sens des mots (pour les mots « proches ») arrive un peu après : le jeu marche déjà sans
-chargerSemantique().then((s) => { sem = s; if (partie) { calculerProches(); rendre(); } }).catch(() => {});
+chargerSemantique().then((s) => {
+  sem = s;
+  if (partie) { calculerProches(); rendre(); }
+  // les mots plus rares (pour les proximités avec les mots de l'article) : en arrière-plan
+  return s.chargerPlus().then(() => { if (partie) { calculerProches(); rendre(); } });
+}).catch(() => {});

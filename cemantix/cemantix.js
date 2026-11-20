@@ -82,6 +82,8 @@ async function demarrer(m, nouveau = false) {
   const d = await chargerCible(num);
   partie = { mode: m, num, ...d, essais: [], trouve: false, abandon: false, indices: 0, compte: false, dernier: null };
   if (deja) {
+    // (un mot rare de la partie en cours : on charge les mots en plus)
+    if (deja.essais.some((mot) => sem.trouver(mot) < 0)) await sem.chargerPlus();
     deja.essais.forEach((mot) => { const i = sem.trouver(mot); if (i >= 0 && !partie.essais.some((e) => e.i === i)) partie.essais.push({ i, mot: sem.mots[i], ...mesurer(i) }); });
     partie.trouve = !!deja.trouve; partie.abandon = !!deja.abandon; partie.indices = deja.indices || 0; partie.compte = !!deja.compte;
     partie.debut = deja.debut || 0; partie.envoye = !!deja.envoye;
@@ -112,11 +114,17 @@ $('saisie').before(avisPseudo());
 document.addEventListener('pseudo-change', () => { if (partie) { rendre(); if (!fini()) $('mot').focus({ preventScroll: true }); } });
 
 // ---------- Proposer un mot ----------
-function proposer(texte) {
+async function proposer(texte) {
   if (!partie || fini()) return;
   // le pseudo apparaît dans les résultats : on le demande avant le premier mot
   if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
-  const i = sem.trouver(texte);
+  let i = sem.trouver(texte);
+  if (i < 0 && !sem.plusCharge) {
+    // mot rare ou récent (halloween, smartphone…) : on va le chercher dans les 100 000 mots en plus
+    setMessage('Je cherche ce mot…');
+    i = await sem.trouverPartout(texte);
+    if (!partie || fini()) return;
+  }
   if (i < 0) { setMessage(`Je ne connais pas « ${texte.trim()} ».`, true); return; }
   const deja = partie.essais.find((e) => e.i === i);
   if (deja) { partie.dernier = deja; setMessage(`« ${deja.mot} » est déjà dans la liste.`); rendre(); return; }

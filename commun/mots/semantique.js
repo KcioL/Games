@@ -1,40 +1,48 @@
 // ==========================================================================
 // Sens des mots (pour Cémantix et Pédantix)
 // vocabulaire.txt : les 65 000 mots français les plus courants (un par ligne)
-// vecteurs.bin    : pour chaque mot, 64 nombres (−127…127) qui résument son sens ; deux mots de sens
-//                   proche ont des vecteurs qui « pointent dans la même direction » (similarité cosinus).
+// vocabulaire-plus.txt / vecteurs-plus.bin : 100 000 mots de plus (plus rares, récents, anglais courants…)
+// vecteurs.bin    : pour chaque mot, 64 nombres (−127…127) qui résument son sens : les 64 « directions »
+//                   principales du vrai modèle (300 nombres par mot). Le produit des deux listes de nombres
+//                   de deux mots redonne, à 1 ou 2 °C près, leur vraie proximité de sens (similarité cosinus).
 // Ces vecteurs sont une version allégée d'un vrai modèle de langue (spaCy fr_core_news_lg) :
 // assez précis pour dire si deux mots sont proches, mais Cémantix utilise en plus les vraies valeurs
-// pour les 3000 mots les plus proches de chaque mot à trouver.
+// (au demi-degré) pour les 30 000 mots courants face à chaque mot à trouver.
 // ==========================================================================
 
 const D = 64;
+const ECHELLE = 4.754654678314483e-05; // (valeur maximale / 127)² : ramène le produit des nombres à une similarité
 let promesse = null;
 
 export const sansAccents = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/œ/g, 'oe').replace(/æ/g, 'ae');
 export const nettoyer = (t) => String(t || '').trim().toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ');
 
+// vecteurs prêts au calcul : la similarité devient un simple produit scalaire
+function normaliserVecteurs(brut, n) {
+  const vec = new Float32Array(n * D);
+  const f = Math.sqrt(ECHELLE);
+  for (let i = 0; i < n * D; i++) vec[i] = brut[i] * f;
+  return vec;
+}
+const lireTexte = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.text(); });
+const lireBinaire = (url) => fetch(url).then((r) => { if (!r.ok) throw new Error(url); return r.arrayBuffer(); });
+
 export function chargerSemantique(base = '../commun/mots/') {
   if (promesse) return promesse;
-  promesse = Promise.all([
-    fetch(`${base}vocabulaire.txt`).then((r) => { if (!r.ok) throw new Error('vocabulaire'); return r.text(); }),
-    fetch(`${base}vecteurs.bin`).then((r) => { if (!r.ok) throw new Error('vecteurs'); return r.arrayBuffer(); }),
-  ]).then(([texte, buf]) => {
+  promesse = Promise.all([lireTexte(`${base}vocabulaire.txt`), lireBinaire(`${base}vecteurs.bin`)]).then(([texte, buf]) => {
     const mots = texte.split('\n').map((m) => m.trim()).filter(Boolean);
-    const brut = new Int8Array(buf);
-    // vecteurs normalisés (longueur 1) : la similarité devient un simple produit scalaire
-    const vec = new Float32Array(mots.length * D);
-    for (let i = 0; i < mots.length; i++) {
-      let n = 0;
-      for (let k = 0; k < D; k++) { const v = brut[i * D + k]; n += v * v; }
-      n = Math.sqrt(n) || 1;
-      for (let k = 0; k < D; k++) vec[i * D + k] = brut[i * D + k] / n;
-    }
-    const index = new Map(mots.map((m, i) => [m, i]));
+    let vec = normaliserVecteurs(new Int8Array(buf), mots.length);
+    const index = new Map();
     // sans accents : le mot le plus courant (les mots sont rangés du plus courant au plus rare)
     const indexSansAccents = new Map();
-    mots.forEach((m, i) => { const k = sansAccents(m); if (!indexSansAccents.has(k)) indexSansAccents.set(k, i); });
-    return {
+    const ajouterMots = (liste, debut) => liste.forEach((m, k) => {
+      if (!index.has(m)) index.set(m, debut + k);
+      const s = sansAccents(m);
+      if (!indexSansAccents.has(s)) indexSansAccents.set(s, debut + k);
+    });
+    ajouterMots(mots, 0);
+    let plus = null;
+    const sem = {
       mots,
       // numéro d'un mot (-1 s'il est inconnu) ; on accepte un mot écrit sans ses accents
       trouver(t) {
@@ -42,6 +50,32 @@ export function chargerSemantique(base = '../commun/mots/') {
         if (index.has(m)) return index.get(m);
         const k = sansAccents(m);
         return indexSansAccents.has(k) ? indexSansAccents.get(k) : -1;
+      },
+      // Mots en plus (100 000 mots plus rares ou récents : halloween, smartphone…), chargés seulement
+      // quand on en a besoin pour ne pas alourdir le premier chargement
+      chargerPlus() {
+        if (!plus) {
+          plus = Promise.all([lireTexte(`${base}vocabulaire-plus.txt`), lireBinaire(`${base}vecteurs-plus.bin`)]).then(([t, b]) => {
+            const nouveaux = t.split('\n').map((m) => m.trim()).filter(Boolean);
+            const v2 = normaliserVecteurs(new Int8Array(b), nouveaux.length);
+            const tout = new Float32Array(vec.length + v2.length);
+            tout.set(vec); tout.set(v2, vec.length);
+            const debut = mots.length;
+            nouveaux.forEach((m) => mots.push(m));
+            vec = tout;
+            ajouterMots(nouveaux, debut);
+            sem.plusCharge = true;
+          }).catch(() => { plus = null; });
+        }
+        return plus;
+      },
+      plusCharge: false,
+      // comme trouver(), en allant chercher dans les mots en plus si besoin
+      async trouverPartout(t) {
+        const i = sem.trouver(t);
+        if (i >= 0 || sem.plusCharge) return i;
+        await sem.chargerPlus();
+        return sem.trouver(t);
       },
       // similarité approchée (−1…1) entre deux mots
       similarite(i, j) {
@@ -52,6 +86,7 @@ export function chargerSemantique(base = '../commun/mots/') {
         return s;
       },
     };
+    return sem;
   });
   return promesse;
 }
