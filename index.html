@@ -2,403 +2,316 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="robots" content="noindex">
-  <title>Tableau de bord</title>
-  <link rel="icon" href="icones/favicon.ico" sizes="16x16 32x32 48x48 64x64">
-  <link rel="icon" type="image/svg+xml" href="icones/logo.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jeux</title>
+  <link rel="icon" href="icones/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="icon" type="image/png" href="icones/favicon-32.png" sizes="32x32">
   <link rel="apple-touch-icon" href="icones/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#191414">
+  <meta name="theme-color" content="#0F1633">
+  <meta name="apple-mobile-web-app-title" content="Jeux">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Stats">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <script type="module" src="app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="commun/commun.css">
+  <link rel="stylesheet" href="menu.css">
 </head>
 <body>
-  <!-- Fond : l'image choisie dans config.js (FOND), sinon un dégradé -->
-  <div class="fond" aria-hidden="true"></div>
-
-  <!-- Barre du haut -->
-  <header class="haut">
-    <div class="groupe">
-      <img class="logo-appli" src="icones/logo.svg" alt="Tableau de bord" width="40" height="40">
-      <button type="button" class="rond verre" id="actualiser" title="Actualiser" aria-label="Actualiser">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
-      </button>
-      <a class="rond verre" id="ouvrir" hidden target="_blank" rel="noopener" title="Ouvrir le site" aria-label="Ouvrir le site">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
-      </a>
-    </div>
-    <nav class="pilules" aria-label="Onglets" role="tablist">
-      <button type="button" class="pilule verre actif" role="tab" data-onglet="apercu" aria-selected="true">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/></svg><span>Aperçu</span>
-      </button>
-      <button type="button" class="pilule verre" role="tab" data-onglet="pages" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg><span>Pages</span>
-      </button>
-      <button type="button" class="pilule verre" role="tab" data-onglet="audience" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c1-3.6 3.4-5.5 6.5-5.5s5.5 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg><span>Audience</span>
-      </button>
-      <button type="button" class="pilule verre" role="tab" data-onglet="appareils" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="3" width="12" height="18" rx="3"/><path d="M11 17h2"/></svg><span>Appareils</span>
-      </button>
-      <button type="button" class="pilule verre" role="tab" data-onglet="sante" aria-selected="false">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg><span>Santé</span><b class="pastille-alerte" id="alerte-sante" hidden></b>
-      </button>
-    </nav>
-    <div class="groupe droite">
-      <span class="direct verre" id="etat"><i></i><span>Chargement…</span></span>
-      <span class="avatar" id="avatar" aria-hidden="true">∑</span>
-    </div>
+  <header class="entete">
+    <svg class="decor" viewBox="0 0 320 150" aria-hidden="true">
+      <g class="eventail">
+        <g class="carte-deco c1"><rect x="125" y="22" width="70" height="98" rx="9"/><text class="valeur" x="134" y="44">A</text><text class="motif" x="160" y="86">♠</text></g>
+        <g class="carte-deco c2 rouge"><rect x="125" y="22" width="70" height="98" rx="9"/><text class="valeur" x="134" y="44">R</text><text class="motif" x="160" y="86">♥</text></g>
+        <g class="carte-deco c3 rouge"><rect x="125" y="22" width="70" height="98" rx="9"/><text class="valeur" x="134" y="44">D</text><text class="motif" x="160" y="86">♦</text></g>
+      </g>
+      <g class="de-deco">
+        <rect x="-21" y="-21" width="42" height="42" rx="9"/>
+        <circle cx="-10" cy="-10" r="4"/><circle cx="10" cy="-10" r="4"/><circle cx="0" cy="0" r="4"/><circle cx="-10" cy="10" r="4"/><circle cx="10" cy="10" r="4"/>
+      </g>
+      <g class="pion-deco">
+        <circle cx="0" cy="-26" r="10"/>
+        <path d="M -7 -16 Q 0 -12 7 -16 L 11 10 L -11 10 Z"/>
+        <rect x="-17" y="10" width="34" height="8" rx="4"/>
+      </g>
+    </svg>
+    <h1>Jeux</h1>
+    <p class="intro">Dix jeux à partager : chacun sur son téléphone en ligne, ou tous sur le même téléphone, même sans internet.</p>
   </header>
 
-  <!-- Barre des sites, à gauche (en bas sur téléphone) -->
-  <nav class="dock verre" id="sites" aria-label="Site affiché"></nav>
-
-  <main class="page">
-    <!-- Titre et période -->
-    <section class="titre-page">
-      <div>
-        <h1 id="salut">Bonjour</h1>
-        <p id="sous-titre">Voici ce qui se passe sur tes sites.</p>
-      </div>
-      <div class="actions-titre">
-        <div class="segment verre" role="tablist" aria-label="Période">
-          <button role="tab" data-periode="7" aria-selected="true">7 jours</button>
-          <button role="tab" data-periode="30" aria-selected="false">30 jours</button>
-          <button role="tab" data-periode="12m" aria-selected="false">12 mois</button>
-        </div>
-        <button type="button" class="bouton verre" id="exporter">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11"/><path d="M7 10l5 5 5-5"/><path d="M5 20h14"/></svg><span>Exporter</span>
-        </button>
-      </div>
+  <main class="rayons">
+    <section class="rayon" aria-labelledby="titre-cartes">
+      <h2 id="titre-cartes">Jeux de cartes</h2>
+      <ul class="jeux">
+        <li>
+          <a class="jeu uno" href="uno/">
+            <span class="pastille" aria-hidden="true"></span>
+            <span class="texte">
+              <strong class="nom">UNO</strong>
+              <span class="desc">Vider sa main le premier, sans oublier de crier UNO.</span>
+              <span class="tags"><span class="tag">2 à 6 joueurs</span><span class="tag">10 min</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu skyjo" href="skyjo/">
+            <span class="pastille" aria-hidden="true"></span>
+            <span class="texte">
+              <strong class="nom">Skyjo</strong>
+              <span class="desc">Retourner et échanger ses cartes pour finir avec le moins de points.</span>
+              <span class="tags"><span class="tag">1 à 6 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu blackjack" href="blackjack/">
+            <span class="pastille" aria-hidden="true">21</span>
+            <span class="texte">
+              <strong class="nom">Blackjack</strong>
+              <span class="desc">S'approcher de 21 sans le dépasser, et battre le croupier.</span>
+              <span class="tags"><span class="tag">1 à 4 joueurs</span><span class="tag">Solo possible</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu poker" href="poker/">
+            <span class="pastille" aria-hidden="true">♠</span>
+            <span class="texte">
+              <strong class="nom">Poker</strong>
+              <span class="desc">Texas Hold'em entre amis, ou contre des bots.</span>
+              <span class="tags"><span class="tag">1 à 6 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu president" href="president/">
+            <span class="pastille" aria-hidden="true">👑</span>
+            <span class="texte">
+              <strong class="nom">Le Président</strong>
+              <span class="desc">Se débarrasser de ses cartes le premier pour devenir Président… et éviter d'être le Trou du cul.</span>
+              <span class="tags"><span class="tag">3 à 8 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu cranes" href="cranes/">
+            <span class="pastille" aria-hidden="true">☠</span>
+            <span class="texte">
+              <strong class="nom">Skull King</strong>
+              <span class="desc">Annonce tes plis et tiens parole : pirates, sirènes, Kraken et Baleine blanche.</span>
+              <span class="tags"><span class="tag">1 à 8 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu kassen" href="kassen/">
+            <span class="pastille" aria-hidden="true">戦</span>
+            <span class="texte">
+              <strong class="nom">Gwynt · Kassen</strong>
+              <span class="desc">Deux jeux de cartes, mêmes règles : le Gwynt, et Kassen, sa version au Japon féodal. Construis ton deck et remporte deux manches.</span>
+              <span class="tags"><span class="tag">1 ou 2 joueurs</span><span class="tag">Bot</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+      </ul>
     </section>
 
-    <div class="grille">
-      <!-- Chiffres clés -->
-      <article class="carte verre kpi" data-onglets="apercu" style="--teinte: #F2B632">
-        <div class="kpi-haut"><span class="icone"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></span><span class="fleche">↗</span></div>
-        <h2>Visiteurs aujourd'hui</h2>
-        <p class="valeur" id="k-aujourdhui">–</p>
-        <p class="ecart" id="e-aujourdhui"></p>
-        <svg class="spark" id="s-aujourdhui" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"></svg>
-      </article>
-      <article class="carte verre kpi" data-onglets="apercu" style="--teinte: #3FBF7F">
-        <div class="kpi-haut"><span class="icone"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><span class="fleche">↗</span></div>
-        <h2>Visiteurs ce mois-ci</h2>
-        <p class="valeur" id="k-mois">–</p>
-        <p class="ecart" id="e-mois"></p>
-        <svg class="spark" id="s-mois" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"></svg>
-      </article>
-      <article class="carte verre kpi" data-onglets="apercu" style="--teinte: #4F8DFF">
-        <div class="kpi-haut"><span class="icone"><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="fleche">↗</span></div>
-        <h2 id="h-vues">Pages vues</h2>
-        <p class="valeur" id="k-vues">–</p>
-        <p class="ecart" id="e-vues"></p>
-        <svg class="spark" id="s-vues" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"></svg>
-      </article>
-      <article class="carte verre kpi" data-onglets="apercu" style="--teinte: #9B7BEA">
-        <div class="kpi-haut"><span class="icone"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/></svg></span><span class="fleche">↗</span></div>
-        <h2 id="h-nouveaux">Nouveaux visiteurs</h2>
-        <p class="valeur" id="k-nouveaux">–</p>
-        <p class="ecart" id="e-nouveaux"></p>
-        <svg class="spark" id="s-nouveaux" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true"></svg>
-      </article>
+    <section class="rayon" aria-labelledby="titre-plateau">
+      <h2 id="titre-plateau">Jeux de plateau</h2>
+      <ul class="jeux">
+        <li>
+          <a class="jeu bataille" href="bataille/">
+            <span class="pastille" aria-hidden="true"></span>
+            <span class="texte">
+              <strong class="nom">Bataille navale</strong>
+              <span class="desc">Cacher sa flotte, trouver celle de l'autre et la couler la première.</span>
+              <span class="tags"><span class="tag">2 joueurs</span><span class="tag">15 min</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu chevaux" href="chevaux/">
+            <span class="pastille" aria-hidden="true">♞︎</span>
+            <span class="texte">
+              <strong class="nom">Petits chevaux</strong>
+              <span class="desc">Faire le tour du plateau, renvoyer les autres à l'écurie et monter son escalier.</span>
+              <span class="tags"><span class="tag">1 à 4 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu puissance4" href="puissance4/">
+            <span class="pastille" aria-hidden="true"></span>
+            <span class="texte">
+              <strong class="nom">Puissance 4</strong>
+              <span class="desc">Aligner 4 jetons avant l'autre.</span>
+              <span class="tags"><span class="tag">1 ou 2 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu tokyo" href="tokyo/">
+            <span class="pastille" aria-hidden="true">東</span>
+            <span class="texte">
+              <strong class="nom">Monopoly</strong>
+              <span class="desc">Édition Tokyo : acheter les quartiers, construire et ruiner ses adversaires.</span>
+              <span class="tags"><span class="tag">1 à 6 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu cluedo" href="cluedo/">
+            <span class="pastille" aria-hidden="true">🔎</span>
+            <span class="texte">
+              <strong class="nom">Cluedo</strong>
+              <span class="desc">Un crime au manoir : déplace-toi de pièce en pièce, fais tes suggestions et démasque le coupable, l'arme et le lieu.</span>
+              <span class="tags"><span class="tag">2 à 6 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu mastermind" href="mastermind/">
+            <span class="pastille" aria-hidden="true">●</span>
+            <span class="texte">
+              <strong class="nom">Mastermind</strong>
+              <span class="desc">Trouve le code secret de couleurs en un minimum d'essais : seul, en duel ou en course.</span>
+              <span class="tags"><span class="tag">1 à 8 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu demineur" href="demineur/">
+            <span class="pastille" aria-hidden="true">💣</span>
+            <span class="texte">
+              <strong class="nom">Démineur</strong>
+              <span class="desc">Ouvre toutes les cases sans sauter sur une mine : seul pour battre ton record, ou en course contre tes amis.</span>
+              <span class="tags"><span class="tag">1 à 8 joueurs</span><span class="tag">3 niveaux</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu yams" href="yams/">
+            <span class="pastille" aria-hidden="true">⚃</span>
+            <span class="texte">
+              <strong class="nom">Yam's</strong>
+              <span class="desc">Cinq dés, trois lancers : brelan, full, suites et Yam's pour remplir ta feuille et faire le plus gros score.</span>
+              <span class="tags"><span class="tag">1 à 8 joueurs</span><span class="tag">Bots</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+      </ul>
+    </section>
 
-      <!-- Graphique principal -->
-      <section class="carte verre principal" data-onglets="apercu" aria-labelledby="titre-graphe">
-        <header class="entete-carte">
-          <div>
-            <h2 id="titre-graphe">Visiteurs uniques par jour</h2>
-            <p class="note" id="note-graphe"></p>
-          </div>
-          <div class="badges">
-            <span class="badge" id="badge-graphe" hidden></span>
-            <span class="badge neutre" id="record"></span>
-          </div>
-        </header>
-        <div class="graphe" id="graphe">
-          <div class="axe" aria-hidden="true"></div>
-          <div class="barres"></div>
-          <div class="bulle" role="status" hidden></div>
+    <section class="rayon" aria-labelledby="titre-ambiance">
+      <h2 id="titre-ambiance">Jeux d'ambiance</h2>
+      <ul class="jeux">
+        <li>
+          <a class="jeu loupgarou" href="loupgarou/">
+            <span class="pastille" aria-hidden="true">🐺</span>
+            <span class="texte">
+              <strong class="nom">Loup-Garou</strong>
+              <span class="desc">Chacun son rôle secret sur son téléphone : les villageois doivent démasquer les loups avant d'être dévorés.</span>
+              <span class="tags"><span class="tag">4 à 18 joueurs</span><span class="tag">11 rôles</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu undercover" href="undercover/">
+            <span class="pastille" aria-hidden="true">?</span>
+            <span class="texte">
+              <strong class="nom">Undercover</strong>
+              <span class="desc">Un mot secret, des indices, un vote : démasque les Undercover et Mister White.</span>
+              <span class="tags"><span class="tag">3 à 16 joueurs</span><span class="tag">2 thèmes</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu petitbac" href="petitbac/">
+            <span class="pastille" aria-hidden="true">✏️</span>
+            <span class="texte">
+              <strong class="nom">Petit bac</strong>
+              <span class="desc">Une lettre, des catégories, le premier qui a tout rempli crie STOP ! Puis on vérifie les réponses des autres.</span>
+              <span class="tags"><span class="tag">2 à 10 joueurs</span><span class="tag">Thèmes à modifier</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="rayon" aria-labelledby="titre-mots">
+      <h2 id="titre-mots">Jeux de mots</h2>
+      <ul class="jeux">
+        <li>
+          <a class="jeu sutom" href="sutom/">
+            <span class="pastille" aria-hidden="true">S</span>
+            <span class="texte">
+              <strong class="nom">Sutom</strong>
+              <span class="desc">Trouve le mot en 6 essais, la première lettre est donnée : un mot du jour pour tout le monde, des parties libres ou une course entre amis.</span>
+              <span class="tags"><span class="tag">1 à 8 joueurs</span><span class="tag">Mot du jour</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu cemantix" href="cemantix/">
+            <span class="pastille" aria-hidden="true">🌡️</span>
+            <span class="texte">
+              <strong class="nom">Cémantix</strong>
+              <span class="desc">Trouve le mot secret grâce au sens des mots : plus tu t'en approches, plus ça chauffe !</span>
+              <span class="tags"><span class="tag">Seul</span><span class="tag">Mot du jour</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+        <li>
+          <a class="jeu pedantix" href="pedantix/">
+            <span class="pastille" aria-hidden="true">W</span>
+            <span class="texte">
+              <strong class="nom">Pédantix</strong>
+              <span class="desc">Un article de Wikipédia dont tous les mots sont cachés : dévoile-les un par un jusqu'à trouver son titre.</span>
+              <span class="tags"><span class="tag">Seul</span><span class="tag">Article du jour</span></span>
+            </span>
+            <span class="jouer">Jouer</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="modes" aria-labelledby="titre-modes">
+      <h2 id="titre-modes">Deux façons de jouer</h2>
+      <div class="modes-liste">
+        <div class="mode">
+          <strong>En ligne</strong>
+          <p>Chacun sur son téléphone. Un joueur crée un salon, les autres entrent le code à 4 lettres. Si la connexion coupe un moment, la partie reprend toute seule.</p>
         </div>
-        <details class="tableau-donnees">
-          <summary>Voir les chiffres</summary>
-          <table><thead><tr><th scope="col">Période</th><th scope="col">Visiteurs uniques</th></tr></thead><tbody id="tableau-corps"></tbody></table>
-        </details>
-      </section>
-
-      <!-- Classement : pages d'un site, ou sites entre eux -->
-      <section class="carte verre pages" data-onglets="apercu pages" aria-labelledby="titre-classement">
-        <header class="entete-carte">
-          <div>
-            <h2 id="titre-classement">Pages les plus vues</h2>
-            <p class="note" id="note-classement"></p>
-          </div>
-          <div class="segment verre petit" id="choix-classement" role="tablist" aria-label="Classer par" hidden>
-            <button role="tab" data-tri="visiteurs" aria-selected="true">Visiteurs</button>
-            <button role="tab" data-tri="parties" aria-selected="false">Parties</button>
-          </div>
-        </header>
-        <ol class="classement" id="classement"></ol>
-      </section>
-
-      <!-- Temps passé par page -->
-      <section class="carte verre temps" data-onglets="pages" aria-labelledby="titre-temps">
-        <header class="entete-carte">
-          <div><h2 id="titre-temps">Temps passé</h2><p class="note" id="note-temps"></p></div>
-          <span class="badge neutre" id="badge-temps" hidden></span>
-        </header>
-        <ol class="barres-liste" id="liste-temps"></ol>
-      </section>
-
-      <!-- Contenus les plus consultés (séries, recherches…) -->
-      <section class="carte verre contenus" data-onglets="pages" aria-labelledby="titre-contenus">
-        <header class="entete-carte">
-          <div><h2 id="titre-contenus">Les plus consultés</h2><p class="note" id="note-contenus"></p></div>
-          <div class="segment verre petit" id="choix-contenus" role="tablist" aria-label="Type de contenu"></div>
-        </header>
-        <ol class="barres-liste" id="liste-contenus"></ol>
-      </section>
-
-      <!-- Parties : durée, fin, rejouées (site de jeux) -->
-      <section class="carte verre jeux" data-onglets="pages" aria-labelledby="titre-jeux">
-        <header class="entete-carte">
-          <div><h2 id="titre-jeux">Les parties en détail</h2><p class="note" id="note-jeux"></p></div>
-        </header>
-        <div class="mini-chiffres" id="chiffres-jeux"></div>
-        <div class="tableau-jeux" id="tableau-jeux"></div>
-      </section>
-
-      <!-- En direct -->
-      <section class="carte verre direct-carte" data-onglets="apercu audience" aria-labelledby="titre-direct">
-        <header class="entete-carte">
-          <div><h2 id="titre-direct">En direct</h2><p class="note" id="note-direct">Visiteurs sur tes sites en ce moment</p></div>
-          <span class="voyant-direct" aria-hidden="true"></span>
-        </header>
-        <p class="grand-chiffre" id="nb-direct">–</p>
-        <ul class="liste-direct" id="liste-direct"></ul>
-      </section>
-
-      <!-- Carte de chaleur jour × heure -->
-      <section class="carte verre chaleur" data-onglets="audience" aria-labelledby="titre-chaleur">
-        <header class="entete-carte">
-          <div><h2 id="titre-chaleur">Quand viennent les visiteurs</h2><p class="note" id="note-chaleur"></p></div>
-        </header>
-        <div class="grille-chaleur" id="grille-chaleur"></div>
-      </section>
-
-      <!-- D'où viennent les visiteurs -->
-      <section class="carte verre sources" data-onglets="apercu audience" aria-labelledby="titre-sources">
-        <header class="entete-carte">
-          <div><h2 id="titre-sources">D'où ils viennent</h2><p class="note" id="note-sources"></p></div>
-        </header>
-        <div class="repartition" id="repartition-sources"></div>
-        <ul class="legende" id="legende-sources"></ul>
-      </section>
-
-      <!-- Fidélité -->
-      <section class="carte verre fidelite" data-onglets="audience" aria-labelledby="titre-fidelite">
-        <header class="entete-carte">
-          <div><h2 id="titre-fidelite">Fidélité</h2><p class="note" id="note-fidelite"></p></div>
-        </header>
-        <div class="mini-chiffres" id="chiffres-fidelite"></div>
-        <h3 class="sous-titre-carte">Ils reviennent après…</h3>
-        <ul class="legende" id="legende-retours"></ul>
-      </section>
-
-      <!-- Appareils -->
-      <section class="carte verre appareils" data-onglets="appareils" aria-labelledby="titre-appareils">
-        <header class="entete-carte">
-          <div><h2 id="titre-appareils">Appareils</h2><p class="note">Visiteurs uniques par jour, cumulés</p></div>
-        </header>
-        <div class="repartition" id="repartition"></div>
-        <ul class="legende" id="legende-appareils"></ul>
-      </section>
-
-      <!-- Appli installée -->
-      <section class="carte verre appli" data-onglets="appareils" aria-labelledby="titre-appli">
-        <header class="entete-carte">
-          <div><h2 id="titre-appli">Appli installée</h2><p class="note">Visiteurs venus de l'écran d'accueil</p></div>
-        </header>
-        <div class="anneau-ligne">
-          <div class="anneau-bloc">
-            <svg class="anneau" viewBox="0 0 120 120" aria-hidden="true">
-              <circle class="piste" cx="60" cy="60" r="50"/>
-              <circle class="arc" id="arc-appli" cx="60" cy="60" r="50"/>
-            </svg>
-            <strong class="anneau-texte" id="pct-appli">–</strong>
-          </div>
-          <p class="note" id="note-appli"></p>
+        <div class="mode">
+          <strong>Sur ce téléphone</strong>
+          <p>On se passe l'appareil à chaque tour, ou on joue contre des bots. Ça marche sans internet, une fois le site ouvert une première fois.</p>
         </div>
-      </section>
-
-      <!-- Systèmes et navigateurs -->
-      <section class="carte verre systemes" data-onglets="appareils" aria-labelledby="titre-systemes">
-        <header class="entete-carte">
-          <div><h2 id="titre-systemes">Systèmes</h2><p class="note">Visiteurs uniques par jour, cumulés</p></div>
-        </header>
-        <div class="repartition" id="repartition-systemes"></div>
-        <ul class="legende" id="legende-systemes"></ul>
-      </section>
-      <section class="carte verre navigateurs" data-onglets="appareils" aria-labelledby="titre-navigateurs">
-        <header class="entete-carte">
-          <div><h2 id="titre-navigateurs">Navigateurs</h2><p class="note">Visiteurs uniques par jour, cumulés</p></div>
-        </header>
-        <div class="repartition" id="repartition-navigateurs"></div>
-        <ul class="legende" id="legende-navigateurs"></ul>
-      </section>
-
-      <!-- Santé : le suivi est-il à jour sur chaque site ? -->
-      <section class="carte verre etat-suivi" data-onglets="sante" aria-labelledby="titre-etat-suivi">
-        <header class="entete-carte">
-          <div><h2 id="titre-etat-suivi">État du suivi</h2><p class="note">Chaque site envoie-t-il bien tous les chiffres ?</p></div>
-          <button type="button" class="bouton verre petit-bouton" id="verifier-regles">Vérifier les règles</button>
-        </header>
-        <ul class="liste-etat" id="liste-etat"></ul>
-      </section>
-
-      <!-- Santé : erreurs et temps de chargement -->
-      <section class="carte verre erreurs" data-onglets="sante" aria-labelledby="titre-erreurs">
-        <header class="entete-carte">
-          <div><h2 id="titre-erreurs">Erreurs des sites</h2><p class="note" id="note-erreurs"></p></div>
-          <span class="badge" id="badge-erreurs" hidden></span>
-        </header>
-        <ul class="liste-bugs" id="liste-bugs"></ul>
-      </section>
-      <section class="carte verre chargement" data-onglets="sante" aria-labelledby="titre-chargement">
-        <header class="entete-carte">
-          <div><h2 id="titre-chargement">Temps de chargement</h2><p class="note" id="note-chargement"></p></div>
-        </header>
-        <p class="grand-chiffre" id="nb-chargement">–</p>
-        <svg class="spark spark-large" id="s-chargement" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true" style="--teinte:#3FBF7F"></svg>
-        <ul class="legende" id="legende-chargement"></ul>
-      </section>
-      <section class="carte verre erreurs-pages" data-onglets="sante" aria-labelledby="titre-erreurs-pages">
-        <header class="entete-carte">
-          <div><h2 id="titre-erreurs-pages">Pages touchées</h2><p class="note" id="note-erreurs-pages"></p></div>
-        </header>
-        <ol class="barres-liste" id="liste-erreurs-pages"></ol>
-      </section>
-
-      <!-- Depuis le début -->
-      <section class="carte verre total" data-onglets="apercu" aria-labelledby="titre-total">
-        <header class="entete-carte">
-          <div><h2 id="titre-total">Records</h2><p class="note">Depuis le début</p></div>
-        </header>
-        <dl class="totaux">
-          <div><dt>Visiteurs</dt><dd id="t-visiteurs">–</dd></div>
-          <div><dt>Pages vues</dt><dd id="t-vues">–</dd></div>
-          <div id="t-parties-ligne" hidden><dt>Parties jouées</dt><dd id="t-parties">–</dd></div>
-          <div><dt>Meilleur jour</dt><dd id="t-record">–</dd></div>
-          <div><dt>Meilleure semaine</dt><dd id="t-semaine">–</dd></div>
-          <div><dt>Meilleur mois</dt><dd id="t-mois">–</dd></div>
-          <div><dt>Série en cours</dt><dd id="t-serie">–</dd></div>
-        </dl>
-      </section>
-    </div>
-
-    <footer class="pied">
-      <div class="moi" id="moi"></div>
-      <p class="note" id="mode"></p>
-    </footer>
+      </div>
+      <p class="hors-ligne" id="hors-ligne">Vérification du mode hors connexion…</p>
+    </section>
   </main>
 
-  <!-- Détail d'un jour (ou d'un mois) : s'ouvre en cliquant sur une barre du graphique -->
-  <dialog class="fiche verre" id="jour" aria-labelledby="jour-titre">
-    <header class="fiche-entete">
-      <div>
-        <p class="note" id="jour-site"></p>
-        <h2 id="jour-titre">Jour</h2>
-      </div>
-      <div class="groupe">
-        <button type="button" class="rond verre" id="jour-avant" aria-label="Jour précédent" title="Jour précédent">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
-        </button>
-        <button type="button" class="rond verre" id="jour-apres" aria-label="Jour suivant" title="Jour suivant">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
-        </button>
-        <button type="button" class="rond verre" id="jour-fermer" aria-label="Fermer">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
-      </div>
-    </header>
-    <p class="note-jour" id="jour-note" hidden></p>
-    <div class="fiche-chiffres" id="jour-chiffres"></div>
-    <div id="jour-heures-bloc" hidden>
-      <div class="fiche-graphe-entete">
-        <div><h3 id="jour-heures-titre">Heure par heure</h3><p class="note" id="jour-heures-note"></p></div>
-      </div>
-      <div class="graphe petit-graphe heures" id="jour-heures">
-        <div class="axe" aria-hidden="true"></div>
-        <div class="barres"></div>
-        <div class="bulle" role="status" hidden></div>
-      </div>
-    </div>
-    <div class="fiche-graphe-entete"><h3 id="jour-titre-liste">Par page</h3></div>
-    <ol class="classement jour-liste" id="jour-liste"></ol>
-  </dialog>
-
-  <!-- Fiche d'une page (ou d'un jeu) : s'ouvre en cliquant dans le classement -->
-  <dialog class="fiche verre" id="fiche" aria-labelledby="fiche-titre">
-    <header class="fiche-entete">
-      <div>
-        <p class="note"><span id="fiche-site"></span> · <span id="fiche-periode"></span></p>
-        <h2 id="fiche-titre">Page</h2>
-      </div>
-      <button type="button" class="rond verre" id="fiche-fermer" aria-label="Fermer">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </header>
-    <div class="fiche-chiffres" id="fiche-chiffres"></div>
-    <div class="fiche-modes" id="fiche-modes" hidden></div>
-    <div class="fiche-graphe-entete">
-      <h3 id="fiche-titre-graphe">Parties jouées par jour</h3>
-      <div class="segment verre petit" id="fiche-choix" role="tablist" aria-label="Courbe affichée">
-        <button role="tab" data-serie="parties" aria-selected="true">Parties</button>
-        <button role="tab" data-serie="visiteurs" aria-selected="false">Visiteurs</button>
-      </div>
-    </div>
-    <div class="graphe petit-graphe" id="fiche-graphe">
-      <div class="axe" aria-hidden="true"></div>
-      <div class="barres"></div>
-      <div class="bulle" role="status" hidden></div>
-    </div>
-    <!-- Heures des parties (journal) -->
-    <div id="fiche-heures-bloc" hidden>
-      <div class="fiche-graphe-entete">
-        <div><h3 id="fiche-heures-titre">À quelle heure on joue</h3><p class="note" id="fiche-heures-note"></p></div>
-      </div>
-      <div class="graphe petit-graphe heures" id="fiche-heures">
-        <div class="axe" aria-hidden="true"></div>
-        <div class="barres"></div>
-        <div class="bulle" role="status" hidden></div>
-      </div>
-      <div id="fiche-journal-bloc">
-        <h3 class="titre-journal" id="fiche-journal-titre">Une par une</h3>
-        <ul class="journal" id="fiche-journal"></ul>
-        <div class="partie-detail" id="fiche-partie" hidden></div>
-      </div>
-    </div>
-    <!-- Résultats des joueurs (jeux de mots : pseudo, essais, temps) -->
-    <div id="fiche-resultats-bloc" hidden>
-      <div class="fiche-graphe-entete">
-        <div><h3>Résultats des joueurs</h3><p class="note" id="fiche-resultats-note"></p></div>
-        <div class="segment verre petit" id="fiche-resultats-choix" role="tablist" aria-label="Résultats affichés">
-          <button role="tab" data-vue="jours" aria-selected="true">Par jour</button>
-          <button role="tab" data-vue="joueurs" aria-selected="false">Par joueur</button>
-          <button role="tab" data-vue="parties" aria-selected="false">Partie par partie</button>
-        </div>
-      </div>
-      <div class="tableau-jeux tableau-resultats" id="fiche-resultats"></div>
-    </div>
-  </dialog>
+  <script src="menu.js"></script>
 </body>
 </html>
