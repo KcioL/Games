@@ -1,5 +1,5 @@
 import { $, el, toast, initRegles, compterPartie } from '../commun/salon.js';
-import { chargerSemantique, numeroDuJour } from '../commun/mots/semantique.js';
+import { chargerSemantique, numeroDuJour, sansAccents } from '../commun/mots/semantique.js';
 import { pseudo, assurerPseudo, boutonPseudo, avisPseudo } from '../commun/pseudo.js';
 
 const CLE = 'jeux-vol:cemantix';
@@ -40,7 +40,7 @@ async function chargerCible(num) {
   return { cible: idx[0], idx, sc, rang, table };
 }
 
-// Température d'un mot : précise pour les 1000 plus proches, au demi-degré pour les 30 000 mots courants,
+// Température d'un mot : précise pour les 1000 plus proches, au demi-degré pour les 30 000 lemmes courants,
 // approchée pour les mots plus rares
 function mesurer(i) {
   const r = partie.rang.get(i);
@@ -82,7 +82,7 @@ async function demarrer(m, nouveau = false) {
   const d = await chargerCible(num);
   partie = { mode: m, num, ...d, essais: [], trouve: false, abandon: false, indices: 0, compte: false, dernier: null };
   if (deja) {
-    // (un mot rare de la partie en cours : on charge les mots en plus)
+    // (une forme conjuguée ou au pluriel dans la partie en cours : on charge les autres formes)
     if (deja.essais.some((mot) => sem.trouver(mot) < 0)) await sem.chargerPlus();
     deja.essais.forEach((mot) => { const i = sem.trouver(mot); if (i >= 0 && !partie.essais.some((e) => e.i === i)) partie.essais.push({ i, mot: sem.mots[i], ...mesurer(i) }); });
     partie.trouve = !!deja.trouve; partie.abandon = !!deja.abandon; partie.indices = deja.indices || 0; partie.compte = !!deja.compte;
@@ -120,7 +120,7 @@ async function proposer(texte) {
   if (!pseudo()) { assurerPseudo().then((n) => { if (n) proposer(texte); }); return; }
   let i = sem.trouver(texte);
   if (i < 0 && !sem.plusCharge) {
-    // mot rare ou récent (halloween, smartphone…) : on va le chercher dans les 30 000 mots en plus
+    // pluriel, féminin, verbe conjugué… : on charge les autres formes des mots
     setMessage('Je cherche ce mot…');
     i = await sem.trouverPartout(texte);
     if (!partie || fini()) return;
@@ -131,7 +131,10 @@ async function proposer(texte) {
     return;
   }
   const deja = partie.essais.find((e) => e.i === i);
-  if (deja) { partie.dernier = deja; setMessage(`« ${deja.mot} » est déjà dans la liste.`); rendre(); return; }
+  // les mots comptent sous leur forme de base : « mangeons » → « manger », « chats » → « chat »
+  const tape = texte.trim().toLowerCase();
+  const autreForme = sansAccents(tape) !== sansAccents(sem.mots[i]) ? `« ${tape} » compte comme « ${sem.mots[i]} ». ` : '';
+  if (deja) { partie.dernier = deja; setMessage(`${autreForme}« ${deja.mot} » est déjà dans la liste.`); rendre(); return; }
   const e = { i, mot: sem.mots[i], ...mesurer(i) };
   partie.essais.push(e);
   if (!partie.debut) partie.debut = Date.now();
@@ -139,7 +142,7 @@ async function proposer(texte) {
   if (!partie.compte) { partie.compte = true; compterPartie('cemantix', 'telephone'); }
   if (e.r === 0) { partie.trouve = true; noterResultat(); }
   sauver();
-  setMessage('');
+  setMessage(autreForme.trim());
   rendre();
 }
 $('saisie').addEventListener('submit', (ev) => {

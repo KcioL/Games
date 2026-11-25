@@ -1,17 +1,18 @@
 // ==========================================================================
 // Sens des mots (pour Cémantix et Pédantix)
-// vocabulaire.txt : les 65 000 mots français les plus courants (un par ligne)
-// vocabulaire-plus.txt / vecteurs-plus.bin : 30 000 mots de plus (plus rares ou récents : halloween, smartphone…)
-// vecteurs.bin    : pour chaque mot, 64 nombres (−127…127) qui résument son sens : les 64 « directions »
-//                   principales du vrai modèle (300 nombres par mot). Le produit des deux listes de nombres
-//                   de deux mots redonne, à 1 ou 2 °C près, leur vraie proximité de sens (similarité cosinus).
-// Ces vecteurs sont une version allégée d'un vrai modèle de langue (spaCy fr_core_news_lg) :
-// assez précis pour dire si deux mots sont proches, mais Cémantix utilise en plus les vraies valeurs
-// (au demi-degré) pour les 30 000 mots courants face à chaque mot à trouver.
+// Modèle de langue : frWac2Vec de Jean-Philippe Fauconnier (word2vec entraîné sur 1,6 milliard de mots
+// du web français), le même genre de modèle que le vrai Cémantix. Les mots sont regroupés par LEMME :
+// « retient », « retenu »… comptent comme « retenir », « chats » comme « chat ».
+// vocabulaire.txt : 40 000 lemmes, du plus courant au plus rare (un par ligne)
+// vecteurs.bin    : pour chaque lemme, 64 nombres (−127…127) qui résument son sens : les 64 « directions »
+//                   principales du vrai modèle (200 nombres par mot). Le produit des deux listes de nombres
+//                   de deux mots redonne, à 2 °C près, leur vraie proximité de sens (similarité cosinus).
+// formes.txt      : les autres formes des mots (« forme numéro_du_lemme »), chargées seulement si besoin
+// Cémantix utilise en plus les vraies valeurs (au demi-degré) des 30 000 lemmes courants face à chaque mot à trouver.
 // ==========================================================================
 
 const D = 64;
-const ECHELLE = 4.754654678314483e-05; // (valeur maximale / 127)² : ramène le produit des nombres à une similarité
+const ECHELLE = 3.5914149637850615e-05; // (valeur maximale / 127)² : ramène le produit des nombres à une similarité
 let promesse = null;
 
 export const sansAccents = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/œ/g, 'oe').replace(/æ/g, 'ae');
@@ -31,7 +32,7 @@ export function chargerSemantique(base = '../commun/mots/') {
   if (promesse) return promesse;
   promesse = Promise.all([lireTexte(`${base}vocabulaire.txt`), lireBinaire(`${base}vecteurs.bin`)]).then(([texte, buf]) => {
     const mots = texte.split('\n').map((m) => m.trim()).filter(Boolean);
-    let vec = normaliserVecteurs(new Int8Array(buf), mots.length);
+    const vec = normaliserVecteurs(new Int8Array(buf), mots.length);
     const index = new Map();
     // sans accents : le mot le plus courant (les mots sont rangés du plus courant au plus rare)
     const indexSansAccents = new Map();
@@ -51,19 +52,22 @@ export function chargerSemantique(base = '../commun/mots/') {
         const k = sansAccents(m);
         return indexSansAccents.has(k) ? indexSansAccents.get(k) : -1;
       },
-      // Mots en plus (30 000 mots plus rares ou récents : halloween, smartphone…), chargés seulement
-      // quand on en a besoin pour ne pas alourdir le premier chargement
+      // Les autres formes des mots (pluriels, féminins, conjugaisons…), chargées seulement quand on en a besoin
+      // pour ne pas alourdir le premier chargement : chacune renvoie au numéro de son lemme
+      formes: [],
       chargerPlus() {
         if (!plus) {
-          plus = Promise.all([lireTexte(`${base}vocabulaire-plus.txt`), lireBinaire(`${base}vecteurs-plus.bin`)]).then(([t, b]) => {
-            const nouveaux = t.split('\n').map((m) => m.trim()).filter(Boolean);
-            const v2 = normaliserVecteurs(new Int8Array(b), nouveaux.length);
-            const tout = new Float32Array(vec.length + v2.length);
-            tout.set(vec); tout.set(v2, vec.length);
-            const debut = mots.length;
-            nouveaux.forEach((m) => mots.push(m));
-            vec = tout;
-            ajouterMots(nouveaux, debut);
+          plus = lireTexte(`${base}formes.txt`).then((t) => {
+            t.split('\n').forEach((ligne) => {
+              const k = ligne.lastIndexOf(' ');
+              if (k < 1) return;
+              const f = ligne.slice(0, k); const i = parseInt(ligne.slice(k + 1), 10);
+              if (!(i >= 0 && i < mots.length)) return;
+              sem.formes.push([f, i]);
+              if (!index.has(f)) index.set(f, i);
+              const s = sansAccents(f);
+              if (!indexSansAccents.has(s)) indexSansAccents.set(s, i);
+            });
             sem.plusCharge = true;
           }).catch(() => { plus = null; });
         }
@@ -83,12 +87,14 @@ export function chargerSemantique(base = '../commun/mots/') {
         if (cible.length < 3) return '';
         const max = cible.length <= 5 ? 1 : 2;
         let meilleur = ''; let dMin = max + 1;
-        for (let i = 0; i < mots.length && dMin > 1; i++) {
-          const m = sansAccents(mots[i]);
-          if (Math.abs(m.length - cible.length) > max) continue;
+        const essayer = (mot) => {
+          const m = sansAccents(mot);
+          if (Math.abs(m.length - cible.length) > max) return;
           const d = distance(cible, m, dMin - 1);
-          if (d < dMin) { dMin = d; meilleur = mots[i]; } // les mots sont rangés du plus courant au plus rare
-        }
+          if (d < dMin) { dMin = d; meilleur = mot; } // les mots sont rangés du plus courant au plus rare
+        };
+        for (let i = 0; i < mots.length && dMin > 1; i++) essayer(mots[i]);
+        for (let k = 0; k < sem.formes.length && dMin > 1; k++) essayer(sem.formes[k][0]);
         return meilleur;
       },
       // similarité approchée (−1…1) entre deux mots

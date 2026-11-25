@@ -6,7 +6,7 @@ const CLE = 'jeux-vol:pedantix';
 const CLE_PETITS = 'jeux-vol:pedantix-petits';
 const API = 'https://fr.wikipedia.org/w/api.php';
 const MOTS_MAX = 420;   // longueur du texte à deviner (on coupe à la fin d'un paragraphe)
-const SEUIL = 0.5;     // proximité de sens à partir de laquelle un mot s'affiche en gris
+const SEUIL = 0.45;    // proximité de sens à partir de laquelle un mot s'affiche en gris
 // petits mots qu'on peut afficher d'office
 const PETITS = new Set(('le la les l un une des de du d et à au aux en dans par pour sur avec ou où est a sont il elle ils elles '
   + 'se s sa son ses leur leurs qu que qui ce c cet cette ces ne n pas plus y été être ont était sous entre').split(' ').map((m) => sansAccents(m)));
@@ -282,7 +282,7 @@ function rendreMorceaux(zone, morceaux, tout) {
       c.classList.add('proche');
       c.textContent = p.mot;
       // plus c'est proche, plus c'est foncé
-      c.style.setProperty('--force', Math.min(1, (p.s - SEUIL) / (0.9 - SEUIL)).toFixed(2));
+      c.style.setProperty('--force', Math.min(1, (p.s - SEUIL) / (0.85 - SEUIL)).toFixed(2));
       if (partie.dernier === norm(p.mot)) c.classList.add('nouveau');
     }
     c.title = `${m.mot.length} lettre${m.mot.length > 1 ? 's' : ''}`;
