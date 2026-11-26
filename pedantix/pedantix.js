@@ -226,6 +226,7 @@ async function proposer(texte) {
   calculerProches();
   sauver();
   rendre();
+  return true;
 }
 function verifierVictoire() {
   if (!partie || partie.abandon) return;
