@@ -211,7 +211,23 @@ function noterResultat() {
 
 $('mode-libre').parentElement.after(boutonPseudo());
 // pas de pseudo, pas de partie : il apparaît dans les résultats du tableau de bord
-$('saisie').before(avisPseudo());
+$('colle').before(avisPseudo());
+// la barre où on tape reste collée sous la barre du haut : on mesure celle-ci (elle change de hauteur en tournant le téléphone)
+const barre = document.querySelector('.barre');
+const mesurer = () => document.documentElement.style.setProperty('--barre', `${barre ? barre.offsetHeight : 0}px`);
+mesurer();
+if (barre && window.ResizeObserver) new ResizeObserver(mesurer).observe(barre);
+// une ombre sous la barre quand le texte défile dessous
+let ombreEnAttente = false;
+window.addEventListener('scroll', () => {
+  if (ombreEnAttente) return;
+  ombreEnAttente = true;
+  requestAnimationFrame(() => {
+    ombreEnAttente = false;
+    const c = $('colle');
+    c.classList.toggle('colle', c.getBoundingClientRect().top <= (barre ? barre.offsetHeight : 0) + 1 && window.scrollY > 0);
+  });
+}, { passive: true });
 document.addEventListener('pseudo-change', () => { if (partie) { rendre(); if (!fini()) $('mot').focus({ preventScroll: true }); } });
 
 // ---------- Proposer un mot ----------
