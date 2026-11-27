@@ -100,8 +100,32 @@ function decouper(t) {
   if (i < t.length) morceaux.push({ sep: t.slice(i) });
   return morceaux;
 }
-const trouves = () => new Set(partie.essais.map(norm));
-const visible = (n, t) => t.has(n) || (petitsVisibles() && PETITS.has(n));
+// Même mot sous une autre forme (pluriel, féminin, conjugaison…) : on compare les lemmes du dictionnaire
+// (« chats », « chatons » → non ; « chats » → « chat », « grandes » → « grand », « mangeaient » → « manger »)
+let versionSem = 0; // change quand le dictionnaire (ou ses formes en plus) arrive
+let familles = new Map(); // lemme -> lemme principal (« différents » → « différent », « chienne » → « chien »)
+let sansFamille = new Set(); // « être » et « avoir » : trop de formes ambiguës (« été », « est », « a »…), on compare tels quels
+function lemme(mot) {
+  if (!sem) return -1;
+  let i = sem.trouver(String(mot).toLowerCase());
+  if (i < 0) return -1;
+  if (familles.has(i)) i = familles.get(i);
+  return sansFamille.has(i) ? -1 : i;
+}
+function lemmeDe(m) {
+  if (m.lv !== versionSem) { m.l = lemme(m.mot); m.lv = versionSem; }
+  return m.l;
+}
+// t : les mots proposés (sans accents) et leurs lemmes
+function trouves() {
+  const t = new Set(partie.essais.map(norm));
+  t.lemmes = new Set(partie.essais.map(lemme).filter((i) => i >= 0));
+  return t;
+}
+const visible = (m, t) => t.has(m.n) || (petitsVisibles() && PETITS.has(m.n)) || (t.lemmes.size > 0 && t.lemmes.has(lemmeDe(m)));
+// le morceau m correspond-il au mot proposé (n : sans accents, l : son lemme) ?
+const correspond = (m, n, l) => m.mot && (m.n === n || (l >= 0 && lemmeDe(m) === l));
+const combien = (n, l) => partie.morceauxTexte.filter((m) => correspond(m, n, l)).length + partie.morceauxTitre.filter((m) => correspond(m, n, l)).length;
 
 // proximité : pour chaque mot caché, le mot proposé le plus proche par le sens
 let proches = new Map(); // n -> { mot, s }
@@ -111,7 +135,7 @@ function calculerProches() {
   const t = trouves();
   const caches = new Map();
   [...partie.morceauxTexte, ...partie.morceauxTitre].forEach((m) => {
-    if (m.mot && !visible(m.n, t) && !caches.has(m.n)) caches.set(m.n, sem.trouver(m.mot.toLowerCase()));
+    if (m.mot && !visible(m, t) && !caches.has(m.n)) caches.set(m.n, sem.trouver(m.mot.toLowerCase()));
   });
   partie.essais.forEach((e) => {
     const ie = sem.trouver(e);
@@ -162,6 +186,7 @@ async function demarrer(m, nouveau = false) {
   partie.morceauxTexte = decouper(partie.texte);
   partie.morceauxTitre = decouper(partie.titre);
   partie.dernier = null;
+  partie.dernierL = -1;
   calculerProches();
   setMessage('');
   $('mot').disabled = fini() || !pseudo();
@@ -199,13 +224,20 @@ async function proposer(texte) {
   if (!mots) return false;
   const mot = mots[0];
   const n = norm(mot);
-  if (partie.essais.some((e) => norm(e) === n)) { setMessage(`« ${mot} » est déjà proposé.`); partie.dernier = n; rendre(); return true; }
+  if (partie.essais.some((e) => norm(e) === n)) { setMessage(`« ${mot} » est déjà proposé.`); partie.dernier = n; partie.dernierL = lemme(mot); rendre(); return true; }
+  // le dictionnaire et ses formes (pluriels, féminins…) : pour reconnaître le mot sous une autre forme dans l'article
+  if (!dicoPret) {
+    if (!sem) setMessage('Un instant, je vérifie le mot…');
+    try { await pret; } catch (e) { /* dictionnaire indisponible : on compare juste les mots tels quels */ }
+    if (!partie || fini()) return false;
+  }
   // un mot qui n'existe pas (faute de frappe) ne compte pas : on le refuse, en proposant la bonne orthographe
   // (les mots de l'article sont toujours acceptés, même les noms propres que le dictionnaire ne connaît pas)
-  const dansArticle = partie.morceauxTexte.some((m) => m.n === n) || partie.morceauxTitre.some((m) => m.n === n);
+  const l = lemme(mot);
+  const dansArticle = combien(n, l) > 0;
   if (!dansArticle && !/^\d+$/.test(n)) {
     try {
-      if (!sem) { setMessage('Un instant, je vérifie le mot…'); sem = await chargerSemantique(); }
+      if (!sem) throw new Error('dictionnaire');
       const i = await sem.trouverPartout(mot);
       if (!partie || fini()) return false;
       if (i < 0) {
@@ -218,8 +250,9 @@ async function proposer(texte) {
   partie.essais.push(mot.toLowerCase());
   if (!partie.debut) partie.debut = Date.now();
   partie.dernier = n;
+  partie.dernierL = l;
   if (!partie.compte) { partie.compte = true; compterPartie('pedantix', 'telephone'); }
-  const nb = partie.morceauxTexte.filter((m) => m.n === n).length + partie.morceauxTitre.filter((m) => m.n === n).length;
+  const nb = combien(n, l);
   setMessage(nb ? `« ${mot} » : ${nb} fois dans l'article !` : `« ${mot} » n'est pas dans l'article.`, !nb);
   verifierVictoire();
   if (partie.trouve) noterResultat();
@@ -231,7 +264,7 @@ async function proposer(texte) {
 function verifierVictoire() {
   if (!partie || partie.abandon) return;
   const t = trouves();
-  if (partie.morceauxTitre.filter((m) => m.mot).every((m) => visible(m.n, t))) partie.trouve = true;
+  if (partie.morceauxTitre.filter((m) => m.mot).every((m) => visible(m, t))) partie.trouve = true;
 }
 $('saisie').addEventListener('submit', (ev) => {
   ev.preventDefault();
@@ -271,8 +304,8 @@ function rendreMorceaux(zone, morceaux, tout) {
       bouts.forEach((b, k) => { if (k) zone.appendChild(el('span', 'para-px')); if (b) zone.appendChild(document.createTextNode(b)); });
       return;
     }
-    if (tout || visible(m.n, t)) {
-      const s = el('span', `vu-px${partie.dernier === m.n ? ' nouveau' : ''}`, m.mot);
+    if (tout || visible(m, t)) {
+      const s = el('span', `vu-px${correspond(m, partie.dernier, partie.dernierL ?? -1) ? ' nouveau' : ''}`, m.mot);
       zone.appendChild(s);
       return;
     }
@@ -317,13 +350,12 @@ function rendre() {
   // les mots proposés (le dernier en haut) et combien de fois on les a trouvés
   const t = trouves();
   const total = partie.morceauxTexte.filter((m) => m.mot).length;
-  const vus = partie.morceauxTexte.filter((m) => m.mot && visible(m.n, t)).length;
+  const vus = partie.morceauxTexte.filter((m) => m.mot && visible(m, t)).length;
   $('compte').textContent = `${partie.mode === 'jour' ? `Article du jour n°${partie.num}` : 'Partie libre'} · ${partie.essais.length} mot${partie.essais.length > 1 ? 's' : ''} proposé${partie.essais.length > 1 ? 's' : ''} · ${Math.round((100 * vus) / Math.max(1, total))} % du texte dévoilé`;
   const ol = $('essais');
   ol.innerHTML = '';
   [...partie.essais].reverse().forEach((e) => {
-    const n = norm(e);
-    const nb = partie.morceauxTexte.filter((m) => m.n === n).length + partie.morceauxTitre.filter((m) => m.n === n).length;
+    const nb = combien(norm(e), lemme(e));
     const li = el('li', nb ? 'oui' : 'non');
     li.append(el('span', '', e), el('b', '', nb ? String(nb) : '0'));
     ol.appendChild(li);
@@ -349,9 +381,33 @@ fetch('articles.txt').then((r) => r.text()).then((t) => {
   if (!pseudo()) assurerPseudo();
 }).catch(() => setMessage('Impossible de charger la liste des articles.', true));
 // le sens des mots (pour les mots « proches ») arrive un peu après : le jeu marche déjà sans
-chargerSemantique().then((s) => {
-  sem = s;
-  if (partie) { calculerProches(); rendre(); }
-  // les mots plus rares (pour les proximités avec les mots de l'article) : en arrière-plan
-  return s.chargerPlus().then(() => { if (partie) { calculerProches(); rendre(); } });
-}).catch(() => {});
+function chargerDico() {
+  return chargerSemantique().then((s) => {
+    if (!sem) { sem = s; sansFamille = new Set(['être', 'avoir'].map((m) => s.trouver(m))); versionSem++; if (partie) { calculerProches(); rendre(); } }
+    return s;
+  });
+}
+function chargerFamilles(s) {
+  return fetch('../commun/mots/familles.txt').then((r) => (r.ok ? r.text() : '')).then((t) => {
+    const f = new Map();
+    t.split('\n').forEach((ligne) => {
+      const [a, b] = ligne.trim().split(' ');
+      const i = s.trouver(a); const j = s.trouver(b);
+      if (a && b && i >= 0 && j >= 0 && i !== j) f.set(i, j);
+    });
+    familles = f;
+  }).catch(() => {});
+}
+let dicoPret = false;
+const pret = chargerDico().then((s) => Promise.all([s.chargerPlus(), chargerFamilles(s)]).then(() => {
+  // les autres formes des mots (pluriels, conjugaisons…) et les mots plus rares : en arrière-plan
+  dicoPret = true;
+  versionSem++;
+  if (partie) { verifierPartie(); calculerProches(); rendre(); }
+})).catch(() => { dicoPret = true; });
+// une partie déjà commencée : un mot proposé peut maintenant en dévoiler d'autres (et même le titre)
+function verifierPartie() {
+  if (!partie || fini()) return;
+  verifierVictoire();
+  if (partie.trouve) { noterResultat(); sauver(); }
+}
